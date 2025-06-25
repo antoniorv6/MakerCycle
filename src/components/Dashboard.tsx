@@ -1,0 +1,155 @@
+import React, { useState } from 'react';
+import { Settings } from 'lucide-react';
+
+// Importar componentes existentes
+import Sidebar from './Sidebar';
+import Accounting from './Accounting';
+import ProjectManager from './ProjectManager';
+
+// Importar la nueva calculadora refactorizada
+import CostCalculator, { type Project } from './cost-calculator';
+
+// Nota: Si tienes otros componentes que usan Project, 
+// podrías necesitar crear un adaptador o actualizar sus interfaces
+
+export default function Dashboard() {
+  const [currentPage, setCurrentPage] = useState('calculator');
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [loadedProject, setLoadedProject] = useState<Project | null>(null);
+
+  const handleLoadProject = (project: Project) => {
+    // Asegurar que el proyecto tiene todos los campos requeridos por la nueva interfaz
+    const adaptedProject: Project = {
+      ...project,
+      // Añadir campos nuevos con valores por defecto si no existen
+      vatPercentage: project.vatPercentage || 21,
+      profitMargin: project.profitMargin || 15,
+      recommendedPrice: project.recommendedPrice || 0,
+      // Asegurar que materials tiene la estructura correcta
+      materials: project.materials || []
+    };
+    
+    setLoadedProject(adaptedProject);
+    setCurrentPage('calculator');
+  };
+
+  const handleProjectSaved = () => {
+    setLoadedProject(null);
+  };
+
+  const renderContent = () => {
+    switch (currentPage) {
+      case 'calculator':
+        return (
+          <CostCalculator 
+            loadedProject={loadedProject} 
+            onProjectSaved={handleProjectSaved}
+          />
+        );
+      case 'accounting':
+        return <Accounting />;
+      case 'projects':
+        return <ProjectManager onLoadProject={handleLoadProject} />;
+      case 'settings':
+        return (
+          <div className="max-w-4xl mx-auto p-6">
+            <div className="text-center mb-8">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-50 rounded-full mb-4">
+                <Settings className="w-8 h-8 text-gray-600" />
+              </div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">Configuración</h1>
+              <p className="text-gray-600">Personaliza tu experiencia de gestión 3D</p>
+            </div>
+            <div className="bg-white rounded-xl shadow-lg p-8 border border-gray-100">
+              <div className="space-y-6">
+                <div className="border-b border-gray-200 pb-4">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Valores por Defecto</h3>
+                  <p className="text-gray-600 text-sm">Configura los valores predeterminados para nuevos proyectos</p>
+                </div>
+                
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <h4 className="font-medium text-gray-900">Filamento</h4>
+                    <div>
+                      <label className="block text-sm text-gray-700 mb-1">Precio por kg (€)</label>
+                      <input 
+                        type="number" 
+                        placeholder="25" 
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <h4 className="font-medium text-gray-900">Electricidad</h4>
+                    <div>
+                      <label className="block text-sm text-gray-700 mb-1">Coste por kWh (€)</label>
+                      <input 
+                        type="number" 
+                        placeholder="0.12" 
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <h4 className="font-medium text-gray-900">Precios</h4>
+                    <div>
+                      <label className="block text-sm text-gray-700 mb-1">IVA por defecto (%)</label>
+                      <input 
+                        type="number" 
+                        placeholder="21" 
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <h4 className="font-medium text-gray-900">Margen</h4>
+                    <div>
+                      <label className="block text-sm text-gray-700 mb-1">Beneficio por defecto (%)</label>
+                      <input 
+                        type="number" 
+                        placeholder="15" 
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      />
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="pt-4 border-t border-gray-200">
+                  <button className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors duration-200">
+                    Guardar Configuración
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      default:
+        return (
+          <CostCalculator 
+            loadedProject={loadedProject} 
+            onProjectSaved={handleProjectSaved} 
+          />
+        );
+    }
+  };
+
+  return (
+    <div className="flex h-screen bg-gray-50">
+      <Sidebar
+        currentPage={currentPage}
+        onPageChange={setCurrentPage}
+        isOpen={sidebarOpen}
+        onToggle={() => setSidebarOpen(!sidebarOpen)}
+      />
+      
+      <main className={`flex-1 overflow-auto transition-all duration-300 mx-auto`}>
+        <div className="py-8 px-4 lg:px-8">
+          {renderContent()}
+        </div>
+      </main>
+    </div>
+  );
+}
