@@ -1,41 +1,37 @@
-import React, { useState } from 'react';
-import { Settings } from 'lucide-react';
+'use client'
 
-// Importar componentes existentes
-import Sidebar from './Sidebar';
-import Accounting from './Accounting';
-import ProjectManager from './ProjectManager';
+import React, { useState } from 'react'
+import { Settings } from 'lucide-react'
+import { useAuth } from '@/components/providers/AuthProvider'
 
-// Importar la nueva calculadora refactorizada
-import CostCalculator, { type Project } from './cost-calculator';
-
-// Nota: Si tienes otros componentes que usan Project, 
-// podrías necesitar crear un adaptador o actualizar sus interfaces
+// Import existing components (we'll need to update these to work with Supabase)
+import Sidebar from './Sidebar'
+import Accounting from './Accounting'
+import ProjectManager from './ProjectManager'
+import CostCalculator, { type Project } from './cost-calculator'
 
 export default function Dashboard() {
-  const [currentPage, setCurrentPage] = useState('calculator');
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [loadedProject, setLoadedProject] = useState<Project | null>(null);
+  const [currentPage, setCurrentPage] = useState('calculator')
+  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [loadedProject, setLoadedProject] = useState<Project | null>(null)
+  const { user } = useAuth()
 
   const handleLoadProject = (project: Project) => {
-    // Asegurar que el proyecto tiene todos los campos requeridos por la nueva interfaz
     const adaptedProject: Project = {
       ...project,
-      // Añadir campos nuevos con valores por defecto si no existen
       vatPercentage: project.vatPercentage || 21,
       profitMargin: project.profitMargin || 15,
       recommendedPrice: project.recommendedPrice || 0,
-      // Asegurar que materials tiene la estructura correcta
       materials: project.materials || []
-    };
+    }
     
-    setLoadedProject(adaptedProject);
-    setCurrentPage('calculator');
-  };
+    setLoadedProject(adaptedProject)
+    setCurrentPage('calculator')
+  }
 
   const handleProjectSaved = () => {
-    setLoadedProject(null);
-  };
+    setLoadedProject(null)
+  }
 
   const renderContent = () => {
     switch (currentPage) {
@@ -45,11 +41,11 @@ export default function Dashboard() {
             loadedProject={loadedProject} 
             onProjectSaved={handleProjectSaved}
           />
-        );
+        )
       case 'accounting':
-        return <Accounting />;
+        return <Accounting />
       case 'projects':
-        return <ProjectManager onLoadProject={handleLoadProject} />;
+        return <ProjectManager onLoadProject={handleLoadProject} />
       case 'settings':
         return (
           <div className="max-w-4xl mx-auto p-6">
@@ -62,6 +58,32 @@ export default function Dashboard() {
             </div>
             <div className="bg-white rounded-xl shadow-lg p-8 border border-gray-100">
               <div className="space-y-6">
+                <div className="border-b border-gray-200 pb-4">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Perfil de Usuario</h3>
+                  <p className="text-gray-600 text-sm">Información de tu cuenta</p>
+                </div>
+                
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm text-gray-700 mb-1">Email</label>
+                    <input 
+                      type="email" 
+                      value={user?.email || ''} 
+                      disabled
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm text-gray-700 mb-1">Nombre completo</label>
+                    <input 
+                      type="text" 
+                      placeholder="Tu nombre completo" 
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    />
+                  </div>
+                </div>
+                
                 <div className="border-b border-gray-200 pb-4">
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">Valores por Defecto</h3>
                   <p className="text-gray-600 text-sm">Configura los valores predeterminados para nuevos proyectos</p>
@@ -125,16 +147,16 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
-        );
+        )
       default:
         return (
           <CostCalculator 
             loadedProject={loadedProject} 
             onProjectSaved={handleProjectSaved} 
           />
-        );
+        )
     }
-  };
+  }
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -145,11 +167,11 @@ export default function Dashboard() {
         onToggle={() => setSidebarOpen(!sidebarOpen)}
       />
       
-      <main className={`flex-1 overflow-auto transition-all duration-300 mx-auto`}>
+      <main className="flex-1 overflow-auto transition-all duration-300 mx-auto">
         <div className="py-8 px-4 lg:px-8">
           {renderContent()}
         </div>
       </main>
     </div>
-  );
+  )
 }

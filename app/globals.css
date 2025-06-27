@@ -1,4 +1,6 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 :root {
   /* Primary colors */
@@ -65,10 +67,6 @@ body {
   background-color: #f9fafb;
 }
 
-#root {
-  min-height: 100vh;
-}
-
 /* Custom utility classes for colors */
 .bg-primary-50 { background-color: var(--color-primary-50); }
 .bg-primary-100 { background-color: var(--color-primary-100); }
@@ -125,7 +123,6 @@ body {
 .hover\:bg-error-600:hover { background-color: var(--color-error-600); }
 .hover\:border-primary-400:hover { border-color: var(--color-primary-400); }
 
-button:hover
-{
-  cursor:pointer;
+button:hover {
+  cursor: pointer;
 }

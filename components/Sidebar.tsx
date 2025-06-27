@@ -1,12 +1,15 @@
-import React from 'react';
-import { Calculator, TrendingUp, FolderOpen, Settings, Menu, X } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+'use client'
+
+import React from 'react'
+import { Calculator, TrendingUp, FolderOpen, Settings, Menu, X, LogOut } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { useAuth } from '@/components/providers/AuthProvider'
 
 interface SidebarProps {
-  currentPage: string;
-  onPageChange: (page: string) => void;
-  isOpen: boolean;
-  onToggle: () => void;
+  currentPage: string
+  onPageChange: (page: string) => void
+  isOpen: boolean
+  onToggle: () => void
 }
 
 const menuItems = [
@@ -14,9 +17,11 @@ const menuItems = [
   { id: 'accounting', label: 'Contabilidad', icon: TrendingUp },
   { id: 'projects', label: 'Proyectos', icon: FolderOpen },
   { id: 'settings', label: 'Configuración', icon: Settings },
-];
+]
 
 export default function Sidebar({ currentPage, onPageChange, isOpen, onToggle }: SidebarProps) {
+  const { user, signOut } = useAuth()
+
   return (
     <>
       {/* Mobile overlay */}
@@ -55,22 +60,39 @@ export default function Sidebar({ currentPage, onPageChange, isOpen, onToggle }:
               <Calculator className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-gray-900">3D Manager</h1>
-              <p className="text-sm text-gray-500">Dashboard</p>
+              <h1 className="text-xl font-bold text-gray-900">3D Manager Pro</h1>
+              <p className="text-sm text-gray-500">SaaS Dashboard</p>
+            </div>
+          </div>
+
+          {/* User info */}
+          <div className="mb-6 p-3 bg-gray-50 rounded-lg">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
+                <span className="text-primary-600 font-medium text-sm">
+                  {user?.email?.charAt(0).toUpperCase()}
+                </span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-gray-900 truncate">
+                  {user?.user_metadata?.full_name || user?.email}
+                </p>
+                <p className="text-xs text-gray-500 truncate">{user?.email}</p>
+              </div>
             </div>
           </div>
 
           <nav className="space-y-2">
             {menuItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = currentPage === item.id;
+              const Icon = item.icon
+              const isActive = currentPage === item.id
               
               return (
                 <button
                   key={item.id}
                   onClick={() => {
-                    onPageChange(item.id);
-                    if (window.innerWidth < 1024) onToggle();
+                    onPageChange(item.id)
+                    if (window.innerWidth < 1024) onToggle()
                   }}
                   className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 ${
                     isActive
@@ -81,21 +103,21 @@ export default function Sidebar({ currentPage, onPageChange, isOpen, onToggle }:
                   <Icon className={`w-5 h-5 ${isActive ? 'text-primary-600' : 'text-gray-400'}`} />
                   <span className="font-medium">{item.label}</span>
                 </button>
-              );
+              )
             })}
           </nav>
         </div>
 
         <div className="absolute bottom-0 left-0 right-0 p-6 border-t border-gray-200">
-          <div className="bg-gradient-to-r from-primary-50 to-primary-100 rounded-lg p-4">
-            <h3 className="font-semibold text-gray-900 mb-1">¿Necesitas ayuda?</h3>
-            <p className="text-sm text-gray-600 mb-3">Consulta nuestra documentación</p>
-            <button className="text-sm text-primary-600 font-medium hover:text-primary-700">
-              Ver guías →
-            </button>
-          </div>
+          <button
+            onClick={signOut}
+            className="w-full flex items-center space-x-3 px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition-all duration-200"
+          >
+            <LogOut className="w-5 h-5 text-gray-400" />
+            <span className="font-medium">Cerrar Sesión</span>
+          </button>
         </div>
       </motion.aside>
     </>
-  );
+  )
 }
