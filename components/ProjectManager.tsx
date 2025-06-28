@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase';
 import { useAuth } from '@/components/providers/AuthProvider';
 import type { DatabaseProject } from '@/components/cost-calculator/types';
 import toast from 'react-hot-toast';
+import { ProjectManagerSkeleton } from '@/components/skeletons';
 
 interface ProjectManagerProps {
   onLoadProject: (project: DatabaseProject) => void;
@@ -94,14 +95,7 @@ export default function ProjectManager({ onLoadProject }: ProjectManagerProps) {
   };
 
   if (loading) {
-    return (
-      <div className="max-w-7xl mx-auto p-6">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Cargando proyectos...</p>
-        </div>
-      </div>
-    );
+    return <ProjectManagerSkeleton />;
   }
 
   return (

@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase';
 import { useAuth } from '@/components/providers/AuthProvider';
 import type { Project, DatabaseProject } from './types';
 import toast from 'react-hot-toast';
+import { CalculatorSkeleton } from '@/components/skeletons';
 
 // Importar tipos y hook
 import { 
@@ -33,6 +34,7 @@ import ProjectInfoPanel from './panels/ProjectInfoPanel';
 const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjectSaved }) => {
   // Estados de la aplicación
   const [viewMode, setViewMode] = useState<ViewMode>('selection');
+  const [loading, setLoading] = useState(false);
   
   // Estados del formulario
   const [projectName, setProjectName] = useState<string>('');
@@ -61,6 +63,7 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
   // Cargar proyecto cuando se pasa como prop
   useEffect(() => {
     if (loadedProject) {
+      setLoading(true);
       setProjectName(loadedProject.name);
       setFilamentWeight(loadedProject.filament_weight);
       setFilamentPrice(loadedProject.filament_price);
@@ -70,6 +73,7 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
       setVatPercentage(loadedProject.vat_percentage || 21);
       setProfitMargin(loadedProject.profit_margin || 15);
       setViewMode('manual-entry');
+      setLoading(false);
     }
   }, [loadedProject]);
 
@@ -192,6 +196,10 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
         onFileAnalyzed={handleFileAnalyzed}
       />
     );
+  }
+
+  if (loading) {
+    return <CalculatorSkeleton />;
   }
 
   // Render del formulario manual (viewMode === 'manual-entry')

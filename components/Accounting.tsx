@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase';
 import { useAuth } from '@/components/providers/AuthProvider';
 import AdvancedStatistics from './AdvancedStatistics';
 import toast from 'react-hot-toast';
+import { AccountingSkeleton } from '@/components/skeletons';
 
 interface Sale {
   id: string;
@@ -510,14 +511,7 @@ export default function Accounting() {
   };
 
   if (loading) {
-    return (
-      <div className="max-w-7xl mx-auto p-6">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Cargando datos de contabilidad...</p>
-        </div>
-      </div>
-    );
+    return <AccountingSkeleton />;
   }
 
   // Si se está mostrando estadísticas avanzadas, renderizar ese componente

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { Eye, EyeOff, Mail, Lock, User } from 'lucide-react'
+import { AuthSkeleton } from '@/components/skeletons'
 
 export default function AuthForm() {
   const [isSignUp, setIsSignUp] = useState(false)
@@ -51,6 +52,10 @@ export default function AuthForm() {
     } finally {
       setLoading(false)
     }
+  }
+
+  if (loading) {
+    return <AuthSkeleton />
   }
 
   return (

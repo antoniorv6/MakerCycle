@@ -11,6 +11,7 @@ import {
 import { motion } from 'framer-motion';
 import { createClient } from '@/lib/supabase';
 import { useAuth } from '@/components/providers/AuthProvider';
+import { AdvancedStatisticsSkeleton } from '@/components/skeletons';
 
 interface Sale {
   id: string;
@@ -302,14 +303,7 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
   const formatPercentage = (value: number) => `${value.toFixed(1)}%`;
 
   if (loading) {
-    return (
-      <div className="max-w-7xl mx-auto p-6">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Cargando estadísticas avanzadas...</p>
-        </div>
-      </div>
-    );
+    return <AdvancedStatisticsSkeleton />;
   }
 
   return (
