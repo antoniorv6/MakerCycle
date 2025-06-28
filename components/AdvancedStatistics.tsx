@@ -6,7 +6,7 @@ import {
 
 import { 
   ArrowLeft, TrendingUp, Calendar, Target, DollarSign, Clock, 
-  BarChart3, Activity, Filter
+  BarChart3, Activity, Filter, Receipt
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { createClient } from '@/lib/supabase';
@@ -29,42 +29,71 @@ interface Sale {
   updated_at: string;
 }
 
+interface Expense {
+  id: string;
+  user_id: string;
+  description: string;
+  amount: number;
+  category: string;
+  date: string;
+  status: 'pending' | 'paid' | 'cancelled';
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+}
+
 interface AdvancedStatsProps {
   onBack: () => void;
 }
 
 export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
   const [sales, setSales] = useState<Sale[]>([]);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d' | '1y' | 'all'>('30d');
-  const [chartType, setChartType] = useState<'revenue' | 'profit' | 'margin'>('revenue');
+  const [chartType, setChartType] = useState<'revenue' | 'profit' | 'margin' | 'expenses'>('revenue');
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
   const supabase = createClient();
 
   useEffect(() => {
     if (user) {
-      fetchSales();
+      fetchData();
     }
   }, [user]);
 
-  const fetchSales = async () => {
+  const fetchData = async () => {
     if (!user) return;
     
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      
+      // Fetch sales
+      const { data: salesData, error: salesError } = await supabase
         .from('sales')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching sales:', error);
+      if (salesError) {
+        console.error('Error fetching sales:', salesError);
       } else {
-        setSales(data || []);
+        setSales(salesData || []);
+      }
+
+      // Fetch expenses
+      const { data: expensesData, error: expensesError } = await supabase
+        .from('expenses')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (expensesError) {
+        console.error('Error fetching expenses:', expensesError);
+      } else {
+        setExpenses(expensesData || []);
       }
     } catch (error) {
-      console.error('Error fetching sales:', error);
+      console.error('Error fetching data:', error);
     } finally {
       setLoading(false);
     }
@@ -89,6 +118,25 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
     return completedSales.filter(sale => new Date(sale.date) >= cutoffDate);
   }, [sales, timeRange]);
 
+  // Filtrar gastos por rango de tiempo
+  const filteredExpenses = useMemo(() => {
+    const now = new Date();
+    const paidExpenses = expenses.filter(expense => expense.status === 'paid');
+    
+    if (timeRange === 'all') return paidExpenses;
+
+    const days = {
+      '7d': 7,
+      '30d': 30,
+      '90d': 90,
+      '1y': 365
+    }[timeRange];
+
+    const cutoffDate = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+    
+    return paidExpenses.filter(expense => new Date(expense.date) >= cutoffDate);
+  }, [expenses, timeRange]);
+
   // Datos para gráfico temporal
   const timeSeriesData = useMemo(() => {
     const grouped = filteredSales.reduce((acc, sale) => {
@@ -100,7 +148,8 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
           cost: 0,
           profit: 0,
           sales: 0,
-          hours: 0
+          hours: 0,
+          expenses: 0
         };
       }
       acc[date].revenue += sale.sale_price;
@@ -111,18 +160,36 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
       return acc;
     }, {} as Record<string, any>);
 
+    // Add expenses to the grouped data
+    filteredExpenses.forEach(expense => {
+      const date = expense.date;
+      if (!grouped[date]) {
+        grouped[date] = {
+          date,
+          revenue: 0,
+          cost: 0,
+          profit: 0,
+          sales: 0,
+          hours: 0,
+          expenses: 0
+        };
+      }
+      grouped[date].expenses += expense.amount;
+    });
+
     return Object.values(grouped)
       .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime())
       .map((item: any) => ({
         ...item,
         margin: item.revenue > 0 ? (item.profit / item.revenue) * 100 : 0,
-        eurosPerHour: item.hours > 0 ? item.profit / item.hours : 0,
+        netProfit: item.profit - item.expenses,
+        eurosPerHour: item.hours > 0 ? (item.profit - item.expenses) / item.hours : 0,
         dateFormatted: new Date(item.date).toLocaleDateString('es-ES', { 
           month: 'short', 
           day: 'numeric' 
         })
       }));
-  }, [filteredSales]);
+  }, [filteredSales, filteredExpenses]);
 
   // Datos para gráfico de distribución de proyectos
   const projectDistribution = useMemo(() => {
@@ -171,13 +238,15 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
   const stats = useMemo(() => {
     const totalRevenue = filteredSales.reduce((sum, sale) => sum + sale.sale_price, 0);
     const totalCost = filteredSales.reduce((sum, sale) => sum + sale.cost, 0);
+    const totalExpenses = filteredExpenses.reduce((sum, expense) => sum + expense.amount, 0);
     const totalProfit = totalRevenue - totalCost;
+    const netProfit = totalProfit - totalExpenses;
     const totalHours = filteredSales.reduce((sum, sale) => sum + (sale.print_hours || 0), 0);
     const avgMargin = filteredSales.length > 0 
       ? filteredSales.reduce((sum, sale) => sum + sale.margin, 0) / filteredSales.length 
       : 0;
     const avgSaleValue = filteredSales.length > 0 ? totalRevenue / filteredSales.length : 0;
-    const eurosPerHour = totalHours > 0 ? totalProfit / totalHours : 0;
+    const eurosPerHour = totalHours > 0 ? netProfit / totalHours : 0;
 
     // Tendencias (comparar con período anterior)
     const periodDays = timeRange === 'all' ? 365 : parseInt(timeRange.replace(/\D/g, ''));
@@ -193,22 +262,39 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
              saleDate <= previousPeriodEnd;
     });
 
+    const previousExpenses = expenses.filter(expense => {
+      const expenseDate = new Date(expense.date);
+      return expense.status === 'paid' && 
+             expenseDate >= previousPeriodStart && 
+             expenseDate <= previousPeriodEnd;
+    });
+
     const previousRevenue = previousSales.reduce((sum, sale) => sum + sale.sale_price, 0);
+    const previousExpensesTotal = previousExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+    const previousProfit = previousSales.reduce((sum, sale) => sum + sale.profit, 0);
+    const previousNetProfit = previousProfit - previousExpensesTotal;
+    
     const revenueGrowth = previousRevenue > 0 ? ((totalRevenue - previousRevenue) / previousRevenue) * 100 : 0;
+    const netProfitGrowth = previousNetProfit !== 0 ? ((netProfit - previousNetProfit) / Math.abs(previousNetProfit)) * 100 : 0;
 
     return {
       totalRevenue,
       totalCost,
+      totalExpenses,
       totalProfit,
+      netProfit,
       totalHours,
       avgMargin,
       avgSaleValue,
       eurosPerHour,
-      salesCount: filteredSales.length,
       revenueGrowth,
-      profitMargin: totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0
+      netProfitGrowth,
+      salesCount: filteredSales.length,
+      expensesCount: filteredExpenses.length,
+      profitMargin: totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0,
+      netProfitMargin: totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0
     };
-  }, [filteredSales, timeRange, sales]);
+  }, [filteredSales, filteredExpenses, sales, expenses, timeRange]);
 
   const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
 
@@ -267,12 +353,13 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
             <option value="revenue">Ingresos</option>
             <option value="profit">Beneficios</option>
             <option value="margin">Márgenes</option>
+            <option value="expenses">Gastos</option>
           </select>
         </div>
       </div>
 
       {/* KPIs Resumidos */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -298,10 +385,10 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-green-600 text-sm font-medium">Beneficio Período</p>
-              <p className="text-2xl font-bold text-green-900">{formatCurrency(stats.totalProfit)}</p>
+              <p className="text-green-600 text-sm font-medium">Beneficio Neto</p>
+              <p className="text-2xl font-bold text-green-900">{formatCurrency(stats.netProfit)}</p>
               <p className="text-green-700 text-xs mt-1">
-                Margen: {formatPercentage(stats.profitMargin)}
+                {stats.netProfitGrowth >= 0 ? '↗' : '↘'} {formatPercentage(Math.abs(stats.netProfitGrowth))} vs anterior
               </p>
             </div>
             <TrendingUp className="w-8 h-8 text-green-600" />
@@ -312,6 +399,24 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
+          className="bg-gradient-to-br from-red-50 to-red-100 rounded-xl p-6 border border-red-200"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-red-600 text-sm font-medium">Gastos Período</p>
+              <p className="text-2xl font-bold text-red-900">{formatCurrency(stats.totalExpenses)}</p>
+              <p className="text-red-700 text-xs mt-1">
+                {stats.expensesCount} gastos registrados
+              </p>
+            </div>
+            <Receipt className="w-8 h-8 text-red-600" />
+          </div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
           className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-6 border border-purple-200"
         >
           <div className="flex items-center justify-between">
@@ -329,7 +434,7 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
+          transition={{ delay: 0.4 }}
           className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl p-6 border border-orange-200"
         >
           <div className="flex items-center justify-between">
@@ -368,7 +473,9 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
                   formatter={(value: any, name: string) => {
                     if (name === 'margin') return [formatPercentage(value), 'Margen'];
                     if (name === 'eurosPerHour') return [formatCurrency(value), '€/Hora'];
-                    return [formatCurrency(value), name === 'revenue' ? 'Ingresos' : name === 'profit' ? 'Beneficio' : 'Coste'];
+                    if (name === 'netProfit') return [formatCurrency(value), 'Beneficio Neto'];
+                    if (name === 'expenses') return [formatCurrency(value), 'Gastos'];
+                    return [formatCurrency(value), name === 'revenue' ? 'Ingresos' : name === 'profit' ? 'Beneficio Bruto' : 'Coste'];
                   }}
                 />
                 <Legend />
@@ -376,13 +483,20 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
                   <>
                     <Line type="monotone" dataKey="revenue" stroke="#3b82f6" strokeWidth={3} name="Ingresos" />
                     <Line type="monotone" dataKey="cost" stroke="#ef4444" strokeWidth={2} name="Costes" />
+                    <Line type="monotone" dataKey="expenses" stroke="#f59e0b" strokeWidth={2} name="Gastos" />
                   </>
                 )}
                 {chartType === 'profit' && (
-                  <Line type="monotone" dataKey="profit" stroke="#10b981" strokeWidth={3} name="Beneficio" />
+                  <>
+                    <Line type="monotone" dataKey="profit" stroke="#10b981" strokeWidth={3} name="Beneficio Bruto" />
+                    <Line type="monotone" dataKey="netProfit" stroke="#059669" strokeWidth={3} name="Beneficio Neto" />
+                  </>
                 )}
                 {chartType === 'margin' && (
                   <Line type="monotone" dataKey="margin" stroke="#8b5cf6" strokeWidth={3} name="Margen %" />
+                )}
+                {chartType === 'expenses' && (
+                  <Line type="monotone" dataKey="expenses" stroke="#f59e0b" strokeWidth={3} name="Gastos" />
                 )}
               </LineChart>
             </ResponsiveContainer>

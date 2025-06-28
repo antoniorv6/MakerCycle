@@ -43,6 +43,18 @@
       - `created_at` (timestamp)
       - `updated_at` (timestamp)
 
+    - `expenses`
+      - `id` (uuid, primary key)
+      - `user_id` (uuid, references profiles)
+      - `description` (text)
+      - `amount` (numeric)
+      - `category` (text)
+      - `date` (date)
+      - `status` (enum)
+      - `notes` (text, nullable)
+      - `created_at` (timestamp)
+      - `updated_at` (timestamp)
+
   2. Security
     - Enable RLS on all tables
     - Add policies for authenticated users to access their own data
@@ -51,6 +63,7 @@
 -- Create custom types
 CREATE TYPE project_status AS ENUM ('draft', 'calculated', 'completed');
 CREATE TYPE sale_status AS ENUM ('pending', 'completed', 'cancelled');
+CREATE TYPE expense_status AS ENUM ('pending', 'paid', 'cancelled');
 
 -- Create profiles table FIRST
 CREATE TABLE IF NOT EXISTS profiles (
@@ -99,10 +112,25 @@ CREATE TABLE IF NOT EXISTS sales (
   updated_at timestamptz DEFAULT now()
 );
 
+-- Create expenses table
+CREATE TABLE IF NOT EXISTS expenses (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+  description text NOT NULL,
+  amount numeric NOT NULL DEFAULT 0,
+  category text NOT NULL,
+  date date NOT NULL DEFAULT CURRENT_DATE,
+  status expense_status DEFAULT 'paid',
+  notes text,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
+);
+
 -- Enable Row Level Security
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE projects ENABLE ROW LEVEL SECURITY;
 ALTER TABLE sales ENABLE ROW LEVEL SECURITY;
+ALTER TABLE expenses ENABLE ROW LEVEL SECURITY;
 
 -- Create policies for profiles
 CREATE POLICY "Users can read own profile"
@@ -173,6 +201,31 @@ CREATE POLICY "Users can delete own sales"
   TO authenticated
   USING (auth.uid() = user_id);
 
+-- Create policies for expenses
+CREATE POLICY "Users can read own expenses"
+  ON expenses
+  FOR SELECT
+  TO authenticated
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert own expenses"
+  ON expenses
+  FOR INSERT
+  TO authenticated
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own expenses"
+  ON expenses
+  FOR UPDATE
+  TO authenticated
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete own expenses"
+  ON expenses
+  FOR DELETE
+  TO authenticated
+  USING (auth.uid() = user_id);
+
 -- Create function to update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS trigger AS $$
@@ -193,4 +246,8 @@ CREATE TRIGGER update_projects_updated_at
 
 CREATE TRIGGER update_sales_updated_at
   BEFORE UPDATE ON sales
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_expenses_updated_at
+  BEFORE UPDATE ON expenses
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
