@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { Calculator, ArrowLeft } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Save, Upload, Calculator, FileText, Settings, Euro, Clock, Package, Zap, Plus, Trash2, ArrowLeft } from 'lucide-react';
 import { createClient } from '@/lib/supabase';
 import { useAuth } from '@/components/providers/AuthProvider';
+import type { Project, DatabaseProject } from './types';
+import toast from 'react-hot-toast';
 
 // Importar tipos y hook
-import type { 
-  CostCalculatorProps, 
+import { 
   ViewMode, 
-  Material, 
-  Project,
-  DatabaseProject
+  Material,
+  CostCalculatorProps
 } from './types';
 import { useCostCalculations } from './hooks/useCostCalculations';
 
@@ -109,11 +110,11 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
   // Función de guardado de proyecto
   const saveProject = async () => {
     if (!projectName.trim()) {
-      alert('Por favor, introduce un nombre para el proyecto');
+      toast.error('Por favor, introduce un nombre para el proyecto');
       return;
     }
     if (!user) {
-      alert('Debes iniciar sesión para guardar el proyecto en la nube.');
+      toast.error('Debes iniciar sesión para guardar el proyecto en la nube.');
       return;
     }
 
@@ -139,7 +140,7 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
 
         if (profileError) {
           console.error('Error creating profile:', profileError);
-          alert('Error al crear el perfil del usuario. Inténtalo de nuevo.');
+          toast.error('Error al crear el perfil del usuario. Inténtalo de nuevo.');
           return;
         }
       }
@@ -162,13 +163,13 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
 
       const { error } = await supabase.from('projects').insert([project]);
       if (error) {
-        alert('Error al guardar el proyecto en Supabase: ' + error.message);
+        toast.error('Error al guardar el proyecto en Supabase: ' + error.message);
       } else {
         onProjectSaved?.();
-        alert('Proyecto guardado correctamente en Supabase');
+        toast.success('Proyecto guardado correctamente en Supabase');
       }
     } catch (error: any) {
-      alert('Error inesperado: ' + error.message);
+      toast.error('Error inesperado: ' + error.message);
     }
   };
 

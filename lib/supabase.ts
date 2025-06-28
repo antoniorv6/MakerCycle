@@ -8,10 +8,12 @@ export const createClient = () =>
 
 export const createServerSupabaseClient = async () => {
   const { cookies } = await import('next/headers')
+  const cookieStore = await cookies()
+  
   return createServerClient(supabaseUrl, supabaseAnonKey, {
     cookies: {
       get(name: string) {
-        return cookies().get(name)?.value
+        return cookieStore.get(name)?.value
       },
       set(name: string, value: string, options?: any) {
         // no-op in server components
@@ -149,6 +151,43 @@ export type Database = {
           date?: string
           status?: 'pending' | 'completed' | 'cancelled'
           print_hours?: number | null
+          updated_at?: string
+        }
+      }
+      expenses: {
+        Row: {
+          id: string
+          user_id: string
+          description: string
+          amount: number
+          category: string
+          date: string
+          status: 'pending' | 'paid' | 'cancelled'
+          notes: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          description: string
+          amount: number
+          category: string
+          date: string
+          status?: 'pending' | 'paid' | 'cancelled'
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          description?: string
+          amount?: number
+          category?: string
+          date?: string
+          status?: 'pending' | 'paid' | 'cancelled'
+          notes?: string | null
           updated_at?: string
         }
       }

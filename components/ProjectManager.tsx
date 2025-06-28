@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { createClient } from '@/lib/supabase';
 import { useAuth } from '@/components/providers/AuthProvider';
 import type { DatabaseProject } from '@/components/cost-calculator/types';
+import toast from 'react-hot-toast';
 
 interface ProjectManagerProps {
   onLoadProject: (project: DatabaseProject) => void;
@@ -62,7 +63,7 @@ export default function ProjectManager({ onLoadProject }: ProjectManagerProps) {
 
       if (error) {
         console.error('Error deleting project:', error);
-        alert('Error al eliminar el proyecto');
+        toast.error('Error al eliminar el proyecto');
         return;
       }
 
@@ -70,7 +71,7 @@ export default function ProjectManager({ onLoadProject }: ProjectManagerProps) {
       setProjects(projects.filter(p => p.id !== id));
     } catch (error) {
       console.error('Error deleting project:', error);
-      alert('Error al eliminar el proyecto');
+      toast.error('Error al eliminar el proyecto');
     }
   };
 
