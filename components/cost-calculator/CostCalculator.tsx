@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Calculator, ArrowLeft } from 'lucide-react';
+import { createClient } from '@/lib/supabase';
+import { useAuth } from '@/components/providers/AuthProvider';
 
 // Importar tipos y hook
 import type { 
   CostCalculatorProps, 
   ViewMode, 
   Material, 
-  Project 
+  Project,
+  DatabaseProject
 } from './types';
 import { useCostCalculations } from './hooks/useCostCalculations';
 
@@ -51,17 +54,20 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
     profitMargin
   });
 
+  const { user } = useAuth();
+  const supabase = createClient();
+
   // Cargar proyecto cuando se pasa como prop
   useEffect(() => {
     if (loadedProject) {
       setProjectName(loadedProject.name);
-      setFilamentWeight(loadedProject.filamentWeight);
-      setFilamentPrice(loadedProject.filamentPrice);
-      setPrintHours(loadedProject.printHours);
-      setElectricityCost(loadedProject.electricityCost);
+      setFilamentWeight(loadedProject.filament_weight);
+      setFilamentPrice(loadedProject.filament_price);
+      setPrintHours(loadedProject.print_hours);
+      setElectricityCost(loadedProject.electricity_cost);
       setMaterials(loadedProject.materials);
-      setVatPercentage(loadedProject.vatPercentage || 21);
-      setProfitMargin(loadedProject.profitMargin || 15);
+      setVatPercentage(loadedProject.vat_percentage || 21);
+      setProfitMargin(loadedProject.profit_margin || 15);
       setViewMode('manual-entry');
     }
   }, [loadedProject]);
@@ -101,41 +107,69 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
   };
 
   // Función de guardado de proyecto
-  const saveProject = () => {
+  const saveProject = async () => {
     if (!projectName.trim()) {
       alert('Por favor, introduce un nombre para el proyecto');
       return;
     }
-
-    const project: Project = {
-      id: loadedProject?.id || Date.now().toString(),
-      name: projectName,
-      filamentWeight,
-      filamentPrice,
-      printHours,
-      electricityCost,
-      materials,
-      totalCost: costs.total,
-      vatPercentage,
-      profitMargin,
-      recommendedPrice: salePrice.recommendedPrice,
-      createdAt: loadedProject?.createdAt || new Date().toISOString(),
-      status: 'calculated'
-    };
-
-    const savedProjects = JSON.parse(localStorage.getItem('3d-projects') || '[]');
-    const existingIndex = savedProjects.findIndex((p: Project) => p.id === project.id);
-    
-    if (existingIndex >= 0) {
-      savedProjects[existingIndex] = project;
-    } else {
-      savedProjects.push(project);
+    if (!user) {
+      alert('Debes iniciar sesión para guardar el proyecto en la nube.');
+      return;
     }
-    
-    localStorage.setItem('3d-projects', JSON.stringify(savedProjects));
-    onProjectSaved?.();
-    
-    alert('Proyecto guardado correctamente');
+
+    try {
+      // First, ensure profile exists
+      const { data: existingProfile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', user.id)
+        .single();
+
+      if (!existingProfile) {
+        // Create profile if it doesn't exist
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert([
+            {
+              id: user.id,
+              email: user.email,
+              full_name: user.user_metadata?.full_name || user.email,
+            }
+          ]);
+
+        if (profileError) {
+          console.error('Error creating profile:', profileError);
+          alert('Error al crear el perfil del usuario. Inténtalo de nuevo.');
+          return;
+        }
+      }
+
+      // Now insert the project
+      const project = {
+        user_id: user.id,
+        name: projectName,
+        filament_weight: filamentWeight,
+        filament_price: filamentPrice,
+        print_hours: printHours,
+        electricity_cost: electricityCost,
+        materials,
+        total_cost: costs.total,
+        vat_percentage: vatPercentage,
+        profit_margin: profitMargin,
+        recommended_price: salePrice.recommendedPrice,
+        status: 'calculated',
+      };
+
+      const { error } = await supabase.from('projects').insert([project]);
+      if (error) {
+        alert('Error al guardar el proyecto en Supabase: ' + error.message);
+      } else {
+        onProjectSaved?.();
+        alert('Proyecto guardado correctamente en Supabase');
+      }
+    } catch (error: any) {
+      alert('Error inesperado: ' + error.message);
+    }
   };
 
   // Función para manejar análisis de archivos
@@ -172,15 +206,13 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
           <p className="text-gray-600">Calcula el coste total de tus proyectos de impresión 3D</p>
         </div>
         
-        {!loadedProject && (
-          <button
-            onClick={() => setViewMode('selection')}
-            className="flex items-center text-gray-600 hover:text-gray-800 transition-colors duration-200 ml-4"
-          >
-            <ArrowLeft className="w-4 h-4 mr-1" />
-            Cambiar método
-          </button>
-        )}
+        <button
+          onClick={() => setViewMode('selection')}
+          className="flex items-center text-gray-600 hover:text-gray-800 transition-colors duration-200 ml-4"
+        >
+          <ArrowLeft className="w-4 h-4 mr-1" />
+          Cambiar método
+        </button>
       </div>
 
       {/* Layout principal */}

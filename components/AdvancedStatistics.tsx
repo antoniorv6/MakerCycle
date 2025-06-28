@@ -9,17 +9,24 @@ import {
   BarChart3, Activity, Filter
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { createClient } from '@/lib/supabase';
+import { useAuth } from '@/components/providers/AuthProvider';
 
 interface Sale {
   id: string;
-  projectName: string;
+  user_id: string;
+  project_name: string;
   cost: number;
-  salePrice: number;
+  unit_cost: number;
+  quantity: number;
+  sale_price: number;
   profit: number;
   margin: number;
   date: string;
   status: 'pending' | 'completed' | 'cancelled';
-  printHours?: number;
+  print_hours?: number;
+  created_at: string;
+  updated_at: string;
 }
 
 interface AdvancedStatsProps {
@@ -30,13 +37,38 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
   const [sales, setSales] = useState<Sale[]>([]);
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d' | '1y' | 'all'>('30d');
   const [chartType, setChartType] = useState<'revenue' | 'profit' | 'margin'>('revenue');
+  const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
+  const supabase = createClient();
 
   useEffect(() => {
-    const savedSales = localStorage.getItem('3d-sales');
-    if (savedSales) {
-      setSales(JSON.parse(savedSales));
+    if (user) {
+      fetchSales();
     }
-  }, []);
+  }, [user]);
+
+  const fetchSales = async () => {
+    if (!user) return;
+    
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('sales')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching sales:', error);
+      } else {
+        setSales(data || []);
+      }
+    } catch (error) {
+      console.error('Error fetching sales:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Filtrar ventas por rango de tiempo
   const filteredSales = useMemo(() => {
@@ -71,11 +103,11 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
           hours: 0
         };
       }
-      acc[date].revenue += sale.salePrice;
+      acc[date].revenue += sale.sale_price;
       acc[date].cost += sale.cost;
       acc[date].profit += sale.profit;
       acc[date].sales += 1;
-      acc[date].hours += sale.printHours || 0;
+      acc[date].hours += sale.print_hours || 0;
       return acc;
     }, {} as Record<string, any>);
 
@@ -95,7 +127,7 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
   // Datos para gráfico de distribución de proyectos
   const projectDistribution = useMemo(() => {
     const projectStats = filteredSales.reduce((acc, sale) => {
-      const name = sale.projectName;
+      const name = sale.project_name;
       if (!acc[name]) {
         acc[name] = {
           name,
@@ -105,10 +137,10 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
           hours: 0
         };
       }
-      acc[name].revenue += sale.salePrice;
+      acc[name].revenue += sale.sale_price;
       acc[name].profit += sale.profit;
       acc[name].sales += 1;
-      acc[name].hours += sale.printHours || 0;
+      acc[name].hours += sale.print_hours || 0;
       return acc;
     }, {} as Record<string, any>);
 
@@ -137,10 +169,10 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
 
   // Estadísticas resumidas
   const stats = useMemo(() => {
-    const totalRevenue = filteredSales.reduce((sum, sale) => sum + sale.salePrice, 0);
+    const totalRevenue = filteredSales.reduce((sum, sale) => sum + sale.sale_price, 0);
     const totalCost = filteredSales.reduce((sum, sale) => sum + sale.cost, 0);
     const totalProfit = totalRevenue - totalCost;
-    const totalHours = filteredSales.reduce((sum, sale) => sum + (sale.printHours || 0), 0);
+    const totalHours = filteredSales.reduce((sum, sale) => sum + (sale.print_hours || 0), 0);
     const avgMargin = filteredSales.length > 0 
       ? filteredSales.reduce((sum, sale) => sum + sale.margin, 0) / filteredSales.length 
       : 0;
@@ -161,7 +193,7 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
              saleDate <= previousPeriodEnd;
     });
 
-    const previousRevenue = previousSales.reduce((sum, sale) => sum + sale.salePrice, 0);
+    const previousRevenue = previousSales.reduce((sum, sale) => sum + sale.sale_price, 0);
     const revenueGrowth = previousRevenue > 0 ? ((totalRevenue - previousRevenue) / previousRevenue) * 100 : 0;
 
     return {
@@ -182,6 +214,17 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
 
   const formatCurrency = (value: number) => `€${value.toFixed(2)}`;
   const formatPercentage = (value: number) => `${value.toFixed(1)}%`;
+
+  if (loading) {
+    return (
+      <div className="max-w-7xl mx-auto p-6">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Cargando estadísticas avanzadas...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto p-6 space-y-8">

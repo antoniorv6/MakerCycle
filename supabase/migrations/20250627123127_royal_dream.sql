@@ -52,7 +52,7 @@
 CREATE TYPE project_status AS ENUM ('draft', 'calculated', 'completed');
 CREATE TYPE sale_status AS ENUM ('pending', 'completed', 'cancelled');
 
--- Create profiles table
+-- Create profiles table FIRST
 CREATE TABLE IF NOT EXISTS profiles (
   id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   email text UNIQUE NOT NULL,
@@ -172,26 +172,6 @@ CREATE POLICY "Users can delete own sales"
   FOR DELETE
   TO authenticated
   USING (auth.uid() = user_id);
-
--- Create function to handle user creation
-CREATE OR REPLACE FUNCTION handle_new_user()
-RETURNS trigger AS $$
-BEGIN
-  INSERT INTO profiles (id, email, full_name)
-  VALUES (
-    NEW.id,
-    NEW.email,
-    COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.email)
-  );
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
--- Create trigger for new user creation
-DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
-CREATE TRIGGER on_auth_user_created
-  AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE FUNCTION handle_new_user();
 
 -- Create function to update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_updated_at_column()

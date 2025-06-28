@@ -1,32 +1,38 @@
 import React, { useState, useEffect } from 'react';
 import { TrendingUp, Plus, Search, Calendar, Euro, BarChart3, PieChart, Clock, FileText, Loader, Activity } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { createClient } from '@/lib/supabase';
+import { useAuth } from '@/components/providers/AuthProvider';
 import AdvancedStatistics from './AdvancedStatistics';
 
 interface Sale {
   id: string;
-  projectName: string;
+  user_id: string;
+  project_name: string;
   cost: number;
-  salePrice: number;
+  unit_cost: number;
+  quantity: number;
+  sale_price: number;
   profit: number;
   margin: number;
   date: string;
   status: 'pending' | 'completed' | 'cancelled';
-  printHours?: number;
-  quantity: number; // Nueva propiedad para cantidad de productos
-  unitCost: number; // Coste por unidad
+  print_hours?: number;
+  created_at: string;
+  updated_at: string;
 }
 
-interface Project {
+interface DatabaseProject {
   id: string;
+  user_id: string;
   name: string;
-  filamentWeight: number;
-  filamentPrice: number;
-  printHours: number;
-  electricityCost: number;
+  filament_weight: number;
+  filament_price: number;
+  print_hours: number;
+  electricity_cost: number;
   materials: Array<{ id: string; name: string; price: number }>;
-  totalCost: number;
-  createdAt: string;
+  total_cost: number;
+  created_at: string;
   status: 'draft' | 'calculated' | 'completed';
 }
 
@@ -38,16 +44,20 @@ interface Stats {
   totalSales: number;
   averageEurosPerHour: number;
   totalPrintHours: number;
-  totalProducts: number; // Nuevo KPI para total de productos vendidos
+  totalProducts: number;
 }
 
 export default function Accounting() {
   const [sales, setSales] = useState<Sale[]>([]);
-  const [projects, setProjects] = useState<Project[]>([]);
+  const [projects, setProjects] = useState<DatabaseProject[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
   const [selectedProject, setSelectedProject] = useState<string>('');
   const [showAdvancedStats, setShowAdvancedStats] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
+  const supabase = createClient();
+  
   const [stats, setStats] = useState<Stats>({
     totalRevenue: 0,
     totalCosts: 0,
@@ -71,28 +81,53 @@ export default function Accounting() {
 
   // Cargar datos al inicializar
   useEffect(() => {
-    const savedSales = localStorage.getItem('3d-sales');
-    if (savedSales) {
-      const loadedSales = JSON.parse(savedSales);
-      // Migrar datos antiguos que no tienen quantity
-      const migratedSales = loadedSales.map((sale: any) => ({
-        ...sale,
-        quantity: sale.quantity || 1,
-        unitCost: sale.unitCost || sale.cost || 0
-      }));
-      setSales(migratedSales);
+    if (user) {
+      fetchData();
     }
+  }, [user]);
 
-    const savedProjects = localStorage.getItem('3d-projects');
-    if (savedProjects) {
-      setProjects(JSON.parse(savedProjects));
+  const fetchData = async () => {
+    if (!user) return;
+    
+    try {
+      setLoading(true);
+      
+      // Fetch sales
+      const { data: salesData, error: salesError } = await supabase
+        .from('sales')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (salesError) {
+        console.error('Error fetching sales:', salesError);
+      } else {
+        setSales(salesData || []);
+      }
+
+      // Fetch projects
+      const { data: projectsData, error: projectsError } = await supabase
+        .from('projects')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (projectsError) {
+        console.error('Error fetching projects:', projectsError);
+      } else {
+        setProjects(projectsData || []);
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    } finally {
+      setLoading(false);
     }
-  }, []);
+  };
 
   // Calcular estadísticas
   useEffect(() => {
     const completedSales = sales.filter(sale => sale.status === 'completed');
-    const totalRevenue = completedSales.reduce((sum, sale) => sum + sale.salePrice, 0);
+    const totalRevenue = completedSales.reduce((sum, sale) => sum + sale.sale_price, 0);
     const totalCosts = completedSales.reduce((sum, sale) => sum + sale.cost, 0);
     const totalProfit = totalRevenue - totalCosts;
     const averageMargin = completedSales.length > 0 
@@ -100,7 +135,7 @@ export default function Accounting() {
       : 0;
 
     // Calcular total de horas y euros por hora
-    const totalPrintHours = completedSales.reduce((sum, sale) => sum + (sale.printHours || 0), 0);
+    const totalPrintHours = completedSales.reduce((sum, sale) => sum + (sale.print_hours || 0), 0);
     const averageEurosPerHour = totalPrintHours > 0 ? totalProfit / totalPrintHours : 0;
     
     // Calcular total de productos vendidos
@@ -136,16 +171,21 @@ export default function Accounting() {
     if (project) {
       setNewSale({
         projectName: project.name,
-        unitCost: project.totalCost,
+        unitCost: project.total_cost,
         quantity: 1,
         salePrice: 0, // Usuario debe introducir precio de venta
         date: new Date().toISOString().split('T')[0],
-        printHours: project.printHours
+        printHours: project.print_hours
       });
     }
   };
 
-  const handleAddSale = () => {
+  const handleAddSale = async () => {
+    if (!user) {
+      alert('Debes iniciar sesión para registrar ventas.');
+      return;
+    }
+    
     if (!newSale.projectName || newSale.unitCost <= 0 || newSale.salePrice <= 0 || newSale.quantity <= 0) {
       alert('Por favor, completa todos los campos correctamente');
       return;
@@ -155,47 +195,78 @@ export default function Accounting() {
     const profit = newSale.salePrice - totalCost;
     const margin = (profit / newSale.salePrice) * 100;
 
-    const sale: Sale = {
-      id: Date.now().toString(),
-      projectName: newSale.projectName,
+    const sale = {
+      user_id: user.id,
+      project_name: newSale.projectName,
       cost: totalCost,
-      unitCost: newSale.unitCost,
+      unit_cost: newSale.unitCost,
       quantity: newSale.quantity,
-      salePrice: newSale.salePrice,
+      sale_price: newSale.salePrice,
       profit,
       margin,
       date: newSale.date,
-      status: 'completed',
-      printHours: newSale.printHours * newSale.quantity // Multiplicar horas por cantidad
+      status: 'completed' as const,
+      print_hours: newSale.printHours * newSale.quantity
     };
 
-    const updatedSales = [...sales, sale];
-    setSales(updatedSales);
-    localStorage.setItem('3d-sales', JSON.stringify(updatedSales));
+    try {
+      const { error } = await supabase.from('sales').insert([sale]);
+      
+      if (error) {
+        console.error('Error adding sale:', error);
+        alert('Error al registrar la venta');
+        return;
+      }
 
-    // Resetear formulario
-    setNewSale({
-      projectName: '',
-      unitCost: 0,
-      quantity: 1,
-      salePrice: 0,
-      date: new Date().toISOString().split('T')[0],
-      printHours: 0
-    });
-    setSelectedProject('');
-    setShowAddForm(false);
+      // Refresh data
+      await fetchData();
+
+      // Resetear formulario
+      setNewSale({
+        projectName: '',
+        unitCost: 0,
+        quantity: 1,
+        salePrice: 0,
+        date: new Date().toISOString().split('T')[0],
+        printHours: 0
+      });
+      setSelectedProject('');
+      setShowAddForm(false);
+      
+      alert('Venta registrada correctamente');
+    } catch (error) {
+      console.error('Error adding sale:', error);
+      alert('Error al registrar la venta');
+    }
   };
 
-  const handleDeleteSale = (id: string) => {
-    if (confirm('¿Estás seguro de que quieres eliminar esta venta?')) {
-      const updatedSales = sales.filter(sale => sale.id !== id);
-      setSales(updatedSales);
-      localStorage.setItem('3d-sales', JSON.stringify(updatedSales));
+  const handleDeleteSale = async (id: string) => {
+    if (!confirm('¿Estás seguro de que quieres eliminar esta venta?')) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('sales')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error('Error deleting sale:', error);
+        alert('Error al eliminar la venta');
+        return;
+      }
+
+      // Refresh data
+      await fetchData();
+    } catch (error) {
+      console.error('Error deleting sale:', error);
+      alert('Error al eliminar la venta');
     }
   };
 
   const filteredSales = sales.filter(sale =>
-    sale.projectName.toLowerCase().includes(searchTerm.toLowerCase())
+    sale.project_name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const getStatusColor = (status: string) => {
@@ -215,6 +286,17 @@ export default function Accounting() {
       default: return 'Desconocido';
     }
   };
+
+  if (loading) {
+    return (
+      <div className="max-w-7xl mx-auto p-6">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Cargando datos de contabilidad...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Si se está mostrando estadísticas avanzadas, renderizar ese componente
   if (showAdvancedStats) {
@@ -382,7 +464,7 @@ export default function Accounting() {
               <option value="">Crear venta manualmente</option>
               {projects.map((project) => (
                 <option key={project.id} value={project.id}>
-                  {project.name} - €{project.totalCost.toFixed(2)} ({project.printHours}h)
+                  {project.name} - €{project.total_cost.toFixed(2)} ({project.print_hours}h)
                 </option>
               ))}
             </select>
@@ -592,10 +674,10 @@ export default function Accounting() {
                     className="hover:bg-gray-50"
                   >
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="font-medium text-gray-900">{sale.projectName}</div>
-                      {sale.printHours && (
+                      <div className="font-medium text-gray-900">{sale.project_name}</div>
+                      {sale.print_hours && (
                         <div className="text-sm text-gray-500">
-                          {(sale.printHours / (sale.quantity || 1)).toFixed(1)}h/unidad
+                          {(sale.print_hours / (sale.quantity || 1)).toFixed(1)}h/unidad
                         </div>
                       )}
                     </td>
@@ -603,13 +685,13 @@ export default function Accounting() {
                       {sale.quantity || 1}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-gray-900">
-                      €{(sale.unitCost || sale.cost / (sale.quantity || 1)).toFixed(2)}
+                      €{(sale.unit_cost || sale.cost / (sale.quantity || 1)).toFixed(2)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-gray-900">
                       €{sale.cost.toFixed(2)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-gray-900">
-                      €{sale.salePrice.toFixed(2)}
+                      €{sale.sale_price.toFixed(2)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`font-medium ${sale.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
@@ -622,9 +704,9 @@ export default function Accounting() {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {sale.printHours && sale.printHours > 0 ? (
+                      {sale.print_hours && sale.print_hours > 0 ? (
                         <span className="font-medium text-purple-600">
-                          €{(sale.profit / sale.printHours).toFixed(2)}
+                          €{(sale.profit / sale.print_hours).toFixed(2)}
                         </span>
                       ) : (
                         <span className="text-gray-400">-</span>

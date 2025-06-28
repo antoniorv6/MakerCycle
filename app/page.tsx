@@ -1,10 +1,10 @@
-import { createServerClient } from '@/lib/supabase'
+import { createServerSupabaseClient } from '@/lib/supabase'
 import { redirect } from 'next/navigation'
 import LandingPage from '@/components/LandingPage'
 
 export default async function Home() {
-  // Añadir await aquí - createServerClient() ahora es async
-  const supabase = await createServerClient()
+  // Añadir await aquí - createServerSupabaseClient() ahora es async
+  const supabase = await createServerSupabaseClient()
   
   const {
     data: { session },

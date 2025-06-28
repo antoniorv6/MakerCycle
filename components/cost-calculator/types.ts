@@ -20,6 +20,26 @@ export interface SalePrice {
   recommendedPrice: number;
 }
 
+// Database format (snake_case)
+export interface DatabaseProject {
+  id: string;
+  user_id: string;
+  name: string;
+  filament_weight: number;
+  filament_price: number;
+  print_hours: number;
+  electricity_cost: number;
+  materials: Material[];
+  total_cost: number;
+  vat_percentage: number;
+  profit_margin: number;
+  recommended_price: number;
+  status: 'draft' | 'calculated' | 'completed';
+  created_at: string;
+  updated_at: string;
+}
+
+// App format (camelCase) - for backward compatibility
 export interface Project {
   id: string;
   name: string;
@@ -37,7 +57,7 @@ export interface Project {
 }
 
 export interface CostCalculatorProps {
-  loadedProject?: Project | null;
+  loadedProject?: DatabaseProject | null;
   onProjectSaved?: () => void;
 }
 

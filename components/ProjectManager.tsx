@@ -1,35 +1,51 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Search, Filter, Upload, FileText, Calendar, Euro } from 'lucide-react';
 import { motion } from 'framer-motion';
-
-interface Project {
-  id: string;
-  name: string;
-  filamentWeight: number;
-  filamentPrice: number;
-  printHours: number;
-  electricityCost: number;
-  materials: Array<{ name: string; price: number }>;
-  totalCost: number;
-  createdAt: string;
-  status: 'draft' | 'calculated' | 'completed';
-}
+import { createClient } from '@/lib/supabase';
+import { useAuth } from '@/components/providers/AuthProvider';
+import type { DatabaseProject } from '@/components/cost-calculator/types';
 
 interface ProjectManagerProps {
-  onLoadProject: (project: Project) => void;
+  onLoadProject: (project: DatabaseProject) => void;
 }
 
 export default function ProjectManager({ onLoadProject }: ProjectManagerProps) {
-  const [projects, setProjects] = useState<Project[]>([]);
+  const [projects, setProjects] = useState<DatabaseProject[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
+  const supabase = createClient();
 
   useEffect(() => {
-    const savedProjects = localStorage.getItem('3d-projects');
-    if (savedProjects) {
-      setProjects(JSON.parse(savedProjects));
+    if (user) {
+      fetchProjects();
     }
-  }, []);
+  }, [user]);
+
+  const fetchProjects = async () => {
+    if (!user) return;
+    
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('projects')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching projects:', error);
+        return;
+      }
+
+      setProjects(data || []);
+    } catch (error) {
+      console.error('Error fetching projects:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredProjects = projects.filter(project => {
     const matchesSearch = project.name.toLowerCase().includes(searchTerm.toLowerCase());
@@ -37,10 +53,25 @@ export default function ProjectManager({ onLoadProject }: ProjectManagerProps) {
     return matchesSearch && matchesFilter;
   });
 
-  const handleDeleteProject = (id: string) => {
-    const updatedProjects = projects.filter(p => p.id !== id);
-    setProjects(updatedProjects);
-    localStorage.setItem('3d-projects', JSON.stringify(updatedProjects));
+  const handleDeleteProject = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('projects')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error('Error deleting project:', error);
+        alert('Error al eliminar el proyecto');
+        return;
+      }
+
+      // Update local state
+      setProjects(projects.filter(p => p.id !== id));
+    } catch (error) {
+      console.error('Error deleting project:', error);
+      alert('Error al eliminar el proyecto');
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -60,6 +91,17 @@ export default function ProjectManager({ onLoadProject }: ProjectManagerProps) {
       default: return 'Desconocido';
     }
   };
+
+  if (loading) {
+    return (
+      <div className="max-w-7xl mx-auto p-6">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Cargando proyectos...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto p-6">
@@ -139,11 +181,11 @@ export default function ProjectManager({ onLoadProject }: ProjectManagerProps) {
                   <div className="flex items-center space-x-4 text-sm text-gray-600">
                     <div className="flex items-center space-x-1">
                       <Calendar className="w-4 h-4" />
-                      <span>{new Date(project.createdAt).toLocaleDateString()}</span>
+                      <span>{new Date(project.created_at).toLocaleDateString()}</span>
                     </div>
                     <div className="flex items-center space-x-1">
                       <Euro className="w-4 h-4" />
-                      <span className="font-medium">€{project.totalCost.toFixed(2)}</span>
+                      <span className="font-medium">€{project.total_cost.toFixed(2)}</span>
                     </div>
                   </div>
                 </div>
@@ -166,11 +208,11 @@ export default function ProjectManager({ onLoadProject }: ProjectManagerProps) {
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
                 <div className="bg-gray-50 p-3 rounded-lg">
                   <div className="font-medium text-gray-700">Filamento</div>
-                  <div className="text-gray-900">{project.filamentWeight}g</div>
+                  <div className="text-gray-900">{project.filament_weight}g</div>
                 </div>
                 <div className="bg-gray-50 p-3 rounded-lg">
                   <div className="font-medium text-gray-700">Tiempo</div>
-                  <div className="text-gray-900">{project.printHours}h</div>
+                  <div className="text-gray-900">{project.print_hours}h</div>
                 </div>
                 <div className="bg-gray-50 p-3 rounded-lg">
                   <div className="font-medium text-gray-700">Materiales</div>
@@ -178,7 +220,7 @@ export default function ProjectManager({ onLoadProject }: ProjectManagerProps) {
                 </div>
                 <div className="bg-gray-50 p-3 rounded-lg">
                   <div className="font-medium text-gray-700">Coste Total</div>
-                  <div className="text-gray-900 font-semibold">€{project.totalCost.toFixed(2)}</div>
+                  <div className="text-gray-900 font-semibold">€{project.total_cost.toFixed(2)}</div>
                 </div>
               </div>
             </motion.div>

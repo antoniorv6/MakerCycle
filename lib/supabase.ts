@@ -1,11 +1,26 @@
-import { createClientComponentClient, createServerComponentClient } from '@supabase/auth-helpers-nextjs'
+import { createBrowserClient, createServerClient } from '@supabase/ssr'
 
-export const createClient = () => createClientComponentClient()
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string
 
-// Importación dinámica para evitar el error con Client Components
-export const createServerClient = async () => {
+export const createClient = () =>
+  createBrowserClient(supabaseUrl, supabaseAnonKey)
+
+export const createServerSupabaseClient = async () => {
   const { cookies } = await import('next/headers')
-  return createServerComponentClient({ cookies })
+  return createServerClient(supabaseUrl, supabaseAnonKey, {
+    cookies: {
+      get(name: string) {
+        return cookies().get(name)?.value
+      },
+      set(name: string, value: string, options?: any) {
+        // no-op in server components
+      },
+      remove(name: string, options?: any) {
+        // no-op in server components
+      },
+    },
+  })
 }
 
 export type Database = {

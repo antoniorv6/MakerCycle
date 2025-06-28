@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { Calculator, TrendingUp, FolderOpen, Settings, Menu, X, LogOut } from 'lucide-react'
+import { Calculator, TrendingUp, FolderOpen, Settings, Menu, X, LogOut, Home } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '@/components/providers/AuthProvider'
 
@@ -13,6 +13,7 @@ interface SidebarProps {
 }
 
 const menuItems = [
+  { id: 'home', label: 'Dashboard', icon: Home },
   { id: 'calculator', label: 'Calculadora', icon: Calculator },
   { id: 'accounting', label: 'Contabilidad', icon: TrendingUp },
   { id: 'projects', label: 'Proyectos', icon: FolderOpen },

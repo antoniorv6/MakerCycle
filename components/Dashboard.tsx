@@ -4,14 +4,15 @@ import React, { useState } from 'react'
 import { Settings } from 'lucide-react'
 import { useAuth } from '@/components/providers/AuthProvider'
 
-// Import existing components (we'll need to update these to work with Supabase)
+// Import existing components
 import Sidebar from './Sidebar'
 import Accounting from './Accounting'
 import ProjectManager from './ProjectManager'
 import CostCalculator, { type Project } from './cost-calculator'
+import DashboardHome from './DashboardHome'
 
 export default function Dashboard() {
-  const [currentPage, setCurrentPage] = useState('calculator')
+  const [currentPage, setCurrentPage] = useState('home')
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [loadedProject, setLoadedProject] = useState<Project | null>(null)
   const { user } = useAuth()
@@ -35,6 +36,8 @@ export default function Dashboard() {
 
   const renderContent = () => {
     switch (currentPage) {
+      case 'home':
+        return <DashboardHome />
       case 'calculator':
         return (
           <CostCalculator 
@@ -62,7 +65,7 @@ export default function Dashboard() {
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">Perfil de Usuario</h3>
                   <p className="text-gray-600 text-sm">Información de tu cuenta</p>
                 </div>
-                
+
                 <div className="grid md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm text-gray-700 mb-1">Email</label>
@@ -73,7 +76,7 @@ export default function Dashboard() {
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500"
                     />
                   </div>
-                  
+
                   <div>
                     <label className="block text-sm text-gray-700 mb-1">Nombre completo</label>
                     <input 
@@ -83,7 +86,7 @@ export default function Dashboard() {
                     />
                   </div>
                 </div>
-                
+
                 <div className="border-b border-gray-200 pb-4">
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">Valores por Defecto</h3>
                   <p className="text-gray-600 text-sm">Configura los valores predeterminados para nuevos proyectos</p>
@@ -101,7 +104,7 @@ export default function Dashboard() {
                       />
                     </div>
                   </div>
-                  
+
                   <div className="space-y-4">
                     <h4 className="font-medium text-gray-900">Electricidad</h4>
                     <div>
@@ -113,7 +116,7 @@ export default function Dashboard() {
                       />
                     </div>
                   </div>
-                  
+
                   <div className="space-y-4">
                     <h4 className="font-medium text-gray-900">Precios</h4>
                     <div>
@@ -125,7 +128,7 @@ export default function Dashboard() {
                       />
                     </div>
                   </div>
-                  
+
                   <div className="space-y-4">
                     <h4 className="font-medium text-gray-900">Margen</h4>
                     <div>
