@@ -3,12 +3,12 @@ import { Plus, Search, Filter, Upload, FileText, Calendar, Euro } from 'lucide-r
 import { motion } from 'framer-motion';
 import { createClient } from '@/lib/supabase';
 import { useAuth } from '@/components/providers/AuthProvider';
-import type { DatabaseProject } from '@/components/cost-calculator/types';
+import type { DatabaseProject, DatabasePiece } from '@/components/cost-calculator/types';
 import toast from 'react-hot-toast';
 import { ProjectManagerSkeleton } from '@/components/skeletons';
 
 interface ProjectManagerProps {
-  onLoadProject: (project: DatabaseProject) => void;
+  onLoadProject: (project: DatabaseProject & { pieces?: DatabasePiece[] }) => void;
 }
 
 export default function ProjectManager({ onLoadProject }: ProjectManagerProps) {
@@ -46,6 +46,34 @@ export default function ProjectManager({ onLoadProject }: ProjectManagerProps) {
       console.error('Error fetching projects:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleLoadProject = async (project: DatabaseProject) => {
+    try {
+      // Fetch pieces for this project
+      const { data: pieces, error: piecesError } = await supabase
+        .from('pieces')
+        .select('*')
+        .eq('project_id', project.id)
+        .order('created_at', { ascending: true });
+
+      if (piecesError) {
+        console.error('Error fetching pieces:', piecesError);
+        // Load project without pieces
+        onLoadProject(project);
+        return;
+      }
+
+      // Load project with pieces
+      onLoadProject({
+        ...project,
+        pieces: pieces || []
+      });
+    } catch (error) {
+      console.error('Error loading project with pieces:', error);
+      // Load project without pieces as fallback
+      onLoadProject(project);
     }
   };
 
@@ -186,7 +214,7 @@ export default function ProjectManager({ onLoadProject }: ProjectManagerProps) {
                 </div>
                 <div className="flex space-x-2">
                   <button
-                    onClick={() => onLoadProject(project)}
+                    onClick={() => handleLoadProject(project)}
                     className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors duration-200 text-sm font-medium"
                   >
                     Cargar

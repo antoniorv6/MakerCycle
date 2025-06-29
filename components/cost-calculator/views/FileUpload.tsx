@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
-import { Calculator, FileText, Upload, ArrowLeft, CheckCircle, AlertCircle } from 'lucide-react';
+import { Calculator, FileText, Upload, ArrowLeft, CheckCircle, AlertCircle, AlertTriangle, Info } from 'lucide-react';
 import { analyzeOrcaSlicer3MF } from '../../../util/orcaSlicerUtils';
-import type { SlicerData } from '../../../util/orcaTypes';
+import type { AnalysisInfo } from '../../../util/orcaSlicerUtils';
 import type { FileUploadProps } from '../types';
 
 const FileUpload: React.FC<FileUploadProps> = ({ onBack, onFileAnalyzed }) => {
@@ -9,34 +9,40 @@ const FileUpload: React.FC<FileUploadProps> = ({ onBack, onFileAnalyzed }) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [message, setMessage] = useState('');
+  const [analysisInfo, setAnalysisInfo] = useState<AnalysisInfo | null>(null);
+  const [showContinue, setShowContinue] = useState(false);
 
   const analyze3MFFile = async (file: File) => {
     try {
       setIsProcessing(true);
       setStatus('idle');
       setMessage('');
+      setAnalysisInfo(null);
+      setShowContinue(false);
       
       console.log('🚀 Iniciando análisis y cálculo completo:', file.name);
       
-      const slicerData: SlicerData = await analyzeOrcaSlicer3MF(file);
+      const analysisInfo: AnalysisInfo = await analyzeOrcaSlicer3MF(file);
       
-      if (!slicerData || !slicerData.plates || slicerData.plates.length === 0) {
+      if (!analysisInfo || !analysisInfo.slicerData || !analysisInfo.slicerData.plates || analysisInfo.slicerData.plates.length === 0) {
         throw new Error('No se pudo analizar la geometría del modelo 3D');
       }
       
-      console.log('✅ Cálculos completados:', slicerData);
+      console.log('✅ Cálculos completados:', analysisInfo);
       
-      const validatedWeight = isNaN(Number(slicerData.totalWeight)) ? 100 : Math.max(0, Number(slicerData.totalWeight));
-      const validatedTime = isNaN(Number(slicerData.totalTime)) ? 3 : Math.max(0, Number(slicerData.totalTime));
+      const validatedWeight = isNaN(Number(analysisInfo.slicerData.totalWeight)) ? 100 : Math.max(0, Number(analysisInfo.slicerData.totalWeight));
+      const validatedTime = isNaN(Number(analysisInfo.slicerData.totalTime)) ? 3 : Math.max(0, Number(analysisInfo.slicerData.totalTime));
       
+      setAnalysisInfo(analysisInfo);
       setStatus('success');
       setMessage(
-        `Archivo analizado exitosamente. ${slicerData.plates.length} objeto(s) procesado(s). Peso: ${validatedWeight}g, Tiempo: ${validatedTime}h`
+        `Archivo analizado exitosamente. ${analysisInfo.slicerData.plates.length} objeto(s) procesado(s). Peso: ${validatedWeight}g, Tiempo: ${validatedTime}h`
       );
       
+      // Mostrar botón continuar después de un breve delay
       setTimeout(() => {
-        onFileAnalyzed(validatedWeight, validatedTime);
-      }, 1500);
+        setShowContinue(true);
+      }, 1000);
       
     } catch (error) {
       setStatus('error');
@@ -44,6 +50,14 @@ const FileUpload: React.FC<FileUploadProps> = ({ onBack, onFileAnalyzed }) => {
       console.error('Error en análisis del modelo:', error);
     } finally {
       setIsProcessing(false);
+    }
+  };
+
+  const handleContinue = () => {
+    if (analysisInfo) {
+      const validatedWeight = isNaN(Number(analysisInfo.slicerData.totalWeight)) ? 100 : Math.max(0, Number(analysisInfo.slicerData.totalWeight));
+      const validatedTime = isNaN(Number(analysisInfo.slicerData.totalTime)) ? 3 : Math.max(0, Number(analysisInfo.slicerData.totalTime));
+      onFileAnalyzed(validatedWeight, validatedTime);
     }
   };
 
@@ -181,6 +195,82 @@ const FileUpload: React.FC<FileUploadProps> = ({ onBack, onFileAnalyzed }) => {
               <AlertCircle className="w-5 h-5 mr-2" />
             )}
             <span className="text-sm">{message}</span>
+          </div>
+        )}
+
+        {/* Mostrar información de análisis */}
+        {analysisInfo && (
+          <div className="mt-6 space-y-4">
+            {/* Resumen del análisis */}
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h3 className="font-semibold text-gray-900 mb-2 flex items-center">
+                <Info className="w-4 h-4 mr-2 text-blue-600" />
+                Resumen del Análisis
+              </h3>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="font-medium">Archivos inspeccionados:</span> {analysisInfo.filesInspected.length}
+                </div>
+                <div>
+                  <span className="font-medium">Modelos encontrados:</span> {analysisInfo.modelsFound}
+                </div>
+                <div>
+                  <span className="font-medium">Configuración encontrada:</span> {analysisInfo.configFound ? 'Sí' : 'No'}
+                </div>
+                <div>
+                  <span className="font-medium">Valores reales del slicer:</span> {analysisInfo.realValuesFound ? 'Sí' : 'No'}
+                </div>
+              </div>
+            </div>
+
+            {/* Warnings */}
+            {analysisInfo.warnings.length > 0 && (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <h3 className="font-semibold text-yellow-800 mb-2 flex items-center">
+                  <AlertTriangle className="w-4 h-4 mr-2" />
+                  Advertencias ({analysisInfo.warnings.length})
+                </h3>
+                <ul className="space-y-1 text-sm text-yellow-700">
+                  {analysisInfo.warnings.map((warning, index) => (
+                    <li key={index} className="flex items-start">
+                      <span className="mr-2">•</span>
+                      <span>{warning}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Errors */}
+            {analysisInfo.errors.length > 0 && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <h3 className="font-semibold text-red-800 mb-2 flex items-center">
+                  <AlertCircle className="w-4 h-4 mr-2" />
+                  Errores ({analysisInfo.errors.length})
+                </h3>
+                <ul className="space-y-1 text-sm text-red-700">
+                  {analysisInfo.errors.map((error, index) => (
+                    <li key={index} className="flex items-start">
+                      <span className="mr-2">•</span>
+                      <span>{error}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Botón Continuar */}
+            {showContinue && (
+              <div className="flex justify-center pt-4">
+                <button
+                  onClick={handleContinue}
+                  className="inline-flex items-center px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors duration-200 font-medium"
+                >
+                  <CheckCircle className="w-4 h-4 mr-2" />
+                  Continuar
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>

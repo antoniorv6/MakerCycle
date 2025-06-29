@@ -7,8 +7,14 @@ export type {
   CostBreakdown,
   SalePrice,
   Project,
+  DatabaseProject,
+  DatabasePiece,
+  Piece,
   CostCalculatorProps,
-  ViewMode
+  ViewMode,
+  PiecesSectionProps,
+  PieceCardProps,
+  ProjectSummaryProps
 } from './types';
 
 // Exportar hook personalizado
@@ -22,6 +28,8 @@ export { default as FilamentSection } from './forms/FilamentSection';
 export { default as ElectricitySection } from './forms/ElectricitySection';
 export { default as PricingConfig } from './forms/PricingConfig';
 export { default as MaterialsSection } from './forms/MaterialsSection';
+export { default as PiecesSection } from './forms/PiecesSection';
 export { default as CostBreakdownPanel } from './panels/CostBreakdownPanel';
 export { default as SalePricePanel } from './panels/SalePricePanel';
 export { default as ProjectInfoPanel } from './panels/ProjectInfoPanel';
+export { default as ProjectSummaryPanel } from './panels/ProjectSummaryPanel';

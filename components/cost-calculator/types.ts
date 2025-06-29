@@ -20,11 +20,23 @@ export interface SalePrice {
   recommendedPrice: number;
 }
 
-// Database format (snake_case)
+// Nueva interfaz para piezas
+export interface Piece {
+  id: string;
+  name: string;
+  filamentWeight: number;
+  filamentPrice: number;
+  printHours: number;
+  quantity: number;
+  notes?: string;
+}
+
+// Database format (snake_case) - Actualizado para piezas
 export interface DatabaseProject {
   id: string;
   user_id: string;
   name: string;
+  // Campos legacy para compatibilidad
   filament_weight: number;
   filament_price: number;
   print_hours: number;
@@ -37,12 +49,29 @@ export interface DatabaseProject {
   status: 'draft' | 'calculated' | 'completed';
   created_at: string;
   updated_at: string;
+  // Nuevos campos para piezas
+  pieces?: DatabasePiece[];
 }
 
-// App format (camelCase) - for backward compatibility
+// Database format para piezas
+export interface DatabasePiece {
+  id: string;
+  project_id: string;
+  name: string;
+  filament_weight: number;
+  filament_price: number;
+  print_hours: number;
+  quantity: number;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// App format (camelCase) - Actualizado para piezas
 export interface Project {
   id: string;
   name: string;
+  // Campos legacy para compatibilidad
   filamentWeight: number;
   filamentPrice: number;
   printHours: number;
@@ -54,6 +83,8 @@ export interface Project {
   recommendedPrice: number;
   createdAt: string;
   status: 'draft' | 'calculated' | 'completed';
+  // Nuevos campos para piezas
+  pieces?: Piece[];
 }
 
 export interface CostCalculatorProps {
@@ -123,4 +154,29 @@ export interface ProjectInfoPanelProps {
   filamentWeight: number;
   printHours: number;
   materials: Material[];
+}
+
+// Nuevas props para el sistema de piezas
+export interface PiecesSectionProps {
+  pieces: Piece[];
+  onAddPiece: () => void;
+  onUpdatePiece: (id: string, field: keyof Piece, value: string | number) => void;
+  onRemovePiece: (id: string) => void;
+  onDuplicatePiece: (id: string) => void;
+}
+
+export interface PieceCardProps {
+  piece: Piece;
+  onUpdate: (field: keyof Piece, value: string | number) => void;
+  onRemove: () => void;
+  onDuplicate: () => void;
+  isFirst: boolean;
+}
+
+export interface ProjectSummaryProps {
+  pieces: Piece[];
+  totalFilamentWeight: number;
+  totalPrintHours: number;
+  totalFilamentCost: number;
+  totalElectricityCost: number;
 }

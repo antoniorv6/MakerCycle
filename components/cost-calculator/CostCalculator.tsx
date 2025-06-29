@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Save, Upload, Calculator, FileText, Settings, Euro, Clock, Package, Zap, Plus, Trash2, ArrowLeft } from 'lucide-react';
 import { createClient } from '@/lib/supabase';
 import { useAuth } from '@/components/providers/AuthProvider';
-import type { Project, DatabaseProject } from './types';
+import type { Project, DatabaseProject, Piece } from './types';
 import toast from 'react-hot-toast';
 import { CalculatorSkeleton } from '@/components/skeletons';
 
@@ -25,11 +25,13 @@ import FilamentSection from './forms/FilamentSection';
 import ElectricitySection from './forms/ElectricitySection';
 import PricingConfig from './forms/PricingConfig';
 import MaterialsSection from './forms/MaterialsSection';
+import PiecesSection from './forms/PiecesSection';
 
 // Importar paneles de resultados
 import CostBreakdownPanel from './panels/CostBreakdownPanel';
 import SalePricePanel from './panels/SalePricePanel';
 import ProjectInfoPanel from './panels/ProjectInfoPanel';
+import ProjectSummaryPanel from './panels/ProjectSummaryPanel';
 
 const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjectSaved }) => {
   // Estados de la aplicación
@@ -45,16 +47,30 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
   const [materials, setMaterials] = useState<Material[]>([]);
   const [vatPercentage, setVatPercentage] = useState<number>(21);
   const [profitMargin, setProfitMargin] = useState<number>(15);
+  
+  // Nuevo estado para piezas
+  const [pieces, setPieces] = useState<Piece[]>([
+    {
+      id: '1',
+      name: 'Pieza principal',
+      filamentWeight: 100,
+      filamentPrice: 25,
+      printHours: 3,
+      quantity: 1,
+      notes: ''
+    }
+  ]);
 
   // Hook personalizado para cálculos
-  const { costs, salePrice } = useCostCalculations({
+  const { costs, salePrice, totalFilamentWeight, totalPrintHours, totalFilamentCost, totalElectricityCost } = useCostCalculations({
     filamentWeight,
     filamentPrice,
     printHours,
     electricityCost,
     materials,
     vatPercentage,
-    profitMargin
+    profitMargin,
+    pieces
   });
 
   const { user } = useAuth();
@@ -72,6 +88,31 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
       setMaterials(loadedProject.materials);
       setVatPercentage(loadedProject.vat_percentage || 21);
       setProfitMargin(loadedProject.profit_margin || 15);
+      
+      // Cargar piezas si existen
+      if (loadedProject.pieces && loadedProject.pieces.length > 0) {
+        setPieces(loadedProject.pieces.map(piece => ({
+          id: piece.id,
+          name: piece.name,
+          filamentWeight: piece.filament_weight,
+          filamentPrice: piece.filament_price,
+          printHours: piece.print_hours,
+          quantity: piece.quantity,
+          notes: piece.notes || ''
+        })));
+      } else {
+        // Crear pieza principal con los datos del proyecto
+        setPieces([{
+          id: '1',
+          name: 'Pieza principal',
+          filamentWeight: loadedProject.filament_weight,
+          filamentPrice: loadedProject.filament_price,
+          printHours: loadedProject.print_hours,
+          quantity: 1,
+          notes: ''
+        }]);
+      }
+      
       setViewMode('manual-entry');
       setLoading(false);
     }
@@ -99,6 +140,49 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
     setMaterials(materials.filter(material => material.id !== id));
   };
 
+  // Funciones de manejo de piezas
+  const addPiece = () => {
+    const newPiece: Piece = {
+      id: Date.now().toString(),
+      name: `Pieza ${pieces.length + 1}`,
+      filamentWeight: 0,
+      filamentPrice: filamentPrice, // Usar el precio por defecto
+      printHours: 0,
+      quantity: 1,
+      notes: ''
+    };
+    setPieces([...pieces, newPiece]);
+  };
+
+  const updatePiece = (id: string, field: keyof Piece, value: string | number) => {
+    setPieces(pieces.map(piece => 
+      piece.id === id 
+        ? { ...piece, [field]: value }
+        : piece
+    ));
+  };
+
+  const removePiece = (id: string) => {
+    if (pieces.length > 1) {
+      setPieces(pieces.filter(piece => piece.id !== id));
+    } else {
+      toast.error('Debe haber al menos una pieza en el proyecto');
+    }
+  };
+
+  const duplicatePiece = (id: string) => {
+    const pieceToDuplicate = pieces.find(piece => piece.id === id);
+    if (pieceToDuplicate) {
+      const newPiece: Piece = {
+        ...pieceToDuplicate,
+        id: Date.now().toString(),
+        name: `${pieceToDuplicate.name} (copia)`,
+        quantity: 1
+      };
+      setPieces([...pieces, newPiece]);
+    }
+  };
+
   // Función de reset del formulario
   const resetForm = () => {
     setProjectName('');
@@ -109,6 +193,15 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
     setMaterials([]);
     setVatPercentage(21);
     setProfitMargin(15);
+    setPieces([{
+      id: '1',
+      name: 'Pieza principal',
+      filamentWeight: 100,
+      filamentPrice: 25,
+      printHours: 3,
+      quantity: 1,
+      notes: ''
+    }]);
   };
 
   // Función de guardado de proyecto
@@ -153,9 +246,9 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
       const project = {
         user_id: user.id,
         name: projectName,
-        filament_weight: filamentWeight,
+        filament_weight: totalFilamentWeight,
         filament_price: filamentPrice,
-        print_hours: printHours,
+        print_hours: totalPrintHours,
         electricity_cost: electricityCost,
         materials,
         total_cost: costs.total,
@@ -165,13 +258,41 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
         status: 'calculated',
       };
 
-      const { error } = await supabase.from('projects').insert([project]);
-      if (error) {
-        toast.error('Error al guardar el proyecto en Supabase: ' + error.message);
-      } else {
-        onProjectSaved?.();
-        toast.success('Proyecto guardado correctamente en Supabase');
+      const { data: projectData, error: projectError } = await supabase
+        .from('projects')
+        .insert([project])
+        .select()
+        .single();
+
+      if (projectError) {
+        toast.error('Error al guardar el proyecto en Supabase: ' + projectError.message);
+        return;
       }
+
+      // Guardar piezas si hay más de una o si la primera pieza no es la principal
+      if (pieces.length > 1 || pieces[0].name !== 'Pieza principal') {
+        const piecesToSave = pieces.map(piece => ({
+          project_id: projectData.id,
+          name: piece.name,
+          filament_weight: piece.filamentWeight,
+          filament_price: piece.filamentPrice,
+          print_hours: piece.printHours,
+          quantity: piece.quantity,
+          notes: piece.notes || ''
+        }));
+
+        const { error: piecesError } = await supabase
+          .from('pieces')
+          .insert(piecesToSave);
+
+        if (piecesError) {
+          console.error('Error saving pieces:', piecesError);
+          toast.error('Proyecto guardado pero hubo un error al guardar las piezas');
+        }
+      }
+
+      onProjectSaved?.();
+      toast.success('Proyecto guardado correctamente en Supabase');
     } catch (error: any) {
       toast.error('Error inesperado: ' + error.message);
     }
@@ -181,6 +302,12 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
   const handleFileAnalyzed = (weight: number, time: number) => {
     setFilamentWeight(weight);
     setPrintHours(time);
+    // Actualizar también la primera pieza
+    setPieces(prev => prev.map((piece, index) => 
+      index === 0 
+        ? { ...piece, filamentWeight: weight, printHours: time }
+        : piece
+    ));
     setViewMode('manual-entry');
   };
 
@@ -205,7 +332,7 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
   // Render del formulario manual (viewMode === 'manual-entry')
   return (
     <div className="max-w-7xl mx-auto p-6 space-y-8">
-      {/* Header */}
+      {/* Header original */}
       <div className="flex items-center justify-between">
         <div className="text-center flex-1">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-50 rounded-full mb-4">
@@ -235,15 +362,16 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
             onSave={saveProject}
           />
 
-          <FilamentSection
-            weight={filamentWeight}
-            price={filamentPrice}
-            onWeightChange={setFilamentWeight}
-            onPriceChange={setFilamentPrice}
+          <PiecesSection
+            pieces={pieces}
+            onAddPiece={addPiece}
+            onUpdatePiece={updatePiece}
+            onRemovePiece={removePiece}
+            onDuplicatePiece={duplicatePiece}
           />
 
           <ElectricitySection
-            printHours={printHours}
+            printHours={totalPrintHours}
             electricityCost={electricityCost}
             onPrintHoursChange={setPrintHours}
             onElectricityCostChange={setElectricityCost}
@@ -266,6 +394,14 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
 
         {/* Columna derecha: Resultados */}
         <div className="space-y-6">
+          <ProjectSummaryPanel
+            pieces={pieces}
+            totalFilamentWeight={totalFilamentWeight}
+            totalPrintHours={totalPrintHours}
+            totalFilamentCost={totalFilamentCost}
+            totalElectricityCost={totalElectricityCost}
+          />
+          
           <CostBreakdownPanel costs={costs} />
           
           <SalePricePanel 
@@ -273,12 +409,6 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
             costs={costs}
             vatPercentage={vatPercentage}
             profitMargin={profitMargin}
-          />
-          
-          <ProjectInfoPanel 
-            filamentWeight={filamentWeight}
-            printHours={printHours}
-            materials={materials}
           />
         </div>
       </div>
