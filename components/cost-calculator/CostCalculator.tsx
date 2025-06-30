@@ -33,7 +33,7 @@ import SalePricePanel from './panels/SalePricePanel';
 import ProjectInfoPanel from './panels/ProjectInfoPanel';
 import ProjectSummaryPanel from './panels/ProjectSummaryPanel';
 
-const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjectSaved }) => {
+const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjectSaved }: CostCalculatorProps) => {
   // Estados de la aplicación
   const [viewMode, setViewMode] = useState<ViewMode>('selection');
   const [loading, setLoading] = useState(false);
@@ -91,7 +91,7 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
       
       // Cargar piezas si existen
       if (loadedProject.pieces && loadedProject.pieces.length > 0) {
-        setPieces(loadedProject.pieces.map(piece => ({
+        setPieces(loadedProject.pieces.map((piece: import('./types').DatabasePiece) => ({
           id: piece.id,
           name: piece.name,
           filamentWeight: piece.filament_weight,
@@ -129,7 +129,7 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
   };
 
   const updateMaterial = (id: string, field: 'name' | 'price', value: string | number) => {
-    setMaterials(materials.map(material => 
+    setMaterials(materials.map((material: Material) => 
       material.id === id 
         ? { ...material, [field]: value }
         : material
@@ -137,7 +137,7 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
   };
 
   const removeMaterial = (id: string) => {
-    setMaterials(materials.filter(material => material.id !== id));
+    setMaterials(materials.filter((material: Material) => material.id !== id));
   };
 
   // Funciones de manejo de piezas
@@ -155,7 +155,7 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
   };
 
   const updatePiece = (id: string, field: keyof Piece, value: string | number) => {
-    setPieces(pieces.map(piece => 
+    setPieces(pieces.map((piece: Piece) => 
       piece.id === id 
         ? { ...piece, [field]: value }
         : piece
@@ -164,14 +164,14 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
 
   const removePiece = (id: string) => {
     if (pieces.length > 1) {
-      setPieces(pieces.filter(piece => piece.id !== id));
+      setPieces(pieces.filter((piece: Piece) => piece.id !== id));
     } else {
       toast.error('Debe haber al menos una pieza en el proyecto');
     }
   };
 
   const duplicatePiece = (id: string) => {
-    const pieceToDuplicate = pieces.find(piece => piece.id === id);
+    const pieceToDuplicate = pieces.find((piece: Piece) => piece.id === id);
     if (pieceToDuplicate) {
       const newPiece: Piece = {
         ...pieceToDuplicate,
@@ -242,7 +242,7 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
         }
       }
 
-      // Now insert the project
+      // Prepare project object
       const project = {
         user_id: user.id,
         name: projectName,
@@ -258,36 +258,62 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
         status: 'calculated',
       };
 
-      const { data: projectData, error: projectError } = await supabase
-        .from('projects')
-        .insert([project])
-        .select()
-        .single();
+      let projectId = loadedProject?.id;
+      let projectData;
+      let projectError;
+
+      if (loadedProject?.id) {
+        // Update existing project
+        const { data, error } = await supabase
+          .from('projects')
+          .update(project)
+          .eq('id', loadedProject.id)
+          .select()
+          .single();
+        projectData = data;
+        projectError = error;
+        projectId = loadedProject.id;
+      } else {
+        // Insert new project
+        const { data, error } = await supabase
+          .from('projects')
+          .insert([project])
+          .select()
+          .single();
+        projectData = data;
+        projectError = error;
+        projectId = data?.id;
+      }
 
       if (projectError) {
         toast.error('Error al guardar el proyecto en Supabase: ' + projectError.message);
         return;
       }
 
-      // Guardar piezas si hay más de una o si la primera pieza no es la principal
-      if (pieces.length > 1 || pieces[0].name !== 'Pieza principal') {
-        const piecesToSave = pieces.map(piece => ({
-          project_id: projectData.id,
-          name: piece.name,
-          filament_weight: piece.filamentWeight,
-          filament_price: piece.filamentPrice,
-          print_hours: piece.printHours,
-          quantity: piece.quantity,
-          notes: piece.notes || ''
-        }));
+      // Handle pieces
+      if (projectId) {
+        // Always delete all pieces for this project and re-insert
+        await supabase.from('pieces').delete().eq('project_id', projectId);
 
-        const { error: piecesError } = await supabase
-          .from('pieces')
-          .insert(piecesToSave);
+        if (pieces.length > 1 || pieces[0].name !== 'Pieza principal') {
+          const piecesToSave = pieces.map(piece => ({
+            project_id: projectId,
+            name: piece.name,
+            filament_weight: piece.filamentWeight,
+            filament_price: piece.filamentPrice,
+            print_hours: piece.printHours,
+            quantity: piece.quantity,
+            notes: piece.notes || ''
+          }));
 
-        if (piecesError) {
-          console.error('Error saving pieces:', piecesError);
-          toast.error('Proyecto guardado pero hubo un error al guardar las piezas');
+          const { error: piecesError } = await supabase
+            .from('pieces')
+            .insert(piecesToSave);
+
+          if (piecesError) {
+            console.error('Error saving pieces:', piecesError);
+            toast.error('Proyecto guardado pero hubo un error al guardar las piezas');
+          }
         }
       }
 
@@ -303,7 +329,7 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
     setFilamentWeight(weight);
     setPrintHours(time);
     // Actualizar también la primera pieza
-    setPieces(prev => prev.map((piece, index) => 
+    setPieces((prev: Piece[]) => prev.map((piece: Piece, index: number) => 
       index === 0 
         ? { ...piece, filamentWeight: weight, printHours: time }
         : piece

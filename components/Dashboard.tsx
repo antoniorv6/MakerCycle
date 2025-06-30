@@ -10,6 +10,8 @@ import Accounting from './Accounting'
 import ProjectManager from './ProjectManager'
 import CostCalculator, { type Project } from './cost-calculator'
 import DashboardHome from './DashboardHome'
+import ProjectInfoView from './ProjectInfoView'
+import type { DatabaseProject, DatabasePiece } from './cost-calculator/types'
 
 export default function Dashboard() {
   const [currentPage, setCurrentPage] = useState('home')
@@ -17,17 +19,61 @@ export default function Dashboard() {
   const [loadedProject, setLoadedProject] = useState<Project | null>(null)
   const { user } = useAuth()
 
-  const handleLoadProject = (project: Project) => {
-    const adaptedProject: Project = {
-      ...project,
-      vatPercentage: project.vatPercentage || 21,
-      profitMargin: project.profitMargin || 15,
-      recommendedPrice: project.recommendedPrice || 0,
-      materials: project.materials || []
+  // Helper to convert DatabaseProject to Project
+  function dbProjectToProject(db: DatabaseProject & { pieces?: DatabasePiece[] }): Project {
+    return {
+      id: db.id,
+      name: db.name,
+      filamentWeight: db.filament_weight,
+      filamentPrice: db.filament_price,
+      printHours: db.print_hours,
+      electricityCost: db.electricity_cost,
+      materials: db.materials,
+      totalCost: db.total_cost,
+      vatPercentage: db.vat_percentage,
+      profitMargin: db.profit_margin,
+      recommendedPrice: db.recommended_price,
+      createdAt: db.created_at,
+      status: db.status,
+      pieces: db.pieces?.map(piece => ({
+        id: piece.id,
+        name: piece.name,
+        filamentWeight: piece.filament_weight,
+        filamentPrice: piece.filament_price,
+        printHours: piece.print_hours,
+        quantity: piece.quantity,
+        notes: piece.notes || ''
+      }))
     }
-    
-    setLoadedProject(adaptedProject)
-    setCurrentPage('calculator')
+  }
+
+  // Helper to convert Project back to DatabaseProject for CostCalculator
+  function projectToDbProject(project: Project): DatabaseProject {
+    return {
+      id: project.id,
+      user_id: '', // Not available in Project, but not used in CostCalculator
+      name: project.name,
+      filament_weight: project.filamentWeight,
+      filament_price: project.filamentPrice,
+      print_hours: project.printHours,
+      electricity_cost: project.electricityCost,
+      materials: project.materials,
+      total_cost: project.totalCost,
+      vat_percentage: project.vatPercentage,
+      profit_margin: project.profitMargin,
+      recommended_price: project.recommendedPrice,
+      status: project.status,
+      created_at: project.createdAt,
+      updated_at: '', // Not available in Project
+      // pieces is not part of DatabaseProject, handled separately
+    };
+  }
+
+  // New: go to project-info view first
+  const handleLoadProject = (dbProject: DatabaseProject & { pieces?: DatabasePiece[] }) => {
+    const project = dbProjectToProject(dbProject);
+    setLoadedProject(project)
+    setCurrentPage('project-info')
   }
 
   const handleProjectSaved = () => {
@@ -38,10 +84,17 @@ export default function Dashboard() {
     switch (currentPage) {
       case 'home':
         return <DashboardHome />
+      case 'project-info':
+        return loadedProject ? (
+          <ProjectInfoView
+            project={loadedProject}
+            onEdit={() => setCurrentPage('calculator')}
+          />
+        ) : null;
       case 'calculator':
         return (
           <CostCalculator 
-            loadedProject={loadedProject} 
+            loadedProject={loadedProject ? projectToDbProject(loadedProject) : undefined} 
             onProjectSaved={handleProjectSaved}
           />
         )
