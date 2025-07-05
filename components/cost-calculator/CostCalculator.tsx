@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Save, Upload, Calculator, FileText, Settings, Euro, Clock, Package, Zap, Plus, Trash2, ArrowLeft } from 'lucide-react';
 import { createClient } from '@/lib/supabase';
 import { useAuth } from '@/components/providers/AuthProvider';
-import type { Project, DatabaseProject, Piece } from './types';
+import type { Project, DatabaseProject, Piece, Team } from './types';
 import toast from 'react-hot-toast';
 import { CalculatorSkeleton } from '@/components/skeletons';
 
@@ -61,6 +61,9 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
     }
   ]);
 
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
+
   // Hook personalizado para cálculos
   const { costs, salePrice, totalFilamentWeight, totalPrintHours, totalFilamentCost, totalElectricityCost } = useCostCalculations({
     filamentWeight,
@@ -117,6 +120,23 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
       setLoading(false);
     }
   }, [loadedProject]);
+
+  useEffect(() => {
+    if (user && !loadedProject) {
+      fetchTeams();
+    }
+  }, [user, loadedProject]);
+
+  const fetchTeams = async () => {
+    if (!user) return;
+    const { data, error } = await supabase
+      .from('team_members')
+      .select('team_id, teams(*)')
+      .eq('user_id', user.id);
+    if (!error && data) {
+      setTeams(data.map((tm: any) => tm.teams));
+    }
+  };
 
   // Funciones de manejo de materiales
   const addMaterial = () => {
@@ -256,6 +276,7 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
         profit_margin: profitMargin,
         recommended_price: salePrice.recommendedPrice,
         status: 'calculated',
+        team_id: selectedTeamId,
       };
 
       let projectId = loadedProject?.id;
@@ -387,7 +408,21 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
             onReset={resetForm}
             onSave={saveProject}
           />
-
+          {!loadedProject && (
+            <div className="mt-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Equipo</label>
+              <select
+                value={selectedTeamId || ''}
+                onChange={e => setSelectedTeamId(e.target.value || null)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+              >
+                <option value="">Personal (sin equipo)</option>
+                {teams.map(team => (
+                  <option key={team.id} value={team.id}>{team.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
           <PiecesSection
             pieces={pieces}
             onAddPiece={addPiece}

@@ -51,6 +51,7 @@ export interface DatabaseProject {
   updated_at: string;
   // Nuevos campos para piezas
   pieces?: DatabasePiece[];
+  team_id?: string | null;
 }
 
 // Database format para piezas
@@ -85,6 +86,7 @@ export interface Project {
   status: 'draft' | 'calculated' | 'completed';
   // Nuevos campos para piezas
   pieces?: Piece[];
+  teamId?: string | null;
 }
 
 export interface CostCalculatorProps {
@@ -179,4 +181,20 @@ export interface ProjectSummaryProps {
   totalPrintHours: number;
   totalFilamentCost: number;
   totalElectricityCost: number;
+}
+
+// Team types for UI
+export interface Team {
+  id: string;
+  name: string;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TeamMember {
+  team_id: string;
+  user_id: string;
+  role: string;
+  joined_at: string;
 }

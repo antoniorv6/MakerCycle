@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { Calculator, TrendingUp, FolderOpen, Settings, Menu, X, LogOut, Home } from 'lucide-react'
+import { Calculator, TrendingUp, FolderOpen, Settings, Menu, X, LogOut, Home, Users } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '@/components/providers/AuthProvider'
 
@@ -17,6 +17,7 @@ const menuItems = [
   { id: 'calculator', label: 'Calculadora', icon: Calculator },
   { id: 'accounting', label: 'Contabilidad', icon: TrendingUp },
   { id: 'projects', label: 'Proyectos', icon: FolderOpen },
+  { id: 'teams', label: 'Equipos', icon: Users, href: '/dashboard/teams' },
   { id: 'settings', label: 'Configuración', icon: Settings },
 ]
 
@@ -88,6 +89,23 @@ export default function Sidebar({ currentPage, onPageChange, isOpen, onToggle }:
               const Icon = item.icon
               const isActive = currentPage === item.id
               
+              if (item.href) {
+                return (
+                  <a
+                    key={item.id}
+                    href={item.href}
+                    className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 ${
+                      isActive
+                        ? 'bg-primary-50 text-primary-700 border border-primary-200'
+                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                    }`}
+                    onClick={() => { if (window.innerWidth < 1024) onToggle() }}
+                  >
+                    <Icon className={`w-5 h-5 ${isActive ? 'text-primary-600' : 'text-gray-400'}`} />
+                    <span className="font-medium">{item.label}</span>
+                  </a>
+                )
+              }
               return (
                 <button
                   key={item.id}

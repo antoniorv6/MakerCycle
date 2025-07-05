@@ -12,9 +12,10 @@ import CostCalculator, { type Project } from './cost-calculator'
 import DashboardHome from './DashboardHome'
 import ProjectInfoView from './ProjectInfoView'
 import type { DatabaseProject, DatabasePiece } from './cost-calculator/types'
+import TeamManager from './TeamManager'
 
-export default function Dashboard() {
-  const [currentPage, setCurrentPage] = useState('home')
+export default function Dashboard({ initialPage }: { initialPage?: string } = {}) {
+  const [currentPage, setCurrentPage] = useState(initialPage || 'home')
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [loadedProject, setLoadedProject] = useState<Project | null>(null)
   const { user } = useAuth()
@@ -204,6 +205,8 @@ export default function Dashboard() {
             </div>
           </div>
         )
+      case 'teams':
+        return <TeamManager />
       default:
         return (
           <CostCalculator 
