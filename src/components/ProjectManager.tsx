@@ -38,7 +38,7 @@ export default function ProjectManager({ onLoadProject }: ProjectManagerProps) {
       let query = supabase
         .from('projects')
         .select('*')
-        .eq('user_id', user.id);
+        .order('created_at', { ascending: false });
 
       // Add team filter if a team is selected
       if (currentTeam) {

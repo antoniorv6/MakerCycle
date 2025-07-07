@@ -139,38 +139,122 @@ const TeamManager: React.FC = () => {
     }
   };
 
+  const handleCreateMissingProfiles = async () => {
+    try {
+      const { data, error } = await supabase
+        .rpc('create_missing_profiles');
+      
+      if (error) {
+        console.error('Error creating missing profiles:', error);
+        alert('Error al crear perfiles faltantes.');
+        return;
+      }
+      
+      alert('Perfiles faltantes creados exitosamente.');
+    } catch (error) {
+      console.error('Unexpected error:', error);
+      alert('Error inesperado al crear perfiles faltantes.');
+    }
+  };
+
   const handleInviteMember = async () => {
     if (!inviteEmail.trim() || !selectedTeam) return;
     
-    // First, find the user by email
-    const { data: userData, error: userError } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('email', inviteEmail)
-      .single();
-    
-    if (userError || !userData) {
-      alert('Usuario no encontrado. Asegúrate de que el email esté registrado.');
-      return;
+    try {
+      const searchEmail = inviteEmail.trim();
+      
+      // Try exact match first
+      let { data: userData, error: userError } = await supabase
+        .from('profiles')
+        .select('id, email, full_name')
+        .eq('email', searchEmail)
+        .maybeSingle();
+      
+      // If no exact match, try case-insensitive
+      if (!userData && !userError) {
+        const { data: userDataCI, error: userErrorCI } = await supabase
+          .from('profiles')
+          .select('id, email, full_name')
+          .ilike('email', searchEmail)
+          .maybeSingle();
+        
+        if (userDataCI) {
+          userData = userDataCI;
+        }
+      }
+      
+      if (userError) {
+        console.error('Error searching for user:', userError);
+        alert('Error al buscar el usuario. Inténtalo de nuevo.');
+        return;
+      }
+      
+      if (!userData) {
+        // Let's also try a broader search to see what's in the database
+        const { data: similarProfiles, error: similarError } = await supabase
+          .from('profiles')
+          .select('id, email, full_name')
+          .or(`email.ilike.%${searchEmail.split('@')[0]}%,email.ilike.%${searchEmail.split('@')[1]}%`)
+          .limit(5);
+        
+        let errorMessage = `Usuario no encontrado con el email: ${searchEmail}\n\n`;
+        errorMessage += 'Asegúrate de que:\n';
+        errorMessage += '- El email esté correctamente escrito\n';
+        errorMessage += '- El usuario esté registrado en la aplicación\n';
+        errorMessage += '- El email coincida exactamente con el registrado\n\n';
+        
+        if (similarProfiles && similarProfiles.length > 0) {
+          errorMessage += 'Emails similares encontrados:\n';
+          similarProfiles.forEach(profile => {
+            errorMessage += `- ${profile.email}\n`;
+          });
+        }
+        
+        alert(errorMessage);
+        return;
+      }
+
+      // Check if user is already a member of this team
+      const { data: existingMember, error: memberCheckError } = await supabase
+        .from('team_members')
+        .select('team_id, user_id')
+        .eq('team_id', selectedTeam.id)
+        .eq('user_id', userData.id)
+        .maybeSingle();
+
+      if (memberCheckError) {
+        console.error('Error checking existing membership:', memberCheckError);
+        alert('Error al verificar la membresía. Inténtalo de nuevo.');
+        return;
+      }
+
+      if (existingMember) {
+        alert(`El usuario ${userData.email} ya es miembro de este equipo.`);
+        return;
+      }
+
+      // Add user to team
+      const { error: memberError } = await supabase
+        .from('team_members')
+        .insert([{ 
+          team_id: selectedTeam.id, 
+          user_id: userData.id, 
+          role: 'member' 
+        }]);
+
+      if (memberError) {
+        console.error('Error inviting member:', memberError);
+        alert('Error al invitar miembro al equipo. Inténtalo de nuevo.');
+        return;
+      }
+
+      setInviteEmail('');
+      handleSelectTeam(selectedTeam); // Refresh members
+      alert(`Usuario ${userData.email} invitado exitosamente al equipo.`);
+    } catch (error) {
+      console.error('Unexpected error during invitation:', error);
+      alert('Error inesperado al invitar miembro. Inténtalo de nuevo.');
     }
-
-    // Add user to team
-    const { error: memberError } = await supabase
-      .from('team_members')
-      .insert([{ 
-        team_id: selectedTeam.id, 
-        user_id: userData.id, 
-        role: 'member' 
-      }]);
-
-    if (memberError) {
-      console.error('Error inviting member:', memberError);
-      alert('Error al invitar miembro.');
-      return;
-    }
-
-    setInviteEmail('');
-    handleSelectTeam(selectedTeam); // Refresh members
   };
 
   const handleChangeRole = async (userId: string, newRole: string) => {
@@ -391,6 +475,22 @@ const TeamManager: React.FC = () => {
             disabled={loadingTeams}
           >
             <Plus className="w-4 h-4 mr-1" /> Crear equipo
+          </button>
+        </div>
+      </div>
+
+      {/* Admin Tools */}
+      <div className="bg-yellow-50 rounded-xl shadow-sm border border-yellow-200 p-6 mb-8">
+        <h3 className="text-lg font-semibold text-yellow-900 mb-4">Herramientas de Administración</h3>
+        <p className="text-sm text-yellow-700 mb-4">
+          Si tienes problemas invitando usuarios que están registrados, puede que no tengan perfiles creados.
+        </p>
+        <div className="flex gap-2">
+          <button
+            onClick={handleCreateMissingProfiles}
+            className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors duration-200"
+          >
+            Crear Perfiles Faltantes
           </button>
         </div>
       </div>

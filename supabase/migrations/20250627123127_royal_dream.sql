@@ -151,6 +151,13 @@ CREATE POLICY "Users can insert own profile"
   TO authenticated
   WITH CHECK (auth.uid() = id);
 
+-- Allow the trigger function to insert profiles
+CREATE POLICY "Enable insert for trigger function"
+  ON profiles
+  FOR INSERT
+  TO authenticated
+  WITH CHECK (true);
+
 -- Create policies for projects
 CREATE POLICY "Users can read own projects"
   ON projects
@@ -251,3 +258,23 @@ CREATE TRIGGER update_sales_updated_at
 CREATE TRIGGER update_expenses_updated_at
   BEFORE UPDATE ON expenses
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- Create function to handle new user signup
+CREATE OR REPLACE FUNCTION handle_new_user()
+RETURNS trigger AS $$
+BEGIN
+  INSERT INTO public.profiles (id, email, full_name, avatar_url)
+  VALUES (
+    NEW.id,
+    NEW.email,
+    NEW.raw_user_meta_data->>'full_name',
+    NEW.raw_user_meta_data->>'avatar_url'
+  );
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Create trigger to automatically create profile on user signup
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION handle_new_user();
