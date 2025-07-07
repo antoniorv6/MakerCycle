@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Plus, Copy, Trash2, Package, Edit3, Save } from 'lucide-react';
-import type { PiecesSectionProps, PieceCardProps } from '@/types';
+import type { PiecesSectionProps, PieceCardProps } from '../types';
 
 const PieceCard: React.FC<PieceCardProps> = ({ 
   piece, 
