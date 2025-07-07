@@ -20,7 +20,7 @@ export interface MaterialsSectionProps {
     price: number;
   }>;
   onAddMaterial: () => void;
-  onUpdateMaterial: (id: string, field: string, value: string | number) => void;
+  onUpdateMaterial: (id: string, field: 'name' | 'price', value: string | number) => void;
   onRemoveMaterial: (id: string) => void;
 }
 
@@ -49,7 +49,7 @@ export interface PiecesSectionProps {
     notes?: string;
   }>;
   onAddPiece: () => void;
-  onUpdatePiece: (id: string, field: string, value: string | number) => void;
+  onUpdatePiece: (id: string, field: 'name' | 'filamentWeight' | 'filamentPrice' | 'printHours' | 'quantity' | 'notes', value: string | number) => void;
   onRemovePiece: (id: string) => void;
   onDuplicatePiece: (id: string) => void;
 }
@@ -64,7 +64,7 @@ export interface PieceCardProps {
     quantity: number;
     notes?: string;
   };
-  onUpdate: (field: string, value: string | number) => void;
+  onUpdate: (field: 'name' | 'filamentWeight' | 'filamentPrice' | 'printHours' | 'quantity' | 'notes', value: string | number) => void;
   onRemove: () => void;
   onDuplicate: () => void;
   isFirst: boolean;
