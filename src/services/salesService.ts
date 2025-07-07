@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase';
 import type { Sale, SaleFormData } from '@/types';
+import { NotificationService } from './notificationService';
 
 export class SalesService {
   private supabase = createClient();
@@ -71,6 +72,20 @@ export class SalesService {
 
     if (error) {
       throw new Error(`Error creating sale: ${error.message}`);
+    }
+
+    // Create notification for team if sale is team-based
+    if (teamId) {
+      try {
+        await NotificationService.notifyNewSale(
+          teamId,
+          sale.sale_price,
+          sale.project_name
+        );
+      } catch (notificationError) {
+        console.error('Failed to create notification for new sale:', notificationError);
+        // Don't throw error to avoid breaking the main flow
+      }
     }
 
     return data;

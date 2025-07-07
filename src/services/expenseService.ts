@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase';
 import type { Expense, ExpenseFormData } from '@/types';
+import { NotificationService } from './notificationService';
 
 export class ExpenseService {
   private supabase = createClient();
@@ -61,6 +62,20 @@ export class ExpenseService {
 
     if (error) {
       throw new Error(`Error creating expense: ${error.message}`);
+    }
+
+    // Create notification for team if expense is team-based
+    if (teamId) {
+      try {
+        await NotificationService.notifyNewCost(
+          teamId,
+          expense.amount,
+          expense.description
+        );
+      } catch (notificationError) {
+        console.error('Failed to create notification for new expense:', notificationError);
+        // Don't throw error to avoid breaking the main flow
+      }
     }
 
     return data;

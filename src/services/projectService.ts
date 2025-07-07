@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase';
 import type { DatabaseProject, Project, Material, Piece } from '@/types';
+import { NotificationService } from './notificationService';
 
 export class ProjectService {
   private supabase = createClient();
@@ -50,6 +51,20 @@ export class ProjectService {
 
     if (error) {
       throw new Error(`Error creating project: ${error.message}`);
+    }
+
+    // Create notification for team if project is team-based
+    if (project.team_id) {
+      try {
+        await NotificationService.notifyNewProject(
+          project.team_id,
+          project.name,
+          project.user_id
+        );
+      } catch (notificationError) {
+        console.error('Failed to create notification for new project:', notificationError);
+        // Don't throw error to avoid breaking the main flow
+      }
     }
 
     return data;

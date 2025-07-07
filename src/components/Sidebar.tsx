@@ -5,6 +5,7 @@ import { Calculator, TrendingUp, FolderOpen, Settings, Menu, X, LogOut, Home, Us
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '@/components/providers/AuthProvider'
 import TeamContextIndicator from './TeamContextIndicator'
+import { Notifications } from './Notifications'
 
 interface SidebarProps {
   currentPage: string
@@ -82,6 +83,7 @@ export default function Sidebar({ currentPage, onPageChange, isOpen, onToggle }:
                 </p>
                 <p className="text-xs text-gray-500 truncate">{user?.email}</p>
               </div>
+              <Notifications />
             </div>
             
             {/* Team Context Indicator */}

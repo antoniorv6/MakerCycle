@@ -263,9 +263,46 @@ export async function createTeam(supabase: SupabaseClient, name: string, created
 
 // Add a member to a team
 export async function addTeamMember(supabase: SupabaseClient, team_id: string, user_id: string, role = 'member') {
-  return supabase
+  const result = await supabase
     .from('team_members')
-    .insert([{ team_id, user_id, role }])
+    .insert([{ team_id, user_id, role }]);
+
+  // Create notification for new team member
+  if (result.error) {
+    return result;
+  }
+
+  try {
+    // Get user profile for notification
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('full_name, email')
+      .eq('id', user_id)
+      .single();
+
+    const newMemberName = profile?.full_name || profile?.email || 'New member';
+    
+    // Create notification for all team members
+    const notificationResult = await supabase.rpc('create_team_notification', {
+      p_team_id: team_id,
+      p_type: 'team_member',
+      p_title: 'Nuevo Miembro del Equipo',
+      p_message: `${newMemberName} ha sido añadido al equipo.`,
+      p_metadata: {
+        new_member_name: newMemberName,
+        new_member_id: user_id
+      }
+    });
+
+    if (notificationResult.error) {
+      console.error('Failed to create notification for new team member:', notificationResult.error);
+    }
+  } catch (notificationError) {
+    console.error('Failed to create notification for new team member:', notificationError);
+    // Don't throw error to avoid breaking the main flow
+  }
+
+  return result;
 }
 
 // Remove a member from a team
