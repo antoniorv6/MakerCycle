@@ -52,7 +52,8 @@ export default function Accounting() {
           quantity: saleData.quantity,
           sale_price: saleData.salePrice,
           date: saleData.date,
-          print_hours: saleData.printHours
+          print_hours: saleData.printHours,
+          team_id: saleData.team_id
         });
         setEditingSale(null);
       } else {
@@ -72,7 +73,8 @@ export default function Accounting() {
           amount: expenseData.amount,
           category: expenseData.category,
           date: expenseData.date,
-          notes: expenseData.notes
+          notes: expenseData.notes,
+          team_id: expenseData.team_id
         });
         setEditingExpense(null);
       } else {

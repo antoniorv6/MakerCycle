@@ -1,92 +1,70 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Save, Calculator, FileText, Settings, Euro, Clock, Package, Zap, Plus, Trash2 } from 'lucide-react';
+import { Calculator } from 'lucide-react';
 import { createClient } from '@/lib/supabase';
 import { useAuth } from '@/components/providers/AuthProvider';
-import type { Project, DatabaseProject, Piece, Team, Material, ViewMode, CostCalculatorProps } from '@/types';
-import toast from 'react-hot-toast';
-import { CalculatorSkeleton } from '@/components/skeletons';
-import { useCostCalculations } from './hooks/useCostCalculations';
-
-// Importar componentes de vistas
-import ModeSelection from './views/ModeSelection';
-
-// Importar componentes de formularios
+import { useTeam } from '@/components/providers/TeamProvider';
+import { toast } from 'react-hot-toast';
+import CalculatorSkeleton from '@/components/skeletons/CalculatorSkeleton';
+import TeamContextBanner from '@/components/TeamContextBanner';
 import ProjectInfo from './forms/ProjectInfo';
 import FilamentSection from './forms/FilamentSection';
-import ElectricitySection from './forms/ElectricitySection';
-import PricingConfig from './forms/PricingConfig';
-import MaterialsSection from './forms/MaterialsSection';
 import PiecesSection from './forms/PiecesSection';
-
-// Importar paneles de resultados
+import ElectricitySection from './forms/ElectricitySection';
+import MaterialsSection from './forms/MaterialsSection';
+import PricingConfig from './forms/PricingConfig';
+import ProjectSummaryPanel from './panels/ProjectSummaryPanel';
 import CostBreakdownPanel from './panels/CostBreakdownPanel';
 import SalePricePanel from './panels/SalePricePanel';
-import ProjectInfoPanel from './panels/ProjectInfoPanel';
-import ProjectSummaryPanel from './panels/ProjectSummaryPanel';
+import { useCostCalculations } from './hooks/useCostCalculations';
+import type { DatabaseProject, DatabasePiece } from '@/types';
+
+interface CostCalculatorProps {
+  loadedProject?: DatabaseProject & { pieces?: DatabasePiece[] };
+  onProjectSaved?: (project: DatabaseProject) => void;
+}
 
 const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjectSaved }: CostCalculatorProps) => {
-  // Estados de la aplicación
-  const [viewMode, setViewMode] = useState<ViewMode>('manual-entry');
-  const [loading, setLoading] = useState(false);
-  
-  // Estados del formulario
-  const [projectName, setProjectName] = useState<string>('');
-  const [filamentWeight, setFilamentWeight] = useState<number>(100);
-  const [filamentPrice, setFilamentPrice] = useState<number>(25);
-  const [printHours, setPrintHours] = useState<number>(3);
-  const [electricityCost, setElectricityCost] = useState<number>(0.12);
-  const [materials, setMaterials] = useState<Material[]>([]);
-  const [vatPercentage, setVatPercentage] = useState<number>(21);
-  const [profitMargin, setProfitMargin] = useState<number>(15);
-  
-  // Nuevo estado para piezas
-  const [pieces, setPieces] = useState<Piece[]>([
-    {
-      id: '1',
-      name: 'Pieza principal',
-      filamentWeight: 100,
-      filamentPrice: 25,
-      printHours: 3,
-      quantity: 1,
-      notes: ''
-    }
-  ]);
-
-  const [teams, setTeams] = useState<Team[]>([]);
-  const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
-
-  // Hook personalizado para cálculos
-  const { costs, salePrice, totalFilamentWeight, totalPrintHours, totalFilamentCost, totalElectricityCost } = useCostCalculations({
-    filamentWeight,
-    filamentPrice,
-    printHours,
-    electricityCost,
-    materials,
-    vatPercentage,
-    profitMargin,
-    pieces
-  });
-
   const { user } = useAuth();
+  const { getEffectiveTeam } = useTeam();
   const supabase = createClient();
+  const [loading, setLoading] = useState(true);
+  const [projectName, setProjectName] = useState('');
+  const [filamentPrice, setFilamentPrice] = useState(25);
+  const [printHours, setPrintHours] = useState(0);
+  const [electricityCost, setElectricityCost] = useState(0.12);
+  const [vatPercentage, setVatPercentage] = useState(21);
+  const [profitMargin, setProfitMargin] = useState(15);
+  const [materials, setMaterials] = useState<Array<{ id: string; name: string; price: number }>>([]);
+  const [pieces, setPieces] = useState<Array<{
+    id: string;
+    name: string;
+    filamentWeight: number;
+    filamentPrice: number;
+    printHours: number;
+    quantity: number;
+    notes?: string;
+  }>>([{
+    id: '1',
+    name: 'Pieza principal',
+    filamentWeight: 0,
+    filamentPrice: 25,
+    printHours: 0,
+    quantity: 1,
+    notes: ''
+  }]);
 
-  // Cargar proyecto cuando se pasa como prop
   useEffect(() => {
     if (loadedProject) {
-      setLoading(true);
       setProjectName(loadedProject.name);
-      setFilamentWeight(loadedProject.filament_weight);
       setFilamentPrice(loadedProject.filament_price);
       setPrintHours(loadedProject.print_hours);
       setElectricityCost(loadedProject.electricity_cost);
-      setMaterials(loadedProject.materials);
-      setVatPercentage(loadedProject.vat_percentage || 21);
-      setProfitMargin(loadedProject.profit_margin || 15);
-      
-      // Cargar piezas si existen
+      setVatPercentage(loadedProject.vat_percentage);
+      setProfitMargin(loadedProject.profit_margin);
+      setMaterials(loadedProject.materials || []);
+
       if (loadedProject.pieces && loadedProject.pieces.length > 0) {
-        setPieces(loadedProject.pieces.map((piece: import('@/types').DatabasePiece) => ({
+        setPieces(loadedProject.pieces.map(piece => ({
           id: piece.id,
           name: piece.name,
           filamentWeight: piece.filament_weight,
@@ -95,70 +73,57 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
           quantity: piece.quantity,
           notes: piece.notes || ''
         })));
-      } else {
-        // Crear pieza principal con los datos del proyecto
-        setPieces([{
-          id: '1',
-          name: 'Pieza principal',
-          filamentWeight: loadedProject.filament_weight,
-          filamentPrice: loadedProject.filament_price,
-          printHours: loadedProject.print_hours,
-          quantity: 1,
-          notes: ''
-        }]);
       }
-      
-      setViewMode('manual-entry');
-      setLoading(false);
     }
+    setLoading(false);
   }, [loadedProject]);
 
-  useEffect(() => {
-    if (user && !loadedProject) {
-      fetchTeams();
-    }
-  }, [user, loadedProject]);
-
-  const fetchTeams = async () => {
-    if (!user) return;
-    const { data, error } = await supabase
-      .from('team_members')
-      .select('team_id, teams(*)')
-      .eq('user_id', user.id);
-    if (!error && data) {
-      setTeams(data.map((tm: any) => tm.teams));
-    }
+  const calculateTotalFilamentWeight = () => {
+    return pieces.reduce((sum, piece) => sum + (piece.filamentWeight * piece.quantity), 0);
   };
 
-  // Funciones de manejo de materiales
+  const {
+    totalFilamentWeight,
+    totalPrintHours,
+    totalFilamentCost,
+    totalElectricityCost,
+    costs,
+    salePrice
+  } = useCostCalculations({
+    pieces,
+    filamentWeight: calculateTotalFilamentWeight(),
+    filamentPrice,
+    printHours,
+    electricityCost,
+    materials,
+    vatPercentage,
+    profitMargin
+  });
+
   const addMaterial = () => {
-    const newMaterial: Material = {
+    setMaterials([...materials, {
       id: Date.now().toString(),
       name: '',
       price: 0
-    };
-    setMaterials([...materials, newMaterial]);
+    }]);
   };
 
   const updateMaterial = (id: string, field: 'name' | 'price', value: string | number) => {
-    setMaterials(materials.map((material: Material) => 
-      material.id === id 
-        ? { ...material, [field]: value }
-        : material
+    setMaterials(materials.map(material =>
+      material.id === id ? { ...material, [field]: value } : material
     ));
   };
 
   const removeMaterial = (id: string) => {
-    setMaterials(materials.filter((material: Material) => material.id !== id));
+    setMaterials(materials.filter(material => material.id !== id));
   };
 
-  // Funciones de manejo de piezas
   const addPiece = () => {
-    const newPiece: Piece = {
+    const newPiece = {
       id: Date.now().toString(),
       name: `Pieza ${pieces.length + 1}`,
       filamentWeight: 0,
-      filamentPrice: filamentPrice, // Usar el precio por defecto
+      filamentPrice: filamentPrice,
       printHours: 0,
       quantity: 1,
       notes: ''
@@ -166,69 +131,62 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
     setPieces([...pieces, newPiece]);
   };
 
-  const updatePiece = (id: string, field: keyof Piece, value: string | number) => {
-    setPieces(pieces.map((piece: Piece) => 
-      piece.id === id 
-        ? { ...piece, [field]: value }
-        : piece
+  const updatePiece = (id: string, field: keyof typeof pieces[0], value: string | number) => {
+    setPieces(pieces.map(piece =>
+      piece.id === id ? { ...piece, [field]: value } : piece
     ));
   };
 
   const removePiece = (id: string) => {
     if (pieces.length > 1) {
-      setPieces(pieces.filter((piece: Piece) => piece.id !== id));
-    } else {
-      toast.error('Debe haber al menos una pieza en el proyecto');
+      setPieces(pieces.filter(piece => piece.id !== id));
     }
   };
 
   const duplicatePiece = (id: string) => {
-    const pieceToDuplicate = pieces.find((piece: Piece) => piece.id === id);
+    const pieceToDuplicate = pieces.find(piece => piece.id === id);
     if (pieceToDuplicate) {
-      const newPiece: Piece = {
+      const newPiece = {
         ...pieceToDuplicate,
         id: Date.now().toString(),
-        name: `${pieceToDuplicate.name} (copia)`,
-        quantity: 1
+        name: `${pieceToDuplicate.name} (copia)`
       };
       setPieces([...pieces, newPiece]);
     }
   };
 
-  // Función de reset del formulario
   const resetForm = () => {
     setProjectName('');
-    setFilamentWeight(100);
     setFilamentPrice(25);
-    setPrintHours(3);
+    setPrintHours(0);
     setElectricityCost(0.12);
-    setMaterials([]);
     setVatPercentage(21);
     setProfitMargin(15);
+    setMaterials([]);
     setPieces([{
       id: '1',
       name: 'Pieza principal',
-      filamentWeight: 100,
+      filamentWeight: 0,
       filamentPrice: 25,
-      printHours: 3,
+      printHours: 0,
       quantity: 1,
       notes: ''
     }]);
   };
 
-  // Función de guardado de proyecto
   const saveProject = async () => {
-    if (!projectName.trim()) {
-      toast.error('Por favor, introduce un nombre para el proyecto');
+    if (!user) {
+      toast.error('Debes iniciar sesión para guardar proyectos');
       return;
     }
-    if (!user) {
-      toast.error('Debes iniciar sesión para guardar el proyecto en la nube.');
+
+    if (!projectName.trim()) {
+      toast.error('Debes especificar un nombre para el proyecto');
       return;
     }
 
     try {
-      // First, ensure profile exists
+      // Ensure user profile exists
       const { data: existingProfile } = await supabase
         .from('profiles')
         .select('id')
@@ -236,7 +194,6 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
         .single();
 
       if (!existingProfile) {
-        // Create profile if it doesn't exist
         const { error: profileError } = await supabase
           .from('profiles')
           .insert([
@@ -268,7 +225,7 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
         profit_margin: profitMargin,
         recommended_price: salePrice.recommendedPrice,
         status: 'calculated',
-        team_id: selectedTeamId,
+        team_id: getEffectiveTeam()?.id || null,
       };
 
       let projectId = loadedProject?.id;
@@ -339,8 +296,6 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
     }
   };
 
-
-
   if (loading) {
     return <CalculatorSkeleton />;
   }
@@ -348,6 +303,9 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
   // Render del formulario manual (viewMode === 'manual-entry')
   return (
     <div className="max-w-7xl mx-auto p-6 space-y-8">
+      {/* Team Context Banner */}
+      <TeamContextBanner />
+      
       {/* Header */}
       <div className="text-center mb-8">
         <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-50 rounded-full mb-4">
@@ -369,17 +327,10 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
           />
           {!loadedProject && (
             <div className="mt-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Equipo</label>
-              <select
-                value={selectedTeamId || ''}
-                onChange={e => setSelectedTeamId(e.target.value || null)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-              >
-                <option value="">Personal (sin equipo)</option>
-                {teams.map(team => (
-                  <option key={team.id} value={team.id}>{team.name}</option>
-                ))}
-              </select>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Contexto actual</label>
+              <div className="text-sm text-gray-600 p-2 bg-gray-50 rounded-lg">
+                {getEffectiveTeam() ? `Equipo: ${getEffectiveTeam()?.name}` : 'Vista Personal'}
+              </div>
             </div>
           )}
           <PiecesSection

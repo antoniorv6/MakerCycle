@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '@/components/providers/AuthProvider';
+import { useTeam } from '@/components/providers/TeamProvider';
 import { projectService } from '@/services/projectService';
 import type { Project, DatabaseProject } from '@/types';
 import toast from 'react-hot-toast';
@@ -13,8 +14,9 @@ export function useProjects() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
+  const { currentTeam } = useTeam();
 
-  const cacheKey = user?.id || '';
+  const cacheKey = `${user?.id || ''}-${currentTeam?.id || 'personal'}`;
 
   const fetchProjects = useCallback(async () => {
     if (!user) return;
@@ -30,7 +32,7 @@ export function useProjects() {
     try {
       setLoading(true);
       setError(null);
-      const data = await projectService.getProjects(user.id);
+      const data = await projectService.getProjects(user.id, currentTeam?.id);
       
       // Update cache
       projectsCache.set(cacheKey, { data, timestamp: Date.now() });
@@ -41,7 +43,7 @@ export function useProjects() {
     } finally {
       setLoading(false);
     }
-  }, [user, cacheKey]);
+  }, [user, currentTeam, cacheKey]);
 
   const invalidateCache = useCallback(() => {
     projectsCache.delete(cacheKey);
@@ -51,7 +53,7 @@ export function useProjects() {
     if (user) {
       fetchProjects();
     }
-  }, [user, fetchProjects]);
+  }, [user, currentTeam, fetchProjects]);
 
   const createProject = useCallback(async (projectData: Omit<DatabaseProject, 'id' | 'created_at' | 'updated_at'>) => {
     if (!user) throw new Error('User not authenticated');

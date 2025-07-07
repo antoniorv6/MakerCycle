@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { X, Save, Euro, FileText, Calendar } from 'lucide-react';
+import { X, Save, Euro, FileText, Calendar, Users, User } from 'lucide-react';
 import { motion } from 'framer-motion';
-import type { Expense, ExpenseFormData } from '@/types';
+import { useTeam } from '@/components/providers/TeamProvider';
+import type { Expense, ExpenseFormData, Team } from '@/types';
 
 interface AddExpenseFormProps {
   expense?: Expense | null;
@@ -10,12 +11,16 @@ interface AddExpenseFormProps {
 }
 
 export function AddExpenseForm({ expense, onSave, onCancel }: AddExpenseFormProps) {
+  const { currentTeam, userTeams } = useTeam();
+  const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
+  
   const [formData, setFormData] = useState<ExpenseFormData>({
     description: '',
     amount: 0,
     category: '',
     date: new Date().toISOString().split('T')[0],
-    notes: ''
+    notes: '',
+    team_id: null
   });
 
   const expenseCategories = [
@@ -36,14 +41,26 @@ export function AddExpenseForm({ expense, onSave, onCancel }: AddExpenseFormProp
         amount: expense.amount,
         category: expense.category,
         date: expense.date,
-        notes: expense.notes || ''
+        notes: expense.notes || '',
+        team_id: expense.team_id || null
       });
+      setSelectedTeamId(expense.team_id || null);
+    } else {
+      // For new expenses, use current team context
+      setFormData(prev => ({
+        ...prev,
+        team_id: currentTeam?.id || null
+      }));
+      setSelectedTeamId(currentTeam?.id || null);
     }
-  }, [expense]);
+  }, [expense, currentTeam]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData);
+    onSave({
+      ...formData,
+      team_id: selectedTeamId
+    });
   };
 
   const handleInputChange = (field: keyof ExpenseFormData, value: string | number) => {
@@ -134,6 +151,40 @@ export function AddExpenseForm({ expense, onSave, onCancel }: AddExpenseFormProp
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               required
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Equipo
+            </label>
+            <div className="space-y-2">
+              <label className="flex items-center space-x-2">
+                <input
+                  type="radio"
+                  name="team"
+                  value=""
+                  checked={selectedTeamId === null}
+                  onChange={() => setSelectedTeamId(null)}
+                  className="text-blue-600 focus:ring-blue-500"
+                />
+                <User className="w-4 h-4 text-gray-600" />
+                <span className="text-sm text-gray-700">Personal</span>
+              </label>
+              {userTeams.map((team: Team) => (
+                <label key={team.id} className="flex items-center space-x-2">
+                  <input
+                    type="radio"
+                    name="team"
+                    value={team.id}
+                    checked={selectedTeamId === team.id}
+                    onChange={() => setSelectedTeamId(team.id)}
+                    className="text-blue-600 focus:ring-blue-500"
+                  />
+                  <Users className="w-4 h-4 text-blue-600" />
+                  <span className="text-sm text-gray-700">{team.name}</span>
+                </label>
+              ))}
+            </div>
           </div>
 
           <div>

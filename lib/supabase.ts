@@ -120,6 +120,7 @@ export type Database = {
           date: string
           status: 'pending' | 'completed' | 'cancelled'
           print_hours: number | null
+          team_id: string | null
           created_at: string
           updated_at: string
         }
@@ -136,6 +137,7 @@ export type Database = {
           date: string
           status?: 'pending' | 'completed' | 'cancelled'
           print_hours?: number | null
+          team_id?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -152,6 +154,7 @@ export type Database = {
           date?: string
           status?: 'pending' | 'completed' | 'cancelled'
           print_hours?: number | null
+          team_id?: string | null
           updated_at?: string
         }
       }
@@ -165,6 +168,7 @@ export type Database = {
           date: string
           status: 'pending' | 'paid' | 'cancelled'
           notes: string | null
+          team_id: string | null
           created_at: string
           updated_at: string
         }
@@ -177,6 +181,7 @@ export type Database = {
           date: string
           status?: 'pending' | 'paid' | 'cancelled'
           notes?: string | null
+          team_id?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -189,6 +194,7 @@ export type Database = {
           date?: string
           status?: 'pending' | 'paid' | 'cancelled'
           notes?: string | null
+          team_id?: string | null
           updated_at?: string
         }
       }

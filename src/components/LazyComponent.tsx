@@ -23,7 +23,14 @@ const LazyComponent: React.FC<LazyComponentProps> = ({
 export const LazyCostCalculator = lazy(() => import('./cost-calculator'));
 export const LazyAccounting = lazy(() => import('./accounting/Accounting'));
 export const LazyProjectManager = lazy(() => import('./ProjectManager'));
-export const LazyDashboardHome = lazy(() => import('./DashboardHome'));
 export const LazyAdvancedStatistics = lazy(() => import('./AdvancedStatistics'));
+
+// DashboardHome with props wrapper
+const DashboardHomeWithProps = React.lazy(() => import('./DashboardHome'));
+export const LazyDashboardHome = (props: any) => (
+  <Suspense fallback={<GenericSkeleton />}>
+    <DashboardHomeWithProps {...props} />
+  </Suspense>
+);
 
 export default LazyComponent; 

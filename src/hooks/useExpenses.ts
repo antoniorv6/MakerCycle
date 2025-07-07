@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/components/providers/AuthProvider';
+import { useTeam } from '@/components/providers/TeamProvider';
 import { expenseService } from '@/services/expenseService';
 import type { Expense, ExpenseFormData } from '@/types';
 import toast from 'react-hot-toast';
@@ -9,12 +10,13 @@ export function useExpenses() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
+  const { currentTeam } = useTeam();
 
   useEffect(() => {
     if (user) {
       fetchExpenses();
     }
-  }, [user]);
+  }, [user, currentTeam]);
 
   const fetchExpenses = async () => {
     if (!user) return;
@@ -22,7 +24,7 @@ export function useExpenses() {
     try {
       setLoading(true);
       setError(null);
-      const data = await expenseService.getExpenses(user.id);
+      const data = await expenseService.getExpenses(user.id, currentTeam?.id);
       setExpenses(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error fetching expenses');
@@ -36,7 +38,7 @@ export function useExpenses() {
     if (!user) throw new Error('User not authenticated');
     
     try {
-      const newExpense = await expenseService.createExpense(user.id, expenseData);
+      const newExpense = await expenseService.createExpense(user.id, expenseData, currentTeam?.id);
       setExpenses(prev => [newExpense, ...prev]);
       toast.success('Expense created successfully');
       return newExpense;

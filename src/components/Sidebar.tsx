@@ -4,6 +4,7 @@ import React from 'react'
 import { Calculator, TrendingUp, FolderOpen, Settings, Menu, X, LogOut, Home, Users } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '@/components/providers/AuthProvider'
+import TeamContextIndicator from './TeamContextIndicator'
 
 interface SidebarProps {
   currentPage: string
@@ -69,7 +70,7 @@ export default function Sidebar({ currentPage, onPageChange, isOpen, onToggle }:
 
           {/* User info */}
           <div className="mb-6 p-3 bg-gray-50 rounded-lg">
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-3 mb-3">
               <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
                 <span className="text-primary-600 font-medium text-sm">
                   {user?.email?.charAt(0).toUpperCase()}
@@ -81,6 +82,11 @@ export default function Sidebar({ currentPage, onPageChange, isOpen, onToggle }:
                 </p>
                 <p className="text-xs text-gray-500 truncate">{user?.email}</p>
               </div>
+            </div>
+            
+            {/* Team Context Indicator */}
+            <div className="border-t border-gray-200 pt-3">
+              <TeamContextIndicator />
             </div>
           </div>
 

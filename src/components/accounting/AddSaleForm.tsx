@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { X, Save, Euro, Package, Calendar, Clock } from 'lucide-react';
+import { X, Save, Euro, Package, Calendar, Clock, Users, User } from 'lucide-react';
 import { motion } from 'framer-motion';
-import type { Sale, SaleFormData } from '@/types';
+import { useTeam } from '@/components/providers/TeamProvider';
+import type { Sale, SaleFormData, Team } from '@/types';
 
 interface AddSaleFormProps {
   sale?: Sale | null;
@@ -10,13 +11,17 @@ interface AddSaleFormProps {
 }
 
 export function AddSaleForm({ sale, onSave, onCancel }: AddSaleFormProps) {
+  const { currentTeam, userTeams } = useTeam();
+  const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
+  
   const [formData, setFormData] = useState<SaleFormData>({
     projectName: '',
     unitCost: 0,
     quantity: 1,
     salePrice: 0,
     date: new Date().toISOString().split('T')[0],
-    printHours: 0
+    printHours: 0,
+    team_id: null
   });
 
   useEffect(() => {
@@ -27,14 +32,26 @@ export function AddSaleForm({ sale, onSave, onCancel }: AddSaleFormProps) {
         quantity: sale.quantity,
         salePrice: sale.sale_price,
         date: sale.date,
-        printHours: sale.print_hours || 0
+        printHours: sale.print_hours || 0,
+        team_id: sale.team_id || null
       });
+      setSelectedTeamId(sale.team_id || null);
+    } else {
+      // For new sales, use current team context
+      setFormData(prev => ({
+        ...prev,
+        team_id: currentTeam?.id || null
+      }));
+      setSelectedTeamId(currentTeam?.id || null);
     }
-  }, [sale]);
+  }, [sale, currentTeam]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData);
+    onSave({
+      ...formData,
+      team_id: selectedTeamId
+    });
   };
 
   const handleInputChange = (field: keyof SaleFormData, value: string | number) => {
@@ -149,6 +166,40 @@ export function AddSaleForm({ sale, onSave, onCancel }: AddSaleFormProps) {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               required
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Equipo
+            </label>
+            <div className="space-y-2">
+              <label className="flex items-center space-x-2">
+                <input
+                  type="radio"
+                  name="team"
+                  value=""
+                  checked={selectedTeamId === null}
+                  onChange={() => setSelectedTeamId(null)}
+                  className="text-blue-600 focus:ring-blue-500"
+                />
+                <User className="w-4 h-4 text-gray-600" />
+                <span className="text-sm text-gray-700">Personal</span>
+              </label>
+              {userTeams.map((team: Team) => (
+                <label key={team.id} className="flex items-center space-x-2">
+                  <input
+                    type="radio"
+                    name="team"
+                    value={team.id}
+                    checked={selectedTeamId === team.id}
+                    onChange={() => setSelectedTeamId(team.id)}
+                    className="text-blue-600 focus:ring-blue-500"
+                  />
+                  <Users className="w-4 h-4 text-blue-600" />
+                  <span className="text-sm text-gray-700">{team.name}</span>
+                </label>
+              ))}
+            </div>
           </div>
 
           <div className="flex space-x-3 pt-4">

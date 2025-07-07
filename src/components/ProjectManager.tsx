@@ -1,139 +1,157 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Filter, Upload, FileText, Calendar, Euro } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { Plus, Search, Filter, Calendar, Euro, FileText } from 'lucide-react';
 import { createClient } from '@/lib/supabase';
 import { useAuth } from '@/components/providers/AuthProvider';
-import type { DatabaseProject, DatabasePiece, Team } from '@/types';
-import toast from 'react-hot-toast';
-import { ProjectManagerSkeleton } from '@/components/skeletons';
+import { useTeam } from '@/components/providers/TeamProvider';
+import type { DatabaseProject, DatabasePiece } from '@/types';
+import { toast } from 'react-hot-toast';
 import ProjectInfo from './cost-calculator/forms/ProjectInfo';
+import ProjectManagerSkeleton from './skeletons/ProjectManagerSkeleton';
 
 interface ProjectManagerProps {
   onLoadProject: (project: DatabaseProject & { pieces?: DatabasePiece[] }) => void;
 }
 
 export default function ProjectManager({ onLoadProject }: ProjectManagerProps) {
-  const [projects, setProjects] = useState<DatabaseProject[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState<string>('all');
-  const [loading, setLoading] = useState(true);
   const { user } = useAuth();
+  const { currentTeam } = useTeam();
   const supabase = createClient();
+  const [projects, setProjects] = useState<(DatabaseProject & { pieces?: DatabasePiece[] })[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState('all');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newProjectName, setNewProjectName] = useState('');
-  const [teams, setTeams] = useState<Team[]>([]);
-  const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) {
       fetchProjects();
-      fetchTeams();
     }
-  }, [user]);
+  }, [user, currentTeam]);
 
   const fetchProjects = async () => {
     if (!user) return;
     
+    setLoading(true);
     try {
-      setLoading(true);
-      const { data, error } = await supabase
+      let query = supabase
         .from('projects')
         .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+        .eq('user_id', user.id);
+
+      // Add team filter if a team is selected
+      if (currentTeam) {
+        query = query.eq('team_id', currentTeam.id);
+      } else {
+        query = query.is('team_id', null);
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         console.error('Error fetching projects:', error);
+        toast.error('Error al cargar los proyectos');
         return;
       }
 
-      setProjects(data || []);
+      // Fetch pieces for each project
+      const projectsWithPieces = await Promise.all(
+        (data || []).map(async (project) => {
+          const { data: pieces } = await supabase
+            .from('pieces')
+            .select('*')
+            .eq('project_id', project.id);
+          return { ...project, pieces: pieces || [] };
+        })
+      );
+
+      setProjects(projectsWithPieces);
     } catch (error) {
       console.error('Error fetching projects:', error);
+      toast.error('Error al cargar los proyectos');
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchTeams = async () => {
-    if (!user) return;
-    const { data, error } = await supabase
-      .from('team_members')
-      .select('team_id, teams(*)')
-      .eq('user_id', user.id);
-    if (!error && data) {
-      setTeams(data.map((tm: any) => tm.teams));
-    }
-  };
-
   const handleLoadProject = async (project: DatabaseProject) => {
     try {
-      // Fetch pieces for this project
-      const { data: pieces, error: piecesError } = await supabase
+      // Fetch pieces for the project
+      const { data: pieces, error } = await supabase
         .from('pieces')
         .select('*')
-        .eq('project_id', project.id)
-        .order('created_at', { ascending: true });
+        .eq('project_id', project.id);
 
-      if (piecesError) {
-        console.error('Error fetching pieces:', piecesError);
-        // Load project without pieces
-        onLoadProject(project);
+      if (error) {
+        console.error('Error fetching pieces:', error);
+        toast.error('Error al cargar las piezas del proyecto');
         return;
       }
 
-      // Load project with pieces
-      onLoadProject({
-        ...project,
-        pieces: pieces || []
-      });
+      onLoadProject({ ...project, pieces: pieces || [] });
     } catch (error) {
-      console.error('Error loading project with pieces:', error);
-      // Load project without pieces as fallback
-      onLoadProject(project);
+      console.error('Error loading project:', error);
+      toast.error('Error al cargar el proyecto');
     }
   };
 
   const handleCreateProject = async () => {
-    if (!user || !newProjectName.trim()) return;
-    const { data, error } = await supabase
-      .from('projects')
-      .insert([{
-        name: newProjectName,
-        user_id: user.id,
-        team_id: selectedTeamId,
-        filament_weight: 0,
-        filament_price: 0,
-        print_hours: 0,
-        electricity_cost: 0,
-        materials: [],
-        total_cost: 0,
-        vat_percentage: 21,
-        profit_margin: 15,
-        recommended_price: 0,
-        status: 'draft',
-      }])
-      .select()
-      .single();
-    if (!error && data) {
-      setProjects([data, ...projects]);
-      setShowCreateModal(false);
+    if (!newProjectName.trim() || !user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('projects')
+        .insert([{
+          name: newProjectName,
+          user_id: user.id,
+          team_id: currentTeam?.id || null,
+          status: 'draft',
+          total_cost: 0,
+          filament_weight: 0,
+          filament_price: 0,
+          print_hours: 0,
+          electricity_cost: 0,
+          materials: [],
+          vat_percentage: 21,
+          profit_margin: 15,
+          recommended_price: 0,
+          created_at: new Date().toISOString(),
+        }])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating project:', error);
+        toast.error('Error al crear el proyecto');
+        return;
+      }
+
+      setProjects([...projects, { ...data, pieces: [] }]);
       setNewProjectName('');
-      setSelectedTeamId(null);
-      toast.success('Proyecto creado');
-    } else {
+      setShowCreateModal(false);
+      toast.success('Proyecto creado exitosamente');
+    } catch (error) {
+      console.error('Error creating project:', error);
       toast.error('Error al crear el proyecto');
     }
   };
 
-  const filteredProjects = projects.filter(project => {
-    const matchesSearch = project.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter = filterStatus === 'all' || project.status === filterStatus;
-    return matchesSearch && matchesFilter;
-  });
-
   const handleDeleteProject = async (id: string) => {
     try {
+      // Delete pieces first
+      const { error: piecesError } = await supabase
+        .from('pieces')
+        .delete()
+        .eq('project_id', id);
+
+      if (piecesError) {
+        console.error('Error deleting pieces:', piecesError);
+        toast.error('Error al eliminar las piezas del proyecto');
+        return;
+      }
+
+      // Delete project
       const { error } = await supabase
         .from('projects')
         .delete()
@@ -175,11 +193,21 @@ export default function ProjectManager({ onLoadProject }: ProjectManagerProps) {
     return <ProjectManagerSkeleton />;
   }
 
+  const filteredProjects = projects.filter(project => {
+    const matchesSearch = project.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesFilter = filterStatus === 'all' || project.status === filterStatus;
+    return matchesSearch && matchesFilter;
+  });
+
   return (
     <div className="max-w-7xl mx-auto p-6">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Gestión de Proyectos</h1>
-        <p className="text-gray-600">Administra y reutiliza tus proyectos de impresión 3D</p>
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Gestión de Proyectos</h1>
+            <p className="text-gray-600">Administra y reutiliza tus proyectos de impresión 3D</p>
+          </div>
+        </div>
       </div>
 
       {/* Controles */}
@@ -319,17 +347,10 @@ export default function ProjectManager({ onLoadProject }: ProjectManagerProps) {
               onSave={handleCreateProject}
             />
             <div className="mt-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Equipo</label>
-              <select
-                value={selectedTeamId || ''}
-                onChange={e => setSelectedTeamId(e.target.value || null)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-              >
-                <option value="">Personal (sin equipo)</option>
-                {teams.map(team => (
-                  <option key={team.id} value={team.id}>{team.name}</option>
-                ))}
-              </select>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Contexto actual</label>
+              <div className="text-sm text-gray-600 p-2 bg-gray-50 rounded-lg">
+                {currentTeam ? `Equipo: ${currentTeam.name}` : 'Vista Personal'}
+              </div>
             </div>
             <button
               onClick={handleCreateProject}

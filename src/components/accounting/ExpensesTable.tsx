@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, Trash2, Edit } from 'lucide-react';
+import { Search, Trash2, Edit, Users, User } from 'lucide-react';
 import { motion } from 'framer-motion';
 import type { Expense } from '@/types';
 
@@ -82,6 +82,9 @@ export function ExpensesTable({
                 Fecha
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Equipo
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Estado
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -116,6 +119,21 @@ export function ExpensesTable({
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                   {formatDate(expense.date)}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="flex items-center space-x-1">
+                    {expense.team_id ? (
+                      <>
+                        <Users className="w-4 h-4 text-blue-600" />
+                        <span className="text-sm text-blue-600 font-medium">Equipo</span>
+                      </>
+                    ) : (
+                      <>
+                        <User className="w-4 h-4 text-gray-600" />
+                        <span className="text-sm text-gray-600">Personal</span>
+                      </>
+                    )}
+                  </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(expense.status)}`}>

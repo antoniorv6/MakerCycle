@@ -4,12 +4,21 @@ import type { Sale, SaleFormData } from '@/types';
 export class SalesService {
   private supabase = createClient();
 
-  async getSales(userId: string): Promise<Sale[]> {
-    const { data, error } = await this.supabase
+  async getSales(userId: string, teamId?: string | null): Promise<Sale[]> {
+    let query = this.supabase
       .from('sales')
       .select('*')
-      .eq('user_id', userId)
       .order('created_at', { ascending: false });
+
+    if (teamId) {
+      // Get team sales
+      query = query.eq('team_id', teamId);
+    } else {
+      // Get personal sales (where team_id is null)
+      query = query.eq('user_id', userId).is('team_id', null);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       throw new Error(`Error fetching sales: ${error.message}`);
@@ -32,7 +41,7 @@ export class SalesService {
     return data;
   }
 
-  async createSale(userId: string, saleData: SaleFormData): Promise<Sale> {
+  async createSale(userId: string, saleData: SaleFormData, teamId?: string | null): Promise<Sale> {
     const { unitCost, quantity, salePrice, printHours } = saleData;
     
     const cost = unitCost * quantity;
@@ -50,7 +59,8 @@ export class SalesService {
       margin,
       date: saleData.date,
       status: 'completed',
-      print_hours: printHours
+      print_hours: printHours,
+      team_id: teamId || null
     };
 
     const { data, error } = await this.supabase

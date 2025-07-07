@@ -4,12 +4,21 @@ import type { Expense, ExpenseFormData } from '@/types';
 export class ExpenseService {
   private supabase = createClient();
 
-  async getExpenses(userId: string): Promise<Expense[]> {
-    const { data, error } = await this.supabase
+  async getExpenses(userId: string, teamId?: string | null): Promise<Expense[]> {
+    let query = this.supabase
       .from('expenses')
       .select('*')
-      .eq('user_id', userId)
       .order('created_at', { ascending: false });
+
+    if (teamId) {
+      // Get team expenses
+      query = query.eq('team_id', teamId);
+    } else {
+      // Get personal expenses (where team_id is null)
+      query = query.eq('user_id', userId).is('team_id', null);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       throw new Error(`Error fetching expenses: ${error.message}`);
@@ -32,7 +41,7 @@ export class ExpenseService {
     return data;
   }
 
-  async createExpense(userId: string, expenseData: ExpenseFormData): Promise<Expense> {
+  async createExpense(userId: string, expenseData: ExpenseFormData, teamId?: string | null): Promise<Expense> {
     const expense: Omit<Expense, 'id' | 'created_at' | 'updated_at'> = {
       user_id: userId,
       description: expenseData.description,
@@ -40,7 +49,8 @@ export class ExpenseService {
       category: expenseData.category,
       date: expenseData.date,
       status: 'paid',
-      notes: expenseData.notes
+      notes: expenseData.notes,
+      team_id: teamId || null
     };
 
     const { data, error } = await this.supabase

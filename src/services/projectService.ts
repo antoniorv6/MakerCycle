@@ -4,12 +4,21 @@ import type { DatabaseProject, Project, Material, Piece } from '@/types';
 export class ProjectService {
   private supabase = createClient();
 
-  async getProjects(userId: string): Promise<Project[]> {
-    const { data, error } = await this.supabase
+  async getProjects(userId: string, teamId?: string | null): Promise<Project[]> {
+    let query = this.supabase
       .from('projects')
       .select('*')
-      .eq('user_id', userId)
       .order('created_at', { ascending: false });
+
+    if (teamId) {
+      // Get team projects
+      query = query.eq('team_id', teamId);
+    } else {
+      // Get personal projects (where team_id is null)
+      query = query.eq('user_id', userId).is('team_id', null);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       throw new Error(`Error fetching projects: ${error.message}`);
@@ -81,11 +90,11 @@ export class ProjectService {
     pieces?: Piece[];
   }) {
     const totalFilamentWeight = project.pieces 
-      ? project.pieces.reduce((sum, piece) => sum + (piece.filament_weight * piece.quantity), 0)
+      ? project.pieces.reduce((sum, piece) => sum + (piece.filamentWeight * piece.quantity), 0)
       : project.filament_weight;
 
     const totalPrintHours = project.pieces
-      ? project.pieces.reduce((sum, piece) => sum + (piece.print_hours * piece.quantity), 0)
+      ? project.pieces.reduce((sum, piece) => sum + (piece.printHours * piece.quantity), 0)
       : project.print_hours;
 
     const filamentCost = totalFilamentWeight * (project.filament_price / 1000); // Convert to per kg

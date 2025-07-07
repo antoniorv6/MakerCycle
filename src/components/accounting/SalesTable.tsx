@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, Trash2, Edit, Eye } from 'lucide-react';
+import { Search, Trash2, Edit, Eye, Users, User } from 'lucide-react';
 import { motion } from 'framer-motion';
 import type { Sale } from '@/types';
 
@@ -88,6 +88,9 @@ export function SalesTable({
                 Margen
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Equipo
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Estado
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -126,6 +129,21 @@ export function SalesTable({
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                   {formatPercentage(sale.margin)}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="flex items-center space-x-1">
+                    {sale.team_id ? (
+                      <>
+                        <Users className="w-4 h-4 text-blue-600" />
+                        <span className="text-sm text-blue-600 font-medium">Equipo</span>
+                      </>
+                    ) : (
+                      <>
+                        <User className="w-4 h-4 text-gray-600" />
+                        <span className="text-sm text-gray-600">Personal</span>
+                      </>
+                    )}
+                  </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(sale.status)}`}>

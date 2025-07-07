@@ -70,6 +70,7 @@ export interface DatabaseProject {
   profit_margin: number;
   recommended_price: number;
   status: 'draft' | 'calculated' | 'completed';
+  team_id?: string | null;
   pieces?: DatabasePiece[];
   created_at: string;
   updated_at: string;
@@ -118,6 +119,7 @@ export interface Sale {
   date: string;
   status: 'pending' | 'completed' | 'cancelled';
   print_hours?: number;
+  team_id?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -132,6 +134,7 @@ export interface Expense {
   date: string;
   status: 'pending' | 'paid' | 'cancelled';
   notes?: string;
+  team_id?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -209,6 +212,7 @@ export interface SaleFormData {
   salePrice: number;
   date: string;
   printHours: number;
+  team_id?: string | null;
 }
 
 export interface ExpenseFormData {
@@ -217,6 +221,7 @@ export interface ExpenseFormData {
   category: string;
   date: string;
   notes: string;
+  team_id?: string | null;
 }
 
 // API Response types

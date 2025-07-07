@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/components/providers/AuthProvider';
+import { useTeam } from '@/components/providers/TeamProvider';
 import { salesService } from '@/services/salesService';
 import type { Sale, SaleFormData } from '@/types';
 import toast from 'react-hot-toast';
@@ -9,12 +10,13 @@ export function useSales() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
+  const { currentTeam } = useTeam();
 
   useEffect(() => {
     if (user) {
       fetchSales();
     }
-  }, [user]);
+  }, [user, currentTeam]);
 
   const fetchSales = async () => {
     if (!user) return;
@@ -22,7 +24,7 @@ export function useSales() {
     try {
       setLoading(true);
       setError(null);
-      const data = await salesService.getSales(user.id);
+      const data = await salesService.getSales(user.id, currentTeam?.id);
       setSales(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error fetching sales');
@@ -36,7 +38,7 @@ export function useSales() {
     if (!user) throw new Error('User not authenticated');
     
     try {
-      const newSale = await salesService.createSale(user.id, saleData);
+      const newSale = await salesService.createSale(user.id, saleData, currentTeam?.id);
       setSales(prev => [newSale, ...prev]);
       toast.success('Sale created successfully');
       return newSale;
