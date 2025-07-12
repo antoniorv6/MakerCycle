@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { X, Save, Euro, Package, Calendar, Clock, Users, User } from 'lucide-react';
+import { X, Save, Euro, Package, Calendar, Clock, Users, User, ChevronDown } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useTeam } from '@/components/providers/TeamProvider';
-import type { Sale, SaleFormData, Team } from '@/types';
+import { useAuth } from '@/components/providers/AuthProvider';
+import { createClient } from '@/lib/supabase';
+import type { Sale, SaleFormData, Team, Project } from '@/types';
 
 interface AddSaleFormProps {
   sale?: Sale | null;
@@ -12,7 +14,13 @@ interface AddSaleFormProps {
 
 export function AddSaleForm({ sale, onSave, onCancel }: AddSaleFormProps) {
   const { currentTeam, userTeams } = useTeam();
+  const { user } = useAuth();
+  const supabase = createClient();
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loadingProjects, setLoadingProjects] = useState(false);
+  const [showProjectSelector, setShowProjectSelector] = useState(false);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   
   const [formData, setFormData] = useState<SaleFormData>({
     projectName: '',
@@ -23,6 +31,44 @@ export function AddSaleForm({ sale, onSave, onCancel }: AddSaleFormProps) {
     printHours: 0,
     team_id: null
   });
+
+  // Fetch projects when component mounts or team changes
+  useEffect(() => {
+    if (user) {
+      fetchProjects();
+    }
+  }, [user, selectedTeamId]);
+
+  const fetchProjects = async () => {
+    if (!user) return;
+    
+    setLoadingProjects(true);
+    try {
+      let query = supabase
+        .from('projects')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (selectedTeamId) {
+        query = query.eq('team_id', selectedTeamId);
+      } else {
+        query = query.eq('user_id', user.id).is('team_id', null);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('Error fetching projects:', error);
+        return;
+      }
+
+      setProjects(data || []);
+    } catch (error) {
+      console.error('Error fetching projects:', error);
+    } finally {
+      setLoadingProjects(false);
+    }
+  };
 
   useEffect(() => {
     if (sale) {
@@ -61,6 +107,46 @@ export function AddSaleForm({ sale, onSave, onCancel }: AddSaleFormProps) {
     }));
   };
 
+  const handleProjectSelect = (project: Project) => {
+    setSelectedProject(project);
+    setFormData(prev => ({
+      ...prev,
+      projectName: project.name,
+      unitCost: project.total_cost,
+      printHours: project.print_hours
+    }));
+    setShowProjectSelector(false);
+  };
+
+  const handleTeamChange = (teamId: string | null) => {
+    setSelectedTeamId(teamId);
+    setSelectedProject(null);
+    setFormData(prev => ({
+      ...prev,
+      projectName: '',
+      unitCost: 0,
+      printHours: 0
+    }));
+  };
+
+  // Close project selector when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (!target.closest('.project-selector')) {
+        setShowProjectSelector(false);
+      }
+    };
+
+    if (showProjectSelector) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showProjectSelector]);
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <motion.div
@@ -85,15 +171,61 @@ export function AddSaleForm({ sale, onSave, onCancel }: AddSaleFormProps) {
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Nombre del Proyecto
+              Proyecto
             </label>
-            <input
-              type="text"
-              value={formData.projectName}
-              onChange={(e) => handleInputChange('projectName', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              required
-            />
+            <div className="space-y-2">
+              {/* Manual project name input */}
+              <div>
+                <input
+                  type="text"
+                  value={formData.projectName}
+                  onChange={(e) => handleInputChange('projectName', e.target.value)}
+                  placeholder="Escribe el nombre del proyecto o selecciona uno existente"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  required
+                />
+              </div>
+              
+              {/* Project selector button */}
+              <div className="relative project-selector">
+                <button
+                  type="button"
+                  onClick={() => setShowProjectSelector(!showProjectSelector)}
+                  className="w-full flex items-center justify-between px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                >
+                  <span className="text-sm text-gray-600">
+                    {selectedProject ? `Proyecto seleccionado: ${selectedProject.name}` : 'Seleccionar proyecto existente'}
+                  </span>
+                  <ChevronDown className="w-4 h-4 text-gray-400" />
+                </button>
+                
+                {showProjectSelector && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto project-selector">
+                    {loadingProjects ? (
+                      <div className="p-3 text-sm text-gray-500">Cargando proyectos...</div>
+                    ) : projects.length > 0 ? (
+                      <div>
+                        {projects.map((project) => (
+                          <button
+                            key={project.id}
+                            type="button"
+                            onClick={() => handleProjectSelect(project)}
+                            className="w-full text-left px-3 py-2 hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
+                          >
+                            <div className="font-medium text-sm">{project.name}</div>
+                            <div className="text-xs text-gray-500">
+                              Coste: €{project.total_cost.toFixed(2)} | Horas: {project.print_hours}h
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="p-3 text-sm text-gray-500">No hay proyectos disponibles</div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -179,7 +311,7 @@ export function AddSaleForm({ sale, onSave, onCancel }: AddSaleFormProps) {
                   name="team"
                   value=""
                   checked={selectedTeamId === null}
-                  onChange={() => setSelectedTeamId(null)}
+                  onChange={() => handleTeamChange(null)}
                   className="text-blue-600 focus:ring-blue-500"
                 />
                 <User className="w-4 h-4 text-gray-600" />
@@ -192,7 +324,7 @@ export function AddSaleForm({ sale, onSave, onCancel }: AddSaleFormProps) {
                     name="team"
                     value={team.id}
                     checked={selectedTeamId === team.id}
-                    onChange={() => setSelectedTeamId(team.id)}
+                    onChange={() => handleTeamChange(team.id)}
                     className="text-blue-600 focus:ring-blue-500"
                   />
                   <Users className="w-4 h-4 text-blue-600" />

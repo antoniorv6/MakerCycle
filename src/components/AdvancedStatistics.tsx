@@ -11,6 +11,7 @@ import {
 import { motion } from 'framer-motion';
 import { createClient } from '@/lib/supabase';
 import { useAuth } from '@/components/providers/AuthProvider';
+import { useTeam } from '@/components/providers/TeamProvider';
 import { AdvancedStatisticsSkeleton } from '@/components/skeletons';
 
 interface Sale {
@@ -54,13 +55,14 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
   const [chartType, setChartType] = useState<'revenue' | 'profit' | 'margin' | 'expenses'>('revenue');
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
+  const { currentTeam } = useTeam();
   const supabase = createClient();
 
   useEffect(() => {
     if (user) {
       fetchData();
     }
-  }, [user]);
+  }, [user, currentTeam]);
 
   const fetchData = async () => {
     if (!user) return;
@@ -68,12 +70,30 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
     try {
       setLoading(true);
       
-      // Fetch sales
-      const { data: salesData, error: salesError } = await supabase
+      // Prepare queries based on team context
+      let salesQuery = supabase
         .from('sales')
         .select('*')
-        .eq('user_id', user.id)
         .order('created_at', { ascending: false });
+
+      let expensesQuery = supabase
+        .from('expenses')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      // Apply team context filters
+      if (currentTeam) {
+        // Get team data
+        salesQuery = salesQuery.eq('team_id', currentTeam.id);
+        expensesQuery = expensesQuery.eq('team_id', currentTeam.id);
+      } else {
+        // Get personal data (where team_id is null)
+        salesQuery = salesQuery.eq('user_id', user.id).is('team_id', null);
+        expensesQuery = expensesQuery.eq('user_id', user.id).is('team_id', null);
+      }
+
+      // Fetch sales
+      const { data: salesData, error: salesError } = await salesQuery;
 
       if (salesError) {
         console.error('Error fetching sales:', salesError);
@@ -82,11 +102,7 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
       }
 
       // Fetch expenses
-      const { data: expensesData, error: expensesError } = await supabase
-        .from('expenses')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+      const { data: expensesData, error: expensesError } = await expensesQuery;
 
       if (expensesError) {
         console.error('Error fetching expenses:', expensesError);

@@ -166,6 +166,8 @@ export interface DashboardStats {
   totalPrintHours: number;
   averageEurosPerHour: number;
   totalProducts: number;
+  totalExpenses: number;
+  netProfit: number;
 }
 
 export interface AccountingStats {
