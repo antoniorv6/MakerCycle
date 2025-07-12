@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '@/components/providers/AuthProvider';
+import { useTeam } from '@/components/providers/TeamProvider';
 import { createClient } from '@/lib/supabase';
-import type { DatabaseProject, Sale, Expense } from '@/types';
+import type { DatabaseProject, Sale, Expense, DashboardStats } from '@/types';
 
 // Cache for dashboard data
 const dashboardCache = new Map<string, { 
@@ -10,18 +11,7 @@ const dashboardCache = new Map<string, {
 }>();
 const CACHE_DURATION = 2 * 60 * 1000; // 2 minutes
 
-interface DashboardStats {
-  totalProjects: number;
-  totalSales: number;
-  totalRevenue: number;
-  totalProfit: number;
-  averageMargin: number;
-  totalPrintHours: number;
-  averageEurosPerHour: number;
-  totalProducts: number;
-  totalExpenses: number;
-  netProfit: number;
-}
+// Remove local interface and use the one from types
 
 export function useDashboardData() {
   const [projects, setProjects] = useState<DatabaseProject[]>([]);
@@ -30,9 +20,11 @@ export function useDashboardData() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
+  const { currentTeam } = useTeam();
   const supabase = createClient();
 
-  const cacheKey = user?.id || '';
+  // Create cache key that includes team context
+  const cacheKey = `${user?.id || ''}-${currentTeam?.id || 'personal'}`;
 
   const fetchDashboardData = useCallback(async () => {
     if (!user) return;
@@ -51,26 +43,43 @@ export function useDashboardData() {
       setLoading(true);
       setError(null);
       
+      // Prepare queries based on team context
+      let projectsQuery = supabase
+        .from('projects')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      let salesQuery = supabase
+        .from('sales')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      let expensesQuery = supabase
+        .from('expenses')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      // Apply team context filters
+      if (currentTeam) {
+        // Get team data
+        projectsQuery = projectsQuery.eq('team_id', currentTeam.id);
+        salesQuery = salesQuery.eq('team_id', currentTeam.id);
+        expensesQuery = expensesQuery.eq('team_id', currentTeam.id);
+      } else {
+        // Get personal data (where team_id is null)
+        projectsQuery = projectsQuery.eq('user_id', user.id).is('team_id', null);
+        salesQuery = salesQuery.eq('user_id', user.id).is('team_id', null);
+        expensesQuery = expensesQuery.eq('user_id', user.id).is('team_id', null);
+      }
+
       // Fetch all data in parallel
       const [projectsResult, salesResult, expensesResult] = await Promise.allSettled([
-        supabase
-          .from('projects')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false })
-          .limit(10),
-        supabase
-          .from('sales')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false })
-          .limit(10),
-        supabase
-          .from('expenses')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false })
-          .limit(10)
+        projectsQuery,
+        salesQuery,
+        expensesQuery
       ]);
 
       // Handle projects
@@ -110,7 +119,7 @@ export function useDashboardData() {
     } finally {
       setLoading(false);
     }
-  }, [user, cacheKey, supabase]);
+  }, [user, currentTeam, cacheKey, supabase]);
 
   const invalidateCache = useCallback(() => {
     dashboardCache.delete(cacheKey);
@@ -120,7 +129,7 @@ export function useDashboardData() {
     if (user) {
       fetchDashboardData();
     }
-  }, [user, fetchDashboardData]);
+  }, [user, currentTeam, fetchDashboardData]);
 
   const stats = useMemo((): DashboardStats => {
     const totalRevenue = sales.reduce((sum, sale) => sum + sale.sale_price, 0);
