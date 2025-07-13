@@ -61,7 +61,8 @@ export class SalesService {
       date: saleData.date,
       status: 'completed',
       print_hours: printHours,
-      team_id: teamId || null
+      team_id: teamId || null,
+      client_id: saleData.client_id || null
     };
 
     const { data, error } = await this.supabase

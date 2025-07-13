@@ -62,7 +62,8 @@ export default function Accounting() {
           sale_price: saleData.salePrice,
           date: saleData.date,
           print_hours: saleData.printHours,
-          team_id: saleData.team_id
+          team_id: saleData.team_id,
+          client_id: saleData.client_id
         });
         setEditingSale(null);
       } else {
@@ -122,6 +123,11 @@ export default function Accounting() {
   };
 
   const handleGenerateInvoice = (sale: Sale) => {
+    // Validar que la venta tenga un cliente asignado
+    if (!sale.client_id) {
+      alert('Esta venta no tiene un cliente asignado. Por favor, edita la venta y asigna un cliente antes de generar el albarán.');
+      return;
+    }
     setSelectedSaleForInvoice(sale);
     setShowInvoiceForm(true);
   };

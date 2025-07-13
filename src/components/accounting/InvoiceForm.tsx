@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Download, FileText } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useClients } from '@/hooks/useClients';
 import type { Sale, InvoiceFormData } from '@/types';
 
 interface InvoiceFormProps {
@@ -10,6 +11,7 @@ interface InvoiceFormProps {
 }
 
 export function InvoiceForm({ sale, onClose, onGeneratePDF }: InvoiceFormProps) {
+  const { clients } = useClients();
   const [formData, setFormData] = useState<InvoiceFormData>({
     clientName: '',
     clientAddress: '',
@@ -24,6 +26,25 @@ export function InvoiceForm({ sale, onClose, onGeneratePDF }: InvoiceFormProps) 
     totalPrice: sale.sale_price,
     notes: ''
   });
+
+  // Cargar datos del cliente si existe
+  useEffect(() => {
+    if (sale.client_id) {
+      const client = clients.find(c => c.id === sale.client_id);
+      if (client) {
+        setFormData(prev => ({
+          ...prev,
+          clientName: client.name,
+          clientAddress: client.address || '',
+          clientPhone: client.phone || '',
+          clientEmail: client.email || ''
+        }));
+      }
+    } else {
+      // Si no hay cliente asignado, mostrar advertencia
+      alert('Esta venta no tiene un cliente asignado. Por favor, completa los datos del cliente manualmente.');
+    }
+  }, [sale.client_id, clients]);
 
   const handleInputChange = (field: keyof InvoiceFormData, value: string | number) => {
     setFormData(prev => ({

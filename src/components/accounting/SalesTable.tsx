@@ -1,6 +1,7 @@
 import React from 'react';
 import { Search, Trash2, Edit, Eye, Users, User, Plus, FileText } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useClients } from '@/hooks/useClients';
 import type { Sale } from '@/types';
 
 interface SalesTableProps {
@@ -22,9 +23,16 @@ export function SalesTable({
   onAddSale,
   onGenerateInvoice
 }: SalesTableProps) {
+  const { clients } = useClients();
   const formatCurrency = (value: number) => `€${value.toFixed(2)}`;
   const formatPercentage = (value: number) => `${value.toFixed(1)}%`;
   const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString('es-ES');
+
+  const getClientName = (clientId: string | null) => {
+    if (!clientId) return 'Sin cliente';
+    const client = clients.find(c => c.id === clientId);
+    return client ? client.name : 'Cliente no encontrado';
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -100,6 +108,9 @@ export function SalesTable({
                   Margen
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Cliente
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Equipo
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -141,6 +152,11 @@ export function SalesTable({
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {formatPercentage(sale.margin)}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-900">
+                      {getClientName(sale.client_id || null)}
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center space-x-1">

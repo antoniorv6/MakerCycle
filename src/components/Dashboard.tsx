@@ -11,6 +11,7 @@ import ProjectInfoView from './ProjectInfoView'
 import type { DatabaseProject, DatabasePiece, AppProject } from '@/types'
 import TeamManager from './TeamManager'
 import SettingsPage from './settings/SettingsPage'
+import { ClientsManager } from './accounting/ClientsManager'
 
 // Import lazy components
 import { 
@@ -129,6 +130,8 @@ export default function Dashboard({ initialPage }: { initialPage?: string } = {}
         return <SettingsPage />
       case 'teams':
         return <TeamManager />
+      case 'clients':
+        return <ClientsManager onBack={() => setCurrentPage('home')} />
       default:
         return (
           <Suspense fallback={<DashboardSkeleton />}>
