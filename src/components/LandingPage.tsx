@@ -153,7 +153,7 @@ export default function LandingPage() {
               </div>
               <div>
                 <h1 className="text-xl font-bold text-slate-900">
-                  3D Manager Pro
+                  3DCraftFlow
                 </h1>
                 <p className="text-sm text-slate-500">Gestión Profesional 3D</p>
               </div>
@@ -465,7 +465,7 @@ export default function LandingPage() {
                 <div className="w-10 h-10 bg-gradient-to-br from-slate-600 to-slate-700 rounded-xl flex items-center justify-center">
                   <Calculator className="w-6 h-6 text-white" />
                 </div>
-                <span className="text-xl font-bold">3D Manager Pro</span>
+                <span className="text-xl font-bold">3DCraftFlow</span>
               </div>
               <p className="text-slate-400 mb-6">
                 Plataforma open source para la gestión profesional de impresión 3D.
@@ -512,7 +512,7 @@ export default function LandingPage() {
           </div>
           
           <div className="border-t border-slate-800 mt-12 pt-8 text-center text-slate-400">
-            <p>&copy; 2024 3D Manager Pro. Open Source bajo licencia MIT.</p>
+                          <p>&copy; 2024 3DCraftFlow. Open Source bajo licencia MIT.</p>
           </div>
         </div>
       </footer>

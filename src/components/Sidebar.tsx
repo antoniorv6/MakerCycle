@@ -65,7 +65,7 @@ export default function Sidebar({ currentPage, onPageChange, isOpen, onToggle }:
               <Calculator className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-slate-900">3D Manager Pro</h1>
+              <h1 className="text-xl font-bold text-slate-900">3DCraftFlow</h1>
               <p className="text-sm text-slate-500">Gestión Profesional 3D</p>
             </div>
           </div>
