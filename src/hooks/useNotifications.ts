@@ -48,13 +48,49 @@ export function useNotifications() {
 
   const markAllAsRead = useCallback(async () => {
     try {
+      setError(null);
       await NotificationService.markAllAsRead();
       setNotifications(prev => 
         prev.map(notification => ({ ...notification, is_read: true }))
       );
       setUnreadCount(0);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to mark all notifications as read');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to mark all notifications as read';
+      console.error('Error in markAllAsRead:', err);
+      setError(errorMessage);
+    }
+  }, []);
+
+  const deleteNotification = useCallback(async (notificationId: string) => {
+    try {
+      await NotificationService.deleteNotification(notificationId);
+      setNotifications(prev => prev.filter(notification => notification.id !== notificationId));
+      // Update unread count if the deleted notification was unread
+      const deletedNotification = notifications.find(n => n.id === notificationId);
+      if (deletedNotification && !deletedNotification.is_read) {
+        setUnreadCount(prev => Math.max(0, prev - 1));
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete notification');
+    }
+  }, [notifications]);
+
+  const deleteAllNotifications = useCallback(async () => {
+    try {
+      await NotificationService.deleteAllNotifications();
+      setNotifications([]);
+      setUnreadCount(0);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete all notifications');
+    }
+  }, []);
+
+  const deleteReadNotifications = useCallback(async () => {
+    try {
+      await NotificationService.deleteReadNotifications();
+      setNotifications(prev => prev.filter(notification => !notification.is_read));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete read notifications');
     }
   }, []);
 
@@ -79,6 +115,9 @@ export function useNotifications() {
     showAll,
     markAsRead,
     markAllAsRead,
+    deleteNotification,
+    deleteAllNotifications,
+    deleteReadNotifications,
     refreshNotifications,
     toggleShowAll
   };
