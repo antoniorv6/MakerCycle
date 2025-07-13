@@ -226,6 +226,28 @@ export interface ExpenseFormData {
   team_id?: string | null;
 }
 
+export interface InvoiceFormData {
+  // Datos del cliente
+  clientName: string;
+  clientAddress: string;
+  clientPhone: string;
+  clientEmail: string;
+  
+  // Datos del albarán
+  invoiceNumber: string;
+  issueDate: string;
+  deliveryDate: string;
+  
+  // Datos del servicio
+  serviceDescription: string;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+  
+  // Notas adicionales
+  notes: string;
+}
+
 // API Response types
 export interface ApiResponse<T> {
   data: T | null;

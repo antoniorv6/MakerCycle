@@ -29,6 +29,58 @@ export const createServerSupabaseClient = async () => {
 export type Database = {
   public: {
     Tables: {
+      company_settings: {
+        Row: {
+          id: string
+          user_id: string
+          name: string
+          description: string
+          email: string
+          phone: string
+          address: string
+          website: string
+          logo: string
+          tax_id: string
+          bank_info: string
+          terms: string
+          footer: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          name?: string
+          description?: string
+          email?: string
+          phone?: string
+          address?: string
+          website?: string
+          logo?: string
+          tax_id?: string
+          bank_info?: string
+          terms?: string
+          footer?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          name?: string
+          description?: string
+          email?: string
+          phone?: string
+          address?: string
+          website?: string
+          logo?: string
+          tax_id?: string
+          bank_info?: string
+          terms?: string
+          footer?: string
+          updated_at?: string
+        }
+      }
       profiles: {
         Row: {
           id: string
