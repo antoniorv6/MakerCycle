@@ -138,7 +138,13 @@ export default function Sidebar({ currentPage, onPageChange, isOpen, onToggle }:
 
         <div className="absolute bottom-0 left-0 right-0 p-6 border-t border-gray-200">
           <button
-            onClick={signOut}
+            onClick={async () => {
+              try {
+                await signOut()
+              } catch (error) {
+                console.error('Error during logout:', error)
+              }
+            }}
             className="w-full flex items-center space-x-3 px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition-all duration-200"
           >
             <LogOut className="w-5 h-5 text-gray-400" />
