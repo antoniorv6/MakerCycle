@@ -14,7 +14,7 @@ interface AddSaleFormProps {
 }
 
 export function AddSaleForm({ sale, onSave, onCancel }: AddSaleFormProps) {
-  const { currentTeam, userTeams } = useTeam();
+  const { currentTeam, userTeams, getEffectiveTeam } = useTeam();
   const { user } = useAuth();
   const supabase = createClient();
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
@@ -86,14 +86,15 @@ export function AddSaleForm({ sale, onSave, onCancel }: AddSaleFormProps) {
       });
       setSelectedTeamId(sale.team_id || null);
     } else {
-      // For new sales, use current team context
+      // For new sales, use effective team context
+      const effectiveTeam = getEffectiveTeam();
       setFormData(prev => ({
         ...prev,
-        team_id: currentTeam?.id || null
+        team_id: effectiveTeam?.id || null
       }));
-      setSelectedTeamId(currentTeam?.id || null);
+      setSelectedTeamId(effectiveTeam?.id || null);
     }
-  }, [sale, currentTeam]);
+  }, [sale, getEffectiveTeam]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

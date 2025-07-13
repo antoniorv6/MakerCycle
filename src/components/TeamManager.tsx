@@ -320,35 +320,39 @@ const TeamManager: React.FC = () => {
 
   return (
     <div className="max-w-6xl mx-auto p-6">
-      <div className="mb-8">
-        <h2 className="text-3xl font-bold text-gray-900 mb-2">Gestión de Equipos</h2>
-        <p className="text-gray-600">Administra tus equipos y colaboradores</p>
+      {/* Header */}
+      <div className="text-center mb-8">
+        <div className="inline-flex items-center justify-center w-16 h-16 bg-slate-100 rounded-full mb-4">
+          <Users className="w-8 h-8 text-slate-600" />
+        </div>
+        <h1 className="text-3xl font-bold text-slate-900 mb-2">Gestión de Equipos</h1>
+        <p className="text-slate-600">Administra tus equipos y colaboradores</p>
       </div>
 
       {/* Team Context Switcher */}
-      <div className="mb-8 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-1">Contexto Actual</h3>
-            <p className="text-sm text-gray-600">
-              {isInEditingMode 
-                ? `Editando proyecto del equipo: ${editingTeam?.name}`
-                : effectiveTeam 
-                  ? `Trabajando en equipo: ${effectiveTeam.name}`
-                  : 'Vista personal - Tus proyectos privados'
-              }
-            </p>
-          </div>
+      <div className="mb-8 bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                  <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold text-slate-900 mb-1">Contexto Actual</h3>
+              <p className="text-sm text-slate-600">
+                {isInEditingMode 
+                  ? `Editando proyecto del equipo: ${editingTeam?.name}`
+                  : effectiveTeam 
+                    ? `Trabajando en equipo: ${effectiveTeam.name}`
+                    : 'Vista personal - Tus proyectos privados'
+                }
+              </p>
+            </div>
           
           <div className="relative">
             <button
               onClick={() => setShowTeamSwitcher(!showTeamSwitcher)}
               className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-200 border ${
                 isInEditingMode
-                  ? 'bg-orange-50 border-orange-200 text-orange-700 hover:bg-orange-100'
+                  ? 'bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100'
                   : effectiveTeam 
-                    ? 'bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100' 
-                    : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100'
+                    ? 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100' 
+                    : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
               }`}
             >
               {isInEditingMode ? (
@@ -380,7 +384,7 @@ const TeamManager: React.FC = () => {
                   initial={{ opacity: 0, y: -10, scale: 0.95 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                  className="absolute top-full right-0 mt-2 w-72 bg-white border border-gray-200 rounded-lg shadow-xl z-50"
+                  className="absolute top-full right-0 mt-2 w-72 bg-white border border-slate-200 rounded-lg shadow-xl z-50"
                   style={{
                     maxHeight: 'calc(100vh - 100px)',
                     overflowY: 'auto'
@@ -389,55 +393,55 @@ const TeamManager: React.FC = () => {
                 >
                   <div className="p-3">
                     {isInEditingMode && (
-                      <div className="mb-3 p-2 bg-orange-50 border border-orange-200 rounded-lg">
-                        <div className="flex items-center space-x-2">
-                          <Edit className="w-4 h-4 text-orange-600" />
-                          <span className="text-xs font-medium text-orange-700">
-                            Modo de edición activo
-                          </span>
-                        </div>
-                        <div className="text-xs text-orange-600 mt-1">
-                          Editando proyecto del equipo: {editingTeam?.name}
-                        </div>
-                      </div>
+                                        <div className="mb-3 p-2 bg-amber-50 border border-amber-200 rounded-lg">
+                    <div className="flex items-center space-x-2">
+                      <Edit className="w-4 h-4 text-amber-600" />
+                      <span className="text-xs font-medium text-amber-700">
+                        Modo de edición activo
+                      </span>
+                    </div>
+                    <div className="text-xs text-amber-600 mt-1">
+                      Editando proyecto del equipo: {editingTeam?.name}
+                    </div>
+                  </div>
                     )}
                     
-                    <div className="text-xs font-medium text-gray-500 mb-2 px-2">CONTEXTO ACTUAL</div>
+                    <div className="text-xs font-medium text-slate-500 mb-2 px-2">CONTEXTO ACTUAL</div>
                     
                     {/* Personal View Option */}
                     <button
                       onClick={() => handleTeamSwitch(null)}
                       className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-colors duration-200 ${
                         !effectiveTeam
-                          ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                          : 'text-gray-700 hover:bg-gray-50'
+                          ? 'bg-slate-50 text-slate-700 border border-slate-200'
+                          : 'text-slate-700 hover:bg-slate-50'
                       }`}
                     >
                       <User className="w-4 h-4" />
                       <div>
                         <div className="text-sm font-medium">Vista Personal</div>
-                        <div className="text-xs text-gray-500">Tus proyectos y datos privados</div>
+                        <div className="text-xs text-slate-500">Tus proyectos y datos privados</div>
                       </div>
                     </button>
 
                     {/* Team Options */}
                     {userTeams.length > 0 && (
                       <>
-                        <div className="text-xs font-medium text-gray-500 mt-3 mb-2 px-2">EQUIPOS</div>
+                        <div className="text-xs font-medium text-slate-500 mt-3 mb-2 px-2">EQUIPOS</div>
                         {userTeams.map((team) => (
                           <button
                             key={team.id}
                             onClick={() => handleTeamSwitch(team)}
                             className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-colors duration-200 ${
                               effectiveTeam?.id === team.id
-                                ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                                : 'text-gray-700 hover:bg-gray-50'
+                                ? 'bg-slate-50 text-slate-700 border border-slate-200'
+                                : 'text-slate-700 hover:bg-slate-50'
                             }`}
                           >
                             <Users className="w-4 h-4" />
                             <div>
                               <div className="text-sm font-medium">{team.name}</div>
-                              <div className="text-xs text-gray-500">Datos compartidos del equipo</div>
+                              <div className="text-xs text-slate-500">Datos compartidos del equipo</div>
                             </div>
                           </button>
                         ))}
@@ -446,7 +450,7 @@ const TeamManager: React.FC = () => {
 
                     {/* Create Team Option */}
                     {userTeams.length === 0 && (
-                      <div className="px-3 py-2 text-xs text-gray-500 border-t border-gray-100 mt-2 pt-2">
+                      <div className="px-3 py-2 text-xs text-slate-500 border-t border-slate-100 mt-2 pt-2">
                         No tienes equipos. Crea uno abajo.
                       </div>
                     )}
@@ -459,19 +463,19 @@ const TeamManager: React.FC = () => {
       </div>
 
       {/* Create New Team */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Crear Nuevo Equipo</h3>
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-8">
+        <h3 className="text-lg font-semibold text-slate-900 mb-4">Crear Nuevo Equipo</h3>
         <div className="flex gap-2">
           <input
             type="text"
             placeholder="Nombre del equipo"
             value={teamName}
             onChange={e => setTeamName(e.target.value)}
-            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            className="flex-1 px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent"
           />
           <button
             onClick={handleCreateTeam}
-            className="flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors duration-200"
+            className="flex items-center px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors duration-200"
             disabled={loadingTeams}
           >
             <Plus className="w-4 h-4 mr-1" /> Crear equipo
@@ -480,15 +484,15 @@ const TeamManager: React.FC = () => {
       </div>
 
       {/* Admin Tools */}
-      <div className="bg-yellow-50 rounded-xl shadow-sm border border-yellow-200 p-6 mb-8">
-        <h3 className="text-lg font-semibold text-yellow-900 mb-4">Herramientas de Administración</h3>
-        <p className="text-sm text-yellow-700 mb-4">
+      <div className="bg-amber-50 rounded-xl shadow-sm border border-amber-200 p-6 mb-8">
+        <h3 className="text-lg font-semibold text-amber-900 mb-4">Herramientas de Administración</h3>
+        <p className="text-sm text-amber-700 mb-4">
           Si tienes problemas invitando usuarios que están registrados, puede que no tengan perfiles creados.
         </p>
         <div className="flex gap-2">
           <button
             onClick={handleCreateMissingProfiles}
-            className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors duration-200"
+            className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors duration-200"
           >
             Crear Perfiles Faltantes
           </button>
@@ -497,14 +501,14 @@ const TeamManager: React.FC = () => {
 
       {/* Team List */}
       <div className="grid lg:grid-cols-2 gap-8">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Tus Equipos</h3>
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+          <h3 className="text-lg font-semibold text-slate-900 mb-4">Tus Equipos</h3>
           <div className="space-y-2">
             {teams.map(team => (
-              <div key={team.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <span className="font-medium text-gray-900">{team.name}</span>
+              <div key={team.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                <span className="font-medium text-slate-900">{team.name}</span>
                 <button
-                  className="text-primary-600 hover:text-primary-700 underline text-sm"
+                  className="text-slate-600 hover:text-slate-700 underline text-sm"
                   onClick={() => handleSelectTeam(team)}
                 >
                   Gestionar
@@ -512,20 +516,20 @@ const TeamManager: React.FC = () => {
               </div>
             ))}
             {teams.length === 0 && (
-              <p className="text-gray-500 text-sm">No tienes equipos creados.</p>
+              <p className="text-slate-500 text-sm">No tienes equipos creados.</p>
             )}
           </div>
         </div>
 
         {/* Team Details */}
         {selectedTeam && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Miembros de {selectedTeam.name}</h3>
+              <h3 className="text-lg font-semibold text-slate-900">Miembros de {selectedTeam.name}</h3>
               <div className="flex gap-2">
                 {!renaming ? (
                   <button
-                    className="text-blue-600 hover:text-blue-700 underline text-sm"
+                    className="text-slate-600 hover:text-slate-700 underline text-sm"
                     onClick={() => { setRenaming(true); setNewTeamName(selectedTeam.name); }}
                   >
                     Renombrar
@@ -539,13 +543,13 @@ const TeamManager: React.FC = () => {
                       className="px-2 py-1 border rounded text-sm"
                     />
                     <button
-                      className="text-green-600 text-sm"
+                      className="text-emerald-600 text-sm"
                       onClick={handleRenameTeam}
                     >
                       Guardar
                     </button>
                     <button
-                      className="text-gray-500 text-sm"
+                      className="text-slate-500 text-sm"
                       onClick={() => setRenaming(false)}
                     >
                       Cancelar
@@ -562,19 +566,19 @@ const TeamManager: React.FC = () => {
             </div>
             
             {/* Invite Member */}
-            <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-              <h4 className="text-sm font-medium text-gray-900 mb-2">Invitar Miembro</h4>
+            <div className="mb-4 p-3 bg-slate-50 rounded-lg">
+              <h4 className="text-sm font-medium text-slate-900 mb-2">Invitar Miembro</h4>
               <div className="flex gap-2">
                 <input
                   type="email"
                   placeholder="Email del miembro"
                   value={inviteEmail}
                   onChange={e => setInviteEmail(e.target.value)}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-slate-500 focus:border-transparent"
                 />
                 <button
                   onClick={handleInviteMember}
-                  className="px-3 py-2 bg-primary-600 text-white rounded-lg text-sm hover:bg-primary-700 transition-colors duration-200"
+                  className="px-3 py-2 bg-slate-600 text-white rounded-lg text-sm hover:bg-slate-700 transition-colors duration-200"
                 >
                   Invitar
                 </button>
@@ -586,14 +590,14 @@ const TeamManager: React.FC = () => {
               {members.map(member => {
                 const profile = memberProfiles[member.user_id];
                 return (
-                  <div key={member.user_id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                  <div key={member.user_id} className="flex items-center justify-between p-2 bg-slate-50 rounded-lg">
                     <div className="flex items-center gap-2">
-                      <span className="font-medium text-gray-900">
+                      <span className="font-medium text-slate-900">
                         {profile?.full_name || profile?.email || member.user_id}
                       </span>
-                      <span className="text-gray-500 text-xs">{profile?.email && `(${profile.email})`}</span>
+                      <span className="text-slate-500 text-xs">{profile?.email && `(${profile.email})`}</span>
                       <span className={`px-2 py-0.5 rounded text-xs font-semibold ${
-                        member.role === 'admin' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'
+                        member.role === 'admin' ? 'bg-slate-100 text-slate-700' : 'bg-slate-100 text-slate-700'
                       }`}>
                         {member.role}
                       </span>

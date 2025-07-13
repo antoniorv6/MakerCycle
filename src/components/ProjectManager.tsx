@@ -201,27 +201,27 @@ export default function ProjectManager({ onLoadProject }: ProjectManagerProps) {
 
   return (
     <div className="max-w-7xl mx-auto p-6">
-      <div className="mb-8">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Gestión de Proyectos</h1>
-            <p className="text-gray-600">Administra y reutiliza tus proyectos de impresión 3D</p>
-          </div>
+      {/* Header */}
+      <div className="text-center mb-8">
+        <div className="inline-flex items-center justify-center w-16 h-16 bg-slate-100 rounded-full mb-4">
+          <FileText className="w-8 h-8 text-slate-600" />
         </div>
+        <h1 className="text-3xl font-bold text-slate-900 mb-2">Gestión de Proyectos</h1>
+        <p className="text-slate-600">Administra y reutiliza tus proyectos de impresión 3D</p>
       </div>
 
       {/* Controles */}
-      <div className="bg-white rounded-xl shadow-lg p-6 mb-8 border border-gray-100">
+      <div className="bg-white rounded-xl shadow-lg p-6 mb-8 border border-slate-100">
         <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
           <div className="flex flex-1 gap-4 w-full lg:w-auto">
             <div className="relative flex-1 lg:w-80">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
               <input
                 type="text"
                 placeholder="Buscar proyectos..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent"
               />
             </div>
             <div className="relative">
@@ -271,17 +271,17 @@ export default function ProjectManager({ onLoadProject }: ProjectManagerProps) {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
-              className="bg-white rounded-xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-shadow duration-300"
+              className="bg-white rounded-xl shadow-lg p-6 border border-slate-100 hover:shadow-xl transition-shadow duration-300"
             >
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
                   <div className="flex items-center space-x-3 mb-2">
-                    <h3 className="text-xl font-semibold text-gray-900">{project.name}</h3>
+                    <h3 className="text-xl font-semibold text-slate-900">{project.name}</h3>
                     <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(project.status)}`}>
                       {getStatusText(project.status)}
                     </span>
                   </div>
-                  <div className="flex items-center space-x-4 text-sm text-gray-600">
+                  <div className="flex items-center space-x-4 text-sm text-slate-600">
                     <div className="flex items-center space-x-1">
                       <Calendar className="w-4 h-4" />
                       <span>{new Date(project.created_at).toLocaleDateString()}</span>

@@ -19,11 +19,11 @@ export function AccountingHeader({
     <div className="space-y-6">
       {/* Header */}
       <div className="text-center">
-        <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-50 rounded-full mb-4">
-          <Receipt className="w-8 h-8 text-primary-600" />
+        <div className="inline-flex items-center justify-center w-16 h-16 bg-slate-100 rounded-full mb-4">
+          <Receipt className="w-8 h-8 text-slate-600" />
         </div>
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Contabilidad</h1>
-        <p className="text-gray-600">Gestiona tus ventas, gastos y análisis financiero</p>
+        <h1 className="text-3xl font-bold text-slate-900 mb-2">Contabilidad</h1>
+        <p className="text-slate-600">Gestiona tus ventas, gastos y análisis financiero</p>
       </div>
 
       {/* Key Statistics */}

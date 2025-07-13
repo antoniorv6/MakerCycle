@@ -6,17 +6,17 @@ const ModeSelection: React.FC<ModeSelectionProps> = ({ onModeSelect }) => {
   return (
     <div className="max-w-7xl mx-auto p-6">
       <div className="text-center mb-8">
-        <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-50 rounded-full mb-4">
-          <Calculator className="w-8 h-8 text-primary-600" />
+        <div className="inline-flex items-center justify-center w-16 h-16 bg-slate-100 rounded-full mb-4">
+          <Calculator className="w-8 h-8 text-slate-600" />
         </div>
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Calculadora de Costes 3D</h1>
-        <p className="text-gray-600">Calcula el coste total de tus proyectos de impresión 3D</p>
+        <h1 className="text-3xl font-bold text-slate-900 mb-2">Calculadora de Costes 3D</h1>
+        <p className="text-slate-600">Calcula el coste total de tus proyectos de impresión 3D</p>
       </div>
 
-      <div className="bg-white rounded-xl shadow-lg p-8 border border-gray-100 max-w-4xl mx-auto">
+      <div className="bg-white rounded-xl shadow-lg p-8 border border-slate-100 max-w-4xl mx-auto">
         <div className="text-center mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Inserción Manual de Datos</h2>
-          <p className="text-gray-600">Introduce manualmente los datos de tu proyecto de impresión</p>
+          <h2 className="text-2xl font-bold text-slate-900 mb-2">Inserción Manual de Datos</h2>
+          <p className="text-slate-600">Introduce manualmente los datos de tu proyecto de impresión</p>
         </div>
 
         <div className="text-center">

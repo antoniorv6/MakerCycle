@@ -55,14 +55,14 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
   const [chartType, setChartType] = useState<'revenue' | 'profit' | 'margin' | 'expenses'>('revenue');
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
-  const { currentTeam } = useTeam();
+  const { currentTeam, getEffectiveTeam } = useTeam();
   const supabase = createClient();
 
   useEffect(() => {
     if (user) {
       fetchData();
     }
-  }, [user, currentTeam]);
+  }, [user, getEffectiveTeam]);
 
   const fetchData = async () => {
     if (!user) return;
@@ -82,10 +82,11 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
         .order('created_at', { ascending: false });
 
       // Apply team context filters
-      if (currentTeam) {
+      const effectiveTeam = getEffectiveTeam();
+      if (effectiveTeam) {
         // Get team data
-        salesQuery = salesQuery.eq('team_id', currentTeam.id);
-        expensesQuery = expensesQuery.eq('team_id', currentTeam.id);
+        salesQuery = salesQuery.eq('team_id', effectiveTeam.id);
+        expensesQuery = expensesQuery.eq('team_id', effectiveTeam.id);
       } else {
         // Get personal data (where team_id is null)
         salesQuery = salesQuery.eq('user_id', user.id).is('team_id', null);
@@ -325,27 +326,30 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
   return (
     <div className="max-w-7xl mx-auto p-6 space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <button
-            onClick={onBack}
-            className="flex items-center text-gray-600 hover:text-gray-800 transition-colors duration-200"
-          >
-            <ArrowLeft className="w-5 h-5 mr-2" />
-            Volver a Contabilidad
-          </button>
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Estadísticas Avanzadas</h1>
-            <p className="text-gray-600">Análisis detallado de rentabilidad y tendencias</p>
-          </div>
+      <div className="text-center mb-8">
+        <div className="inline-flex items-center justify-center w-16 h-16 bg-slate-100 rounded-full mb-4">
+          <BarChart3 className="w-8 h-8 text-slate-600" />
         </div>
+        <h1 className="text-3xl font-bold text-slate-900 mb-2">Estadísticas Avanzadas</h1>
+        <p className="text-slate-600">Análisis detallado de rentabilidad y tendencias</p>
+      </div>
+
+      {/* Controls */}
+      <div className="flex items-center justify-between">
+        <button
+          onClick={onBack}
+          className="flex items-center text-slate-600 hover:text-slate-800 transition-colors duration-200"
+        >
+          <ArrowLeft className="w-5 h-5 mr-2" />
+          Volver a Contabilidad
+        </button>
 
         <div className="flex space-x-4">
           {/* Filtro de tiempo */}
           <select
             value={timeRange}
             onChange={(e) => setTimeRange(e.target.value as any)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent"
           >
             <option value="7d">Últimos 7 días</option>
             <option value="30d">Últimos 30 días</option>
@@ -358,7 +362,7 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
           <select
             value={chartType}
             onChange={(e) => setChartType(e.target.value as any)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent"
           >
             <option value="revenue">Ingresos</option>
             <option value="profit">Beneficios</option>

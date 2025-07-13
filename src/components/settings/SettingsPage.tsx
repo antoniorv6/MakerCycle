@@ -51,20 +51,20 @@ export default function SettingsPage() {
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center space-x-3 mb-4">
-          <div className="p-3 bg-primary-100 rounded-lg">
-            <Settings className="w-8 h-8 text-primary-600" />
+          <div className="p-3 bg-slate-100 rounded-lg">
+            <Settings className="w-8 h-8 text-slate-600" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Configuración</h1>
-            <p className="text-gray-600">Personaliza tu experiencia de gestión 3D</p>
+            <h1 className="text-3xl font-bold text-slate-900">Configuración</h1>
+            <p className="text-slate-600">Personaliza tu experiencia de gestión 3D</p>
           </div>
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden">
         <div className="flex min-h-[600px]">
           {/* Sidebar */}
-          <div className="w-80 bg-gray-50 border-r border-gray-200 p-6">
+          <div className="w-80 bg-slate-50 border-r border-slate-200 p-6">
             <nav className="space-y-2">
               {tabs.map((tab) => {
                 const Icon = tab.icon
@@ -74,8 +74,8 @@ export default function SettingsPage() {
                     onClick={() => setActiveTab(tab.id)}
                     className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-colors ${
                       activeTab === tab.id
-                        ? 'bg-primary-100 text-primary-700 border border-primary-200'
-                        : 'text-gray-600 hover:bg-gray-100'
+                        ? 'bg-slate-100 text-slate-700 border border-slate-200'
+                        : 'text-slate-600 hover:bg-slate-100'
                     }`}
                   >
                     <Icon className="w-5 h-5" />

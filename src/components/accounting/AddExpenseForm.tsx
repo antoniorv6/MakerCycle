@@ -11,7 +11,7 @@ interface AddExpenseFormProps {
 }
 
 export function AddExpenseForm({ expense, onSave, onCancel }: AddExpenseFormProps) {
-  const { currentTeam, userTeams } = useTeam();
+  const { currentTeam, userTeams, getEffectiveTeam } = useTeam();
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
   
   const [formData, setFormData] = useState<ExpenseFormData>({
@@ -46,14 +46,15 @@ export function AddExpenseForm({ expense, onSave, onCancel }: AddExpenseFormProp
       });
       setSelectedTeamId(expense.team_id || null);
     } else {
-      // For new expenses, use current team context
+      // For new expenses, use effective team context
+      const effectiveTeam = getEffectiveTeam();
       setFormData(prev => ({
         ...prev,
-        team_id: currentTeam?.id || null
+        team_id: effectiveTeam?.id || null
       }));
-      setSelectedTeamId(currentTeam?.id || null);
+      setSelectedTeamId(effectiveTeam?.id || null);
     }
-  }, [expense, currentTeam]);
+  }, [expense, getEffectiveTeam]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

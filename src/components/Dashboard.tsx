@@ -145,7 +145,7 @@ export default function Dashboard({ initialPage }: { initialPage?: string } = {}
   }
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       <Sidebar
         currentPage={currentPage}
         onPageChange={setCurrentPage}
