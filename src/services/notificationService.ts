@@ -91,18 +91,28 @@ export class NotificationService {
    */
   static async markAllAsRead(): Promise<void> {
     const supabase = createClient();
+    
+    // First, get the current user
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      throw new Error('User not authenticated');
+    }
+
     const { data, error } = await supabase
       .rpc('mark_all_notifications_read');
 
     if (error) {
       console.error('Error marking all notifications as read:', error);
-      throw error;
+      throw new Error(`Database error: ${error.message}`);
     }
 
     // Check if the RPC function returned an error
     if (data && !data.success) {
+      console.error('RPC function error:', data.error);
       throw new Error(data.error || 'Failed to mark all notifications as read');
     }
+
+    console.log('Successfully marked notifications as read:', data);
   }
 
   /**
@@ -193,5 +203,62 @@ export class NotificationService {
         added_by: addedBy
       }
     });
+  }
+
+  /**
+   * Delete a single notification
+   */
+  static async deleteNotification(notificationId: string): Promise<void> {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .rpc('delete_notification', { p_notification_id: notificationId });
+
+    if (error) {
+      console.error('Error deleting notification:', error);
+      throw error;
+    }
+
+    // Check if the RPC function returned an error
+    if (data && !data.success) {
+      throw new Error(data.error || 'Failed to delete notification');
+    }
+  }
+
+  /**
+   * Delete all notifications for the current user
+   */
+  static async deleteAllNotifications(): Promise<void> {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .rpc('delete_all_notifications');
+
+    if (error) {
+      console.error('Error deleting all notifications:', error);
+      throw error;
+    }
+
+    // Check if the RPC function returned an error
+    if (data && !data.success) {
+      throw new Error(data.error || 'Failed to delete all notifications');
+    }
+  }
+
+  /**
+   * Delete read notifications for the current user
+   */
+  static async deleteReadNotifications(): Promise<void> {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .rpc('delete_read_notifications');
+
+    if (error) {
+      console.error('Error deleting read notifications:', error);
+      throw error;
+    }
+
+    // Check if the RPC function returned an error
+    if (data && !data.success) {
+      throw new Error(data.error || 'Failed to delete read notifications');
+    }
   }
 } 

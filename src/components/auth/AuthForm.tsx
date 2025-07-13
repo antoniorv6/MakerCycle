@@ -62,35 +62,35 @@ export default function AuthForm() {
     <div className="space-y-6">
       <form onSubmit={handleAuth} className="space-y-6">
         {isSignUp && (
-          <div>
-            <label htmlFor="fullName" className="block text-sm font-medium text-gray-700">
-              Nombre completo
-            </label>
-            <div className="mt-1 relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <User className="h-5 w-5 text-gray-400" />
-              </div>
-              <input
-                id="fullName"
-                name="fullName"
-                type="text"
-                required={isSignUp}
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                className="appearance-none block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-                placeholder="Tu nombre completo"
-              />
+                  <div>
+          <label htmlFor="fullName" className="block text-sm font-medium text-slate-700">
+            Nombre completo
+          </label>
+          <div className="mt-1 relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <User className="h-5 w-5 text-slate-400" />
             </div>
+            <input
+              id="fullName"
+              name="fullName"
+              type="text"
+              required={isSignUp}
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              className="appearance-none block w-full pl-10 pr-3 py-2 border border-slate-300 rounded-md placeholder-slate-400 focus:outline-none focus:ring-slate-500 focus:border-slate-500"
+              placeholder="Tu nombre completo"
+            />
           </div>
+        </div>
         )}
 
         <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="email" className="block text-sm font-medium text-slate-700">
             Email
           </label>
           <div className="mt-1 relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Mail className="h-5 w-5 text-gray-400" />
+              <Mail className="h-5 w-5 text-slate-400" />
             </div>
             <input
               id="email"
@@ -100,19 +100,19 @@ export default function AuthForm() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="appearance-none block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+              className="appearance-none block w-full pl-10 pr-3 py-2 border border-slate-300 rounded-md placeholder-slate-400 focus:outline-none focus:ring-slate-500 focus:border-slate-500"
               placeholder="tu@email.com"
             />
           </div>
         </div>
 
         <div>
-          <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="password" className="block text-sm font-medium text-slate-700">
             Contraseña
           </label>
           <div className="mt-1 relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Lock className="h-5 w-5 text-gray-400" />
+              <Lock className="h-5 w-5 text-slate-400" />
             </div>
             <input
               id="password"
@@ -122,14 +122,14 @@ export default function AuthForm() {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="appearance-none block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+              className="appearance-none block w-full pl-10 pr-10 py-2 border border-slate-300 rounded-md placeholder-slate-400 focus:outline-none focus:ring-slate-500 focus:border-slate-500"
               placeholder="••••••••"
             />
             <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="text-gray-400 hover:text-gray-500"
+                className="text-slate-400 hover:text-slate-500"
               >
                 {showPassword ? (
                   <EyeOff className="h-5 w-5" />
@@ -145,7 +145,7 @@ export default function AuthForm() {
           <button
             type="submit"
             disabled={loading}
-            className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-xl text-white bg-gradient-to-r from-slate-700 to-slate-800 hover:from-slate-800 hover:to-slate-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl"
           >
             {loading ? 'Procesando...' : isSignUp ? 'Crear cuenta' : 'Iniciar sesión'}
           </button>
@@ -153,10 +153,10 @@ export default function AuthForm() {
       </form>
 
       {message && (
-        <div className={`p-4 rounded-md ${
+        <div className={`p-4 rounded-xl ${
           message.includes('error') || message.includes('Error') 
             ? 'bg-red-50 text-red-700 border border-red-200' 
-            : 'bg-green-50 text-green-700 border border-green-200'
+            : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
         }`}>
           <p className="text-sm">{message}</p>
         </div>
@@ -169,7 +169,7 @@ export default function AuthForm() {
             setIsSignUp(!isSignUp)
             setMessage('')
           }}
-          className="text-sm text-primary-600 hover:text-primary-500"
+          className="text-sm text-slate-600 hover:text-slate-900 transition-colors duration-200"
         >
           {isSignUp 
             ? '¿Ya tienes cuenta? Inicia sesión' 

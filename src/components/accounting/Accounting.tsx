@@ -3,24 +3,31 @@ import { motion } from 'framer-motion';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useSales } from '@/hooks/useSales';
 import { useExpenses } from '@/hooks/useExpenses';
+import { useCompanySettings } from '@/hooks/useCompanySettings';
 import { AccountingHeader } from './AccountingHeader';
 import { SalesTable } from './SalesTable';
 import { ExpensesTable } from './ExpensesTable';
 import { AddSaleForm } from './AddSaleForm';
 import { AddExpenseForm } from './AddExpenseForm';
+import { InvoiceForm } from './InvoiceForm';
 import AdvancedStatistics from '@/components/AdvancedStatistics';
 import { AccountingSkeleton } from '@/components/skeletons';
+import { InvoiceService } from '@/services/invoiceService';
 import type { Sale, Expense, SaleFormData, ExpenseFormData } from '@/types';
 
+type TabType = 'sales' | 'expenses';
 
 export default function Accounting() {
+  const [activeTab, setActiveTab] = useState<TabType>('sales');
   const [searchTerm, setSearchTerm] = useState('');
   const [expenseSearchTerm, setExpenseSearchTerm] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
   const [showAddExpenseForm, setShowAddExpenseForm] = useState(false);
   const [showAdvancedStats, setShowAdvancedStats] = useState(false);
+  const [showInvoiceForm, setShowInvoiceForm] = useState(false);
   const [editingSale, setEditingSale] = useState<Sale | null>(null);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
+  const [selectedSaleForInvoice, setSelectedSaleForInvoice] = useState<Sale | null>(null);
 
   const { user } = useAuth();
   const { 
@@ -41,6 +48,8 @@ export default function Accounting() {
     getExpenseStats 
   } = useExpenses();
 
+  const { companyData } = useCompanySettings();
+
   const loading = salesLoading || expensesLoading;
 
   const handleAddSale = async (saleData: SaleFormData) => {
@@ -53,7 +62,8 @@ export default function Accounting() {
           sale_price: saleData.salePrice,
           date: saleData.date,
           print_hours: saleData.printHours,
-          team_id: saleData.team_id
+          team_id: saleData.team_id,
+          client_id: saleData.client_id
         });
         setEditingSale(null);
       } else {
@@ -112,6 +122,28 @@ export default function Accounting() {
     setShowAddExpenseForm(true);
   };
 
+  const handleGenerateInvoice = (sale: Sale) => {
+    // Validar que la venta tenga un cliente asignado
+    if (!sale.client_id) {
+      alert('Esta venta no tiene un cliente asignado. Por favor, edita la venta y asigna un cliente antes de generar el albarán.');
+      return;
+    }
+    setSelectedSaleForInvoice(sale);
+    setShowInvoiceForm(true);
+  };
+
+  const handleGeneratePDF = async (invoiceData: any) => {
+    try {
+      console.log('Generating PDF with company data:', companyData);
+      await InvoiceService.generatePDF(invoiceData, companyData);
+      setShowInvoiceForm(false);
+      setSelectedSaleForInvoice(null);
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      // Aquí podrías mostrar una notificación de error
+    }
+  };
+
   const calculateStats = () => {
     const saleStats = getSaleStats();
     const expenseStats = getExpenseStats();
@@ -150,26 +182,75 @@ export default function Accounting() {
       <AccountingHeader
         stats={stats}
         onShowAdvancedStats={() => setShowAdvancedStats(true)}
-        onShowAddForm={() => setShowAddForm(true)}
-        onShowAddExpenseForm={() => setShowAddExpenseForm(true)}
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <SalesTable
-          sales={sales}
-          searchTerm={searchTerm}
-          onSearchChange={setSearchTerm}
-          onDeleteSale={handleDeleteSale}
-          onEditSale={handleEditSale}
-        />
+      {/* Tabs Navigation */}
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200">
+        <div className="border-b border-slate-200">
+          <nav className="flex space-x-8 px-6" aria-label="Tabs">
+            <button
+              onClick={() => setActiveTab('sales')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200 ${
+                activeTab === 'sales'
+                  ? 'border-slate-500 text-slate-600'
+                  : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+              }`}
+            >
+              <div className="flex items-center space-x-2">
+                <span>Ventas</span>
+                <span className="bg-slate-100 text-slate-800 text-xs font-medium px-2 py-1 rounded-full">
+                  {salesLoading ? '...' : sales.length}
+                </span>
+              </div>
+            </button>
+            <button
+              onClick={() => setActiveTab('expenses')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200 ${
+                activeTab === 'expenses'
+                  ? 'border-slate-500 text-slate-600'
+                  : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+              }`}
+            >
+              <div className="flex items-center space-x-2">
+                <span>Gastos</span>
+                <span className="bg-red-100 text-red-800 text-xs font-medium px-2 py-1 rounded-full">
+                  {expensesLoading ? '...' : expenses.length}
+                </span>
+              </div>
+            </button>
+          </nav>
+        </div>
 
-        <ExpensesTable
-          expenses={expenses}
-          searchTerm={expenseSearchTerm}
-          onSearchChange={setExpenseSearchTerm}
-          onDeleteExpense={handleDeleteExpense}
-          onEditExpense={handleEditExpense}
-        />
+        {/* Tab Content */}
+        <div className="p-6">
+          <motion.div
+            key={activeTab}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            {activeTab === 'sales' ? (
+              <SalesTable
+                sales={sales}
+                searchTerm={searchTerm}
+                onSearchChange={setSearchTerm}
+                onDeleteSale={handleDeleteSale}
+                onEditSale={handleEditSale}
+                onAddSale={() => setShowAddForm(true)}
+                onGenerateInvoice={handleGenerateInvoice}
+              />
+            ) : (
+              <ExpensesTable
+                expenses={expenses}
+                searchTerm={expenseSearchTerm}
+                onSearchChange={setExpenseSearchTerm}
+                onDeleteExpense={handleDeleteExpense}
+                onEditExpense={handleEditExpense}
+                onAddExpense={() => setShowAddExpenseForm(true)}
+              />
+            )}
+          </motion.div>
+        </div>
       </div>
 
       {/* Add Sale Modal */}
@@ -193,6 +274,18 @@ export default function Accounting() {
             setShowAddExpenseForm(false);
             setEditingExpense(null);
           }}
+        />
+      )}
+
+      {/* Invoice Form Modal */}
+      {showInvoiceForm && selectedSaleForInvoice && (
+        <InvoiceForm
+          sale={selectedSaleForInvoice}
+          onClose={() => {
+            setShowInvoiceForm(false);
+            setSelectedSaleForInvoice(null);
+          }}
+          onGeneratePDF={handleGeneratePDF}
         />
       )}
     </div>

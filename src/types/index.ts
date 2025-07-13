@@ -105,6 +105,21 @@ export interface Material {
   price: number;
 }
 
+// Client related types
+export interface Client {
+  id: string;
+  user_id: string;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  address: string | null;
+  tax_id: string | null;
+  notes: string | null;
+  team_id?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 // Sales related types
 export interface Sale {
   id: string;
@@ -120,6 +135,7 @@ export interface Sale {
   status: 'pending' | 'completed' | 'cancelled';
   print_hours?: number;
   team_id?: string | null;
+  client_id?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -215,6 +231,7 @@ export interface SaleFormData {
   date: string;
   printHours: number;
   team_id?: string | null;
+  client_id?: string | null;
 }
 
 export interface ExpenseFormData {
@@ -224,6 +241,28 @@ export interface ExpenseFormData {
   date: string;
   notes: string;
   team_id?: string | null;
+}
+
+export interface InvoiceFormData {
+  // Datos del cliente
+  clientName: string;
+  clientAddress: string;
+  clientPhone: string;
+  clientEmail: string;
+  
+  // Datos del albarán
+  invoiceNumber: string;
+  issueDate: string;
+  deliveryDate: string;
+  
+  // Datos del servicio
+  serviceDescription: string;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+  
+  // Notas adicionales
+  notes: string;
 }
 
 // API Response types

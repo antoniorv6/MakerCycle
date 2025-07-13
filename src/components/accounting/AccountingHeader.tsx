@@ -6,15 +6,11 @@ import type { AccountingStats } from '@/types';
 interface AccountingHeaderProps {
   stats: AccountingStats;
   onShowAdvancedStats: () => void;
-  onShowAddForm: () => void;
-  onShowAddExpenseForm: () => void;
 }
 
 export function AccountingHeader({ 
   stats, 
-  onShowAdvancedStats, 
-  onShowAddForm, 
-  onShowAddExpenseForm 
+  onShowAdvancedStats
 }: AccountingHeaderProps) {
   const formatCurrency = (value: number) => `€${value.toFixed(2)}`;
   const formatPercentage = (value: number) => `${value.toFixed(1)}%`;
@@ -23,11 +19,11 @@ export function AccountingHeader({
     <div className="space-y-6">
       {/* Header */}
       <div className="text-center">
-        <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-50 rounded-full mb-4">
-          <Receipt className="w-8 h-8 text-primary-600" />
+        <div className="inline-flex items-center justify-center w-16 h-16 bg-slate-100 rounded-full mb-4">
+          <Receipt className="w-8 h-8 text-slate-600" />
         </div>
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Contabilidad</h1>
-        <p className="text-gray-600">Gestiona tus ventas, gastos y análisis financiero</p>
+        <h1 className="text-3xl font-bold text-slate-900 mb-2">Contabilidad</h1>
+        <p className="text-slate-600">Gestiona tus ventas, gastos y análisis financiero</p>
       </div>
 
       {/* Key Statistics */}
@@ -77,35 +73,19 @@ export function AccountingHeader({
         </div>
       </motion.div>
 
-      {/* Action Buttons */}
+      {/* Discreet Advanced Stats Link */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
-        className="flex flex-wrap gap-3 justify-center"
+        className="flex justify-center"
       >
         <button
-          onClick={onShowAddForm}
-          className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Nueva Venta
-        </button>
-
-        <button
-          onClick={onShowAddExpenseForm}
-          className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Nuevo Gasto
-        </button>
-
-        <button
           onClick={onShowAdvancedStats}
-          className="flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+          className="flex items-center text-gray-600 hover:text-purple-600 transition-colors duration-200 text-sm"
         >
           <PieChart className="w-4 h-4 mr-2" />
-          Estadísticas Avanzadas
+          Ver estadísticas avanzadas
         </button>
       </motion.div>
     </div>

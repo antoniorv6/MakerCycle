@@ -11,7 +11,7 @@ interface AddExpenseFormProps {
 }
 
 export function AddExpenseForm({ expense, onSave, onCancel }: AddExpenseFormProps) {
-  const { currentTeam, userTeams } = useTeam();
+  const { currentTeam, userTeams, getEffectiveTeam } = useTeam();
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
   
   const [formData, setFormData] = useState<ExpenseFormData>({
@@ -46,14 +46,15 @@ export function AddExpenseForm({ expense, onSave, onCancel }: AddExpenseFormProp
       });
       setSelectedTeamId(expense.team_id || null);
     } else {
-      // For new expenses, use current team context
+      // For new expenses, use effective team context
+      const effectiveTeam = getEffectiveTeam();
       setFormData(prev => ({
         ...prev,
-        team_id: currentTeam?.id || null
+        team_id: effectiveTeam?.id || null
       }));
-      setSelectedTeamId(currentTeam?.id || null);
+      setSelectedTeamId(effectiveTeam?.id || null);
     }
-  }, [expense, currentTeam]);
+  }, [expense, getEffectiveTeam]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,7 +76,7 @@ export function AddExpenseForm({ expense, onSave, onCancel }: AddExpenseFormProp
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="bg-white rounded-xl shadow-xl max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto"
+        className="bg-white rounded-xl shadow-xl max-w-3xl w-full mx-4 max-h-[90vh] overflow-y-auto"
       >
         <div className="p-6 border-b border-gray-200">
           <div className="flex items-center justify-between">
@@ -91,113 +92,130 @@ export function AddExpenseForm({ expense, onSave, onCancel }: AddExpenseFormProp
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Descripción
-            </label>
-            <input
-              type="text"
-              value={formData.description}
-              onChange={(e) => handleInputChange('description', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              required
-            />
+        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          {/* Información del Gasto */}
+          <div className="bg-gray-50 rounded-lg p-4">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Información del Gasto</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Descripción
+                </label>
+                <input
+                  type="text"
+                  value={formData.description}
+                  onChange={(e) => handleInputChange('description', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Descripción detallada del gasto"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Cantidad (€)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={formData.amount}
+                    onChange={(e) => handleInputChange('amount', parseFloat(e.target.value) || 0)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Categoría
+                  </label>
+                  <select
+                    value={formData.category}
+                    onChange={(e) => handleInputChange('category', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                  >
+                    <option value="">Seleccionar categoría</option>
+                    {expenseCategories.map(category => (
+                      <option key={category} value={category}>
+                        {category}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          {/* Información Adicional */}
+          <div className="bg-gray-50 rounded-lg p-4">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Información Adicional</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Fecha
+                </label>
+                <input
+                  type="date"
+                  value={formData.date}
+                  onChange={(e) => handleInputChange('date', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Equipo
+                </label>
+                <div className="space-y-2">
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      name="team"
+                      value=""
+                      checked={selectedTeamId === null}
+                      onChange={() => setSelectedTeamId(null)}
+                      className="text-blue-600 focus:ring-blue-500"
+                    />
+                    <User className="w-4 h-4 text-gray-600" />
+                    <span className="text-sm text-gray-700">Personal</span>
+                  </label>
+                  {userTeams.map((team: Team) => (
+                    <label key={team.id} className="flex items-center space-x-2">
+                      <input
+                        type="radio"
+                        name="team"
+                        value={team.id}
+                        checked={selectedTeamId === team.id}
+                        onChange={() => setSelectedTeamId(team.id)}
+                        className="text-blue-600 focus:ring-blue-500"
+                      />
+                      <Users className="w-4 h-4 text-blue-600" />
+                      <span className="text-sm text-gray-700">{team.name}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Notas */}
+          <div className="bg-gray-50 rounded-lg p-4">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Notas Adicionales</h3>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Cantidad (€)
+                Notas (opcional)
               </label>
-              <input
-                type="number"
-                step="0.01"
-                value={formData.amount}
-                onChange={(e) => handleInputChange('amount', parseFloat(e.target.value) || 0)}
+              <textarea
+                value={formData.notes}
+                onChange={(e) => handleInputChange('notes', e.target.value)}
+                rows={4}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                required
+                placeholder="Información adicional sobre el gasto, justificación, detalles de compra, etc..."
               />
             </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Categoría
-              </label>
-              <select
-                value={formData.category}
-                onChange={(e) => handleInputChange('category', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                required
-              >
-                <option value="">Seleccionar categoría</option>
-                {expenseCategories.map(category => (
-                  <option key={category} value={category}>
-                    {category}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Fecha
-            </label>
-            <input
-              type="date"
-              value={formData.date}
-              onChange={(e) => handleInputChange('date', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Equipo
-            </label>
-            <div className="space-y-2">
-              <label className="flex items-center space-x-2">
-                <input
-                  type="radio"
-                  name="team"
-                  value=""
-                  checked={selectedTeamId === null}
-                  onChange={() => setSelectedTeamId(null)}
-                  className="text-blue-600 focus:ring-blue-500"
-                />
-                <User className="w-4 h-4 text-gray-600" />
-                <span className="text-sm text-gray-700">Personal</span>
-              </label>
-              {userTeams.map((team: Team) => (
-                <label key={team.id} className="flex items-center space-x-2">
-                  <input
-                    type="radio"
-                    name="team"
-                    value={team.id}
-                    checked={selectedTeamId === team.id}
-                    onChange={() => setSelectedTeamId(team.id)}
-                    className="text-blue-600 focus:ring-blue-500"
-                  />
-                  <Users className="w-4 h-4 text-blue-600" />
-                  <span className="text-sm text-gray-700">{team.name}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Notas (opcional)
-            </label>
-            <textarea
-              value={formData.notes}
-              onChange={(e) => handleInputChange('notes', e.target.value)}
-              rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Información adicional sobre el gasto..."
-            />
           </div>
 
           <div className="flex space-x-3 pt-4">

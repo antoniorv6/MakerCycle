@@ -10,13 +10,13 @@ export function useSales() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
-  const { currentTeam } = useTeam();
+  const { currentTeam, getEffectiveTeam } = useTeam();
 
   useEffect(() => {
     if (user) {
       fetchSales();
     }
-  }, [user, currentTeam]);
+  }, [user, getEffectiveTeam]);
 
   const fetchSales = async () => {
     if (!user) return;
@@ -24,7 +24,8 @@ export function useSales() {
     try {
       setLoading(true);
       setError(null);
-      const data = await salesService.getSales(user.id, currentTeam?.id);
+      const effectiveTeam = getEffectiveTeam();
+      const data = await salesService.getSales(user.id, effectiveTeam?.id);
       setSales(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error fetching sales');
@@ -38,7 +39,8 @@ export function useSales() {
     if (!user) throw new Error('User not authenticated');
     
     try {
-      const newSale = await salesService.createSale(user.id, saleData, currentTeam?.id);
+      const effectiveTeam = getEffectiveTeam();
+      const newSale = await salesService.createSale(user.id, saleData, effectiveTeam?.id);
       setSales(prev => [newSale, ...prev]);
       toast.success('Sale created successfully');
       return newSale;

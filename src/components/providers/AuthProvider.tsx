@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
+import { useRouter } from 'next/navigation'
 import type { User, Session } from '@supabase/supabase-js'
 
 type AuthContextType = {
@@ -31,6 +32,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
   const supabase = createClient()
+  const router = useRouter()
 
   useEffect(() => {
     const getSession = async () => {
@@ -57,7 +59,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [supabase.auth])
 
   const signOut = async () => {
-    await supabase.auth.signOut()
+    try {
+      await supabase.auth.signOut()
+      // Redirigir a la landing page después del logout
+      router.push('/')
+    } catch (error) {
+      console.error('Error during sign out:', error)
+      // Aún redirigir en caso de error
+      router.push('/')
+    }
   }
 
   return (

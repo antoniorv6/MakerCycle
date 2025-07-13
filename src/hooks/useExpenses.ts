@@ -10,13 +10,13 @@ export function useExpenses() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
-  const { currentTeam } = useTeam();
+  const { currentTeam, getEffectiveTeam } = useTeam();
 
   useEffect(() => {
     if (user) {
       fetchExpenses();
     }
-  }, [user, currentTeam]);
+  }, [user, getEffectiveTeam]);
 
   const fetchExpenses = async () => {
     if (!user) return;
@@ -24,7 +24,8 @@ export function useExpenses() {
     try {
       setLoading(true);
       setError(null);
-      const data = await expenseService.getExpenses(user.id, currentTeam?.id);
+      const effectiveTeam = getEffectiveTeam();
+      const data = await expenseService.getExpenses(user.id, effectiveTeam?.id);
       setExpenses(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error fetching expenses');
@@ -38,7 +39,8 @@ export function useExpenses() {
     if (!user) throw new Error('User not authenticated');
     
     try {
-      const newExpense = await expenseService.createExpense(user.id, expenseData, currentTeam?.id);
+      const effectiveTeam = getEffectiveTeam();
+      const newExpense = await expenseService.createExpense(user.id, expenseData, effectiveTeam?.id);
       setExpenses(prev => [newExpense, ...prev]);
       toast.success('Expense created successfully');
       return newExpense;

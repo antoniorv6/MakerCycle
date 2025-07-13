@@ -29,6 +29,98 @@ export const createServerSupabaseClient = async () => {
 export type Database = {
   public: {
     Tables: {
+      clients: {
+        Row: {
+          id: string
+          user_id: string
+          name: string
+          email: string | null
+          phone: string | null
+          address: string | null
+          tax_id: string | null
+          notes: string | null
+          team_id: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          name: string
+          email?: string | null
+          phone?: string | null
+          address?: string | null
+          tax_id?: string | null
+          notes?: string | null
+          team_id?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          name?: string
+          email?: string | null
+          phone?: string | null
+          address?: string | null
+          tax_id?: string | null
+          notes?: string | null
+          team_id?: string | null
+          updated_at?: string
+        }
+      }
+      company_settings: {
+        Row: {
+          id: string
+          user_id: string
+          name: string
+          description: string
+          email: string
+          phone: string
+          address: string
+          website: string
+          logo: string
+          tax_id: string
+          bank_info: string
+          terms: string
+          footer: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          name?: string
+          description?: string
+          email?: string
+          phone?: string
+          address?: string
+          website?: string
+          logo?: string
+          tax_id?: string
+          bank_info?: string
+          terms?: string
+          footer?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          name?: string
+          description?: string
+          email?: string
+          phone?: string
+          address?: string
+          website?: string
+          logo?: string
+          tax_id?: string
+          bank_info?: string
+          terms?: string
+          footer?: string
+          updated_at?: string
+        }
+      }
       profiles: {
         Row: {
           id: string
@@ -121,6 +213,7 @@ export type Database = {
           status: 'pending' | 'completed' | 'cancelled'
           print_hours: number | null
           team_id: string | null
+          client_id: string | null
           created_at: string
           updated_at: string
         }
@@ -138,6 +231,7 @@ export type Database = {
           status?: 'pending' | 'completed' | 'cancelled'
           print_hours?: number | null
           team_id?: string | null
+          client_id?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -155,6 +249,7 @@ export type Database = {
           status?: 'pending' | 'completed' | 'cancelled'
           print_hours?: number | null
           team_id?: string | null
+          client_id?: string | null
           updated_at?: string
         }
       }

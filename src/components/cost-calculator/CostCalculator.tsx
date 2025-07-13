@@ -308,11 +308,11 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
       
       {/* Header */}
       <div className="text-center mb-8">
-        <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-50 rounded-full mb-4">
-          <Calculator className="w-8 h-8 text-primary-600" />
+        <div className="inline-flex items-center justify-center w-16 h-16 bg-slate-100 rounded-full mb-4">
+          <Calculator className="w-8 h-8 text-slate-600" />
         </div>
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Calculadora de Costes 3D</h1>
-        <p className="text-gray-600">Calcula el coste total de tus proyectos de impresión 3D</p>
+        <h1 className="text-3xl font-bold text-slate-900 mb-2">Calculadora de Costes 3D</h1>
+        <p className="text-slate-600">Calcula el coste total de tus proyectos de impresión 3D</p>
       </div>
 
       {/* Layout principal */}
@@ -327,8 +327,8 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
           />
           {!loadedProject && (
             <div className="mt-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Contexto actual</label>
-              <div className="text-sm text-gray-600 p-2 bg-gray-50 rounded-lg">
+              <label className="block text-sm font-medium text-slate-700 mb-1">Contexto actual</label>
+              <div className="text-sm text-slate-600 p-2 bg-slate-50 rounded-lg">
                 {getEffectiveTeam() ? `Equipo: ${getEffectiveTeam()?.name}` : 'Vista Personal'}
               </div>
             </div>

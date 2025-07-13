@@ -22,52 +22,48 @@ const ProjectInfoView: React.FC<ProjectInfoViewProps> = ({ project, onEdit }) =>
 
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-8">
-      {/* Report Header */}
-      <div className="flex items-center gap-4 mb-4">
-        <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-50 rounded-full">
-          <FileText className="w-8 h-8 text-primary-600" />
+      {/* Header */}
+      <div className="text-center mb-8">
+        <div className="inline-flex items-center justify-center w-16 h-16 bg-slate-100 rounded-full mb-4">
+          <FileText className="w-8 h-8 text-slate-600" />
         </div>
-        <div className="flex-1">
-          <h1 className="text-3xl font-bold text-gray-900 mb-1 flex items-center gap-2">
-            {project.name}
-            <span className={`ml-2 px-3 py-1 rounded-full text-sm font-medium ${
-              project.status === 'draft'
-                ? 'bg-gray-100 text-gray-700'
-                : project.status === 'calculated'
-                ? 'bg-blue-100 text-blue-700'
-                : 'bg-green-100 text-green-700'
-            }`}>{statusLabels[project.status]}</span>
-          </h1>
-          <div className="text-gray-500 text-sm flex items-center gap-2">
-            <Info className="w-4 h-4 mr-1 text-gray-400" />Creado: {formatDate(project.createdAt)}
-          </div>
+        <h1 className="text-3xl font-bold text-slate-900 mb-2">{project.name}</h1>
+        <div className="flex items-center justify-center gap-2">
+          <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+            project.status === 'draft'
+              ? 'bg-slate-100 text-slate-700'
+              : project.status === 'calculated'
+              ? 'bg-slate-100 text-slate-700'
+              : 'bg-emerald-100 text-emerald-700'
+          }`}>{statusLabels[project.status]}</span>
+          <span className="text-slate-500 text-sm">• Creado: {formatDate(project.createdAt)}</span>
         </div>
       </div>
 
       {/* Summary Panel */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl shadow-lg p-6 border border-blue-200 flex items-center gap-4">
-          <Package className="w-8 h-8 text-blue-600" />
+        <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl shadow-lg p-6 border border-slate-200 flex items-center gap-4">
+          <Package className="w-8 h-8 text-slate-600" />
           <div>
-            <div className="text-2xl font-bold text-blue-900">{uniquePieces}</div>
-            <div className="text-xs text-blue-600">Piezas únicas</div>
-            <div className="text-xs text-blue-400">{totalPieces} unidades</div>
+            <div className="text-2xl font-bold text-slate-900">{uniquePieces}</div>
+            <div className="text-xs text-slate-600">Piezas únicas</div>
+            <div className="text-xs text-slate-400">{totalPieces} unidades</div>
           </div>
         </div>
-        <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl shadow-lg p-6 border border-green-200 flex items-center gap-4">
-          <Weight className="w-8 h-8 text-green-600" />
+        <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-xl shadow-lg p-6 border border-emerald-200 flex items-center gap-4">
+          <Weight className="w-8 h-8 text-emerald-600" />
           <div>
-            <div className="text-2xl font-bold text-green-900">{project.filamentWeight}g</div>
-            <div className="text-xs text-green-600">Filamento total</div>
-            <div className="text-xs text-green-400">Precio: {formatCurrency(project.filamentPrice)}</div>
+            <div className="text-2xl font-bold text-emerald-900">{project.filamentWeight}g</div>
+            <div className="text-xs text-emerald-600">Filamento total</div>
+            <div className="text-xs text-emerald-400">Precio: {formatCurrency(project.filamentPrice)}</div>
           </div>
         </div>
-        <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl shadow-lg p-6 border border-purple-200 flex items-center gap-4">
-          <Euro className="w-8 h-8 text-purple-600" />
+        <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl shadow-lg p-6 border border-slate-200 flex items-center gap-4">
+          <Euro className="w-8 h-8 text-slate-600" />
           <div>
-            <div className="text-2xl font-bold text-purple-900">{formatCurrency(project.totalCost)}</div>
-            <div className="text-xs text-purple-600">Coste total</div>
-            <div className="text-xs text-purple-400">Recomendado: {formatCurrency(project.recommendedPrice)}</div>
+            <div className="text-2xl font-bold text-slate-900">{formatCurrency(project.totalCost)}</div>
+            <div className="text-xs text-slate-600">Coste total</div>
+            <div className="text-xs text-slate-400">Recomendado: {formatCurrency(project.recommendedPrice)}</div>
           </div>
         </div>
       </div>
