@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { X, Save, Euro, Package, Calendar, Clock, Users, User, ChevronDown } from 'lucide-react';
+import { X, Save, Euro, Package, Calendar, Clock, Users, User } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useTeam } from '@/components/providers/TeamProvider';
 import { useAuth } from '@/components/providers/AuthProvider';
-import { createClient } from '@/lib/supabase';
 import { ClientSelector } from './ClientSelector';
-import type { Sale, SaleFormData, Team, Project } from '@/types';
+import { SaleItemsForm } from './SaleItemsForm';
+import type { Sale, SaleFormData, SaleItemFormData } from '@/types';
 
 interface AddSaleFormProps {
   sale?: Sale | null;
@@ -16,75 +16,32 @@ interface AddSaleFormProps {
 export function AddSaleForm({ sale, onSave, onCancel }: AddSaleFormProps) {
   const { currentTeam, userTeams, getEffectiveTeam } = useTeam();
   const { user } = useAuth();
-  const supabase = createClient();
-  const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [loadingProjects, setLoadingProjects] = useState(false);
-  const [showProjectSelector, setShowProjectSelector] = useState(false);
-  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   
   const [formData, setFormData] = useState<SaleFormData>({
-    projectName: '',
-    unitCost: 0,
-    quantity: 1,
-    salePrice: 0,
     date: new Date().toISOString().split('T')[0],
-    printHours: 0,
     team_id: null,
-    client_id: null
+    client_id: null,
+    items: []
   });
-
-  // Fetch projects when component mounts or team changes
-  useEffect(() => {
-    if (user) {
-      fetchProjects();
-    }
-  }, [user, selectedTeamId]);
-
-  const fetchProjects = async () => {
-    if (!user) return;
-    
-    setLoadingProjects(true);
-    try {
-      let query = supabase
-        .from('projects')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (selectedTeamId) {
-        query = query.eq('team_id', selectedTeamId);
-      } else {
-        query = query.eq('user_id', user.id).is('team_id', null);
-      }
-
-      const { data, error } = await query;
-
-      if (error) {
-        console.error('Error fetching projects:', error);
-        return;
-      }
-
-      setProjects(data || []);
-    } catch (error) {
-      console.error('Error fetching projects:', error);
-    } finally {
-      setLoadingProjects(false);
-    }
-  };
 
   useEffect(() => {
     if (sale) {
+      // Convert existing sale to new format
+      const items: SaleItemFormData[] = sale.items?.map(item => ({
+        project_id: item.project_id || null,
+        project_name: item.project_name,
+        unit_cost: item.unit_cost,
+        quantity: item.quantity,
+        sale_price: item.sale_price,
+        print_hours: item.print_hours
+      })) || [];
+
       setFormData({
-        projectName: sale.project_name,
-        unitCost: sale.unit_cost,
-        quantity: sale.quantity,
-        salePrice: sale.sale_price,
         date: sale.date,
-        printHours: sale.print_hours || 0,
         team_id: sale.team_id || null,
-        client_id: sale.client_id || null
+        client_id: sale.client_id || null,
+        items
       });
-      setSelectedTeamId(sale.team_id || null);
     } else {
       // For new sales, use effective team context
       const effectiveTeam = getEffectiveTeam();
@@ -92,71 +49,96 @@ export function AddSaleForm({ sale, onSave, onCancel }: AddSaleFormProps) {
         ...prev,
         team_id: effectiveTeam?.id || null
       }));
-      setSelectedTeamId(effectiveTeam?.id || null);
     }
   }, [sale, getEffectiveTeam]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (formData.items.length === 0) {
+      alert('Debes agregar al menos un proyecto a la venta');
+      return;
+    }
+
+    // Validate all items have valid numeric values
+    const validatedItems = formData.items.map(item => ({
+      ...item,
+      unit_cost: Number(item.unit_cost) || 0,
+      quantity: Number(item.quantity) || 1,
+      sale_price: Number(item.sale_price) || 0,
+      print_hours: Number(item.print_hours) || 0
+    }));
+
+    // Check if any item has invalid values
+    const invalidItems = validatedItems.filter(item => 
+      item.unit_cost <= 0 || 
+      item.quantity <= 0 || 
+      item.sale_price <= 0 ||
+      item.project_name.trim() === ''
+    );
+
+    if (invalidItems.length > 0) {
+      alert('Por favor, asegúrate de que todos los proyectos tengan valores válidos:\n- Coste unitario mayor que 0\n- Cantidad mayor que 0\n- Precio de venta mayor que 0\n- Nombre del proyecto no vacío');
+      return;
+    }
+
     onSave({
       ...formData,
-      team_id: selectedTeamId
+      items: validatedItems
     });
   };
 
-  const handleInputChange = (field: keyof SaleFormData, value: string | number | null) => {
+  const handleInputChange = (field: keyof Omit<SaleFormData, 'items'>, value: string | null) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
     }));
   };
 
-  const handleProjectSelect = (project: Project) => {
-    setSelectedProject(project);
+  const handleItemsChange = (items: SaleItemFormData[]) => {
     setFormData(prev => ({
       ...prev,
-      projectName: project.name,
-      unitCost: project.total_cost,
-      printHours: project.print_hours
+      items
     }));
-    setShowProjectSelector(false);
   };
 
   const handleTeamChange = (teamId: string | null) => {
-    setSelectedTeamId(teamId);
-    setSelectedProject(null);
     setFormData(prev => ({
       ...prev,
-      projectName: '',
-      unitCost: 0,
-      printHours: 0
+      team_id: teamId
     }));
   };
 
-  // Close project selector when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as Element;
-      if (!target.closest('.project-selector')) {
-        setShowProjectSelector(false);
-      }
-    };
+  const calculateTotalAmount = () => {
+    return formData.items.reduce((sum, item) => sum + item.sale_price, 0);
+  };
 
-    if (showProjectSelector) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
+  const calculateTotalCost = () => {
+    return formData.items.reduce((sum, item) => sum + (item.unit_cost * item.quantity), 0);
+  };
 
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showProjectSelector]);
+  const calculateTotalProfit = () => {
+    return calculateTotalAmount() - calculateTotalCost();
+  };
+
+  const calculateTotalMargin = () => {
+    const totalCost = calculateTotalCost();
+    return totalCost > 0 ? (calculateTotalProfit() / totalCost) * 100 : 0;
+  };
+
+  const calculateTotalPrintHours = () => {
+    return formData.items.reduce((sum, item) => sum + item.print_hours, 0);
+  };
+
+  const formatCurrency = (value: number) => `€${value.toFixed(2)}`;
+  const formatPercentage = (value: number) => `${value.toFixed(1)}%`;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="bg-white rounded-xl shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto"
+        className="bg-white rounded-xl shadow-xl max-w-6xl w-full mx-4 max-h-[90vh] overflow-y-auto"
       >
         <div className="p-6 border-b border-gray-200">
           <div className="flex items-center justify-between">
@@ -173,143 +155,10 @@ export function AddSaleForm({ sale, onSave, onCancel }: AddSaleFormProps) {
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {/* Información del Proyecto y Cliente */}
+          {/* Información General */}
           <div className="bg-gray-50 rounded-lg p-4">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Proyecto y Cliente</h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Nombre del Proyecto
-                </label>
-                <input
-                  type="text"
-                  value={formData.projectName}
-                  onChange={(e) => handleInputChange('projectName', e.target.value)}
-                  placeholder="Escribe el nombre del proyecto o selecciona uno existente"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
-                />
-              </div>
-              
-              <div className="relative project-selector">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Seleccionar Proyecto Existente
-                </label>
-                <button
-                  type="button"
-                  onClick={() => setShowProjectSelector(!showProjectSelector)}
-                  className="w-full flex items-center justify-between px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-                >
-                  <span className="text-sm text-gray-600">
-                    {selectedProject ? `Proyecto seleccionado: ${selectedProject.name}` : 'Seleccionar proyecto existente'}
-                  </span>
-                  <ChevronDown className="w-4 h-4 text-gray-400" />
-                </button>
-                
-                {showProjectSelector && (
-                  <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto project-selector">
-                    {loadingProjects ? (
-                      <div className="p-3 text-sm text-gray-500">Cargando proyectos...</div>
-                    ) : projects.length > 0 ? (
-                      <div>
-                        {projects.map((project) => (
-                          <button
-                            key={project.id}
-                            type="button"
-                            onClick={() => handleProjectSelect(project)}
-                            className="w-full text-left px-3 py-2 hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
-                          >
-                            <div className="font-medium text-sm">{project.name}</div>
-                            <div className="text-xs text-gray-500">
-                              Coste: €{project.total_cost.toFixed(2)} | Horas: {project.print_hours}h
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="p-3 text-sm text-gray-500">No hay proyectos disponibles</div>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Cliente
-                </label>
-                <ClientSelector
-                  selectedClientId={formData.client_id || null}
-                  onClientSelect={(clientId) => handleInputChange('client_id', clientId || null)}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Detalles de la Venta */}
-          <div className="bg-gray-50 rounded-lg p-4">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Detalles de la Venta</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Coste Unitario (€)
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={formData.unitCost}
-                  onChange={(e) => handleInputChange('unitCost', parseFloat(e.target.value) || 0)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Cantidad
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  value={formData.quantity}
-                  onChange={(e) => handleInputChange('quantity', parseInt(e.target.value) || 1)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Precio de Venta (€)
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={formData.salePrice}
-                  onChange={(e) => handleInputChange('salePrice', parseFloat(e.target.value) || 0)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Horas de Impresión
-                </label>
-                <input
-                  type="number"
-                  step="0.1"
-                  value={formData.printHours}
-                  onChange={(e) => handleInputChange('printHours', parseFloat(e.target.value) || 0)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Información Adicional */}
-          <div className="bg-gray-50 rounded-lg p-4">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Información Adicional</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Información General</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Fecha
@@ -325,6 +174,16 @@ export function AddSaleForm({ sale, onSave, onCancel }: AddSaleFormProps) {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Cliente
+                </label>
+                <ClientSelector
+                  selectedClientId={formData.client_id || null}
+                  onClientSelect={(clientId) => handleInputChange('client_id', clientId || null)}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   Equipo
                 </label>
                 <div className="space-y-2">
@@ -333,20 +192,20 @@ export function AddSaleForm({ sale, onSave, onCancel }: AddSaleFormProps) {
                       type="radio"
                       name="team"
                       value=""
-                      checked={selectedTeamId === null}
+                      checked={formData.team_id === null}
                       onChange={() => handleTeamChange(null)}
                       className="text-blue-600 focus:ring-blue-500"
                     />
                     <User className="w-4 h-4 text-gray-600" />
                     <span className="text-sm text-gray-700">Personal</span>
                   </label>
-                  {userTeams.map((team: Team) => (
+                  {userTeams.map((team) => (
                     <label key={team.id} className="flex items-center space-x-2">
                       <input
                         type="radio"
                         name="team"
                         value={team.id}
-                        checked={selectedTeamId === team.id}
+                        checked={formData.team_id === team.id}
                         onChange={() => handleTeamChange(team.id)}
                         className="text-blue-600 focus:ring-blue-500"
                       />
@@ -359,6 +218,50 @@ export function AddSaleForm({ sale, onSave, onCancel }: AddSaleFormProps) {
             </div>
           </div>
 
+          {/* Proyectos de la Venta */}
+          <SaleItemsForm
+            items={formData.items}
+            onItemsChange={handleItemsChange}
+          />
+
+          {/* Resumen de la Venta */}
+          {formData.items.length > 0 && (
+            <div className="bg-blue-50 rounded-lg p-4">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Resumen de la Venta</h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-blue-600">
+                    {formatCurrency(calculateTotalAmount())}
+                  </div>
+                  <div className="text-sm text-gray-600">Total Venta</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-gray-600">
+                    {formatCurrency(calculateTotalCost())}
+                  </div>
+                  <div className="text-sm text-gray-600">Total Coste</div>
+                </div>
+                <div className="text-center">
+                  <div className={`text-2xl font-bold ${calculateTotalProfit() >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {formatCurrency(calculateTotalProfit())}
+                  </div>
+                  <div className="text-sm text-gray-600">Beneficio</div>
+                </div>
+                <div className="text-center">
+                  <div className={`text-2xl font-bold ${calculateTotalMargin() >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {formatPercentage(calculateTotalMargin())}
+                  </div>
+                  <div className="text-sm text-gray-600">Margen</div>
+                </div>
+              </div>
+              <div className="mt-4 text-center">
+                <div className="text-sm text-gray-600">
+                  {formData.items.length} proyecto{formData.items.length !== 1 ? 's' : ''} • {calculateTotalPrintHours()} horas totales
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Botones de Acción */}
           <div className="flex space-x-3 pt-4">
             <button
@@ -370,7 +273,8 @@ export function AddSaleForm({ sale, onSave, onCancel }: AddSaleFormProps) {
             </button>
             <button
               type="submit"
-              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center"
+              disabled={formData.items.length === 0}
+              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Save className="w-4 h-4 mr-2" />
               {sale ? 'Actualizar' : 'Guardar'}

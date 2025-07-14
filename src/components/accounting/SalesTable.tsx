@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, Trash2, Edit, Eye, Users, User, Plus, FileText } from 'lucide-react';
+import { Search, Trash2, Edit, Eye, Users, User, Plus, FileText, Package } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useClients } from '@/hooks/useClients';
 import type { Sale } from '@/types';
@@ -53,7 +53,7 @@ export function SalesTable({
   };
 
   const filteredSales = sales.filter(sale =>
-    sale.project_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    sale.items?.some(item => item.project_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
     sale.date.includes(searchTerm)
   );
 
@@ -90,16 +90,16 @@ export function SalesTable({
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Proyecto
+                  Proyectos
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Fecha
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Coste
+                  Total Venta
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Precio Venta
+                  Total Coste
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Beneficio
@@ -130,28 +130,52 @@ export function SalesTable({
                   transition={{ delay: index * 0.05 }}
                   className="hover:bg-gray-50"
                 >
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">
-                      {sale.project_name}
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      Cantidad: {sale.quantity}
+                  <td className="px-6 py-4">
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <Package className="w-4 h-4 text-blue-600" />
+                        <span className="text-sm font-medium text-gray-900">
+                          {sale.items_count} proyecto{sale.items_count !== 1 ? 's' : ''}
+                        </span>
+                      </div>
+                      {sale.items && sale.items.length > 0 && (
+                        <div className="text-sm text-gray-600 space-y-1">
+                          {sale.items.slice(0, 2).map((item, itemIndex) => (
+                            <div key={itemIndex} className="flex items-center space-x-2">
+                              <span className="w-2 h-2 bg-blue-400 rounded-full"></span>
+                              <span className="truncate max-w-xs">{item.project_name}</span>
+                              <span className="text-xs text-gray-500">
+                                (x{item.quantity})
+                              </span>
+                            </div>
+                          ))}
+                          {sale.items.length > 2 && (
+                            <div className="text-xs text-gray-500">
+                              +{sale.items.length - 2} más...
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {formatDate(sale.date)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {formatCurrency(sale.cost)}
+                    {formatCurrency(sale.total_amount)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {formatCurrency(sale.sale_price)}
+                    {formatCurrency(sale.total_cost)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {formatCurrency(sale.profit)}
+                    <span className={sale.total_profit >= 0 ? 'text-green-600' : 'text-red-600'}>
+                      {formatCurrency(sale.total_profit)}
+                    </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {formatPercentage(sale.margin)}
+                    <span className={sale.total_margin >= 0 ? 'text-green-600' : 'text-red-600'}>
+                      {formatPercentage(sale.total_margin)}
+                    </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">
