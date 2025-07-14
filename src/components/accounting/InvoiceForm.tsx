@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Download, FileText } from 'lucide-react';
+import { X, Download, FileText, Plus, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useClients } from '@/hooks/useClients';
 import type { Sale, InvoiceFormData } from '@/types';
@@ -20,10 +20,20 @@ export function InvoiceForm({ sale, onClose, onGeneratePDF }: InvoiceFormProps) 
     invoiceNumber: `ALB-${Date.now()}`,
     issueDate: new Date().toISOString().split('T')[0],
     deliveryDate: new Date().toISOString().split('T')[0],
-    serviceDescription: sale.project_name,
-    quantity: sale.quantity,
-    unitPrice: sale.sale_price,
-    totalPrice: sale.sale_price,
+    items: sale.items?.map(item => {
+      console.log('Sale item:', item);
+      console.log('Sale item sale_price type:', typeof item.sale_price);
+      console.log('Sale item quantity type:', typeof item.quantity);
+      
+      return {
+        description: item.project_name,
+        quantity: Number(item.quantity) || 0,
+        unitPrice: Number(item.sale_price) || 0,
+        totalPrice: (Number(item.sale_price) || 0) * (Number(item.quantity) || 0)
+      };
+    }) || [],
+    subtotal: Number(sale.total_amount) || 0,
+    totalPrice: Number(sale.total_amount) || 0,
     notes: ''
   });
 
@@ -46,17 +56,81 @@ export function InvoiceForm({ sale, onClose, onGeneratePDF }: InvoiceFormProps) 
     }
   }, [sale.client_id, clients]);
 
-  const handleInputChange = (field: keyof InvoiceFormData, value: string | number) => {
+  const handleInputChange = (field: keyof Omit<InvoiceFormData, 'items'>, value: string | number) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
     }));
   };
 
+  const handleItemChange = (index: number, field: keyof InvoiceFormData['items'][0], value: string | number) => {
+    const newItems = [...formData.items];
+    newItems[index] = {
+      ...newItems[index],
+      [field]: value
+    };
+
+    // Recalcular totales
+    const subtotal = newItems.reduce((sum, item) => sum + (item.unitPrice * item.quantity), 0);
+    
+    setFormData(prev => ({
+      ...prev,
+      items: newItems,
+      subtotal,
+      totalPrice: subtotal
+    }));
+  };
+
+  const addItem = () => {
+    const newItem = {
+      description: '',
+      quantity: 1,
+      unitPrice: 0,
+      totalPrice: 0
+    };
+    
+    setFormData(prev => ({
+      ...prev,
+      items: [...prev.items, newItem]
+    }));
+  };
+
+  const removeItem = (index: number) => {
+    const newItems = formData.items.filter((_, i) => i !== index);
+    const subtotal = newItems.reduce((sum, item) => sum + (item.unitPrice * item.quantity), 0);
+    
+    setFormData(prev => ({
+      ...prev,
+      items: newItems,
+      subtotal,
+      totalPrice: subtotal
+    }));
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (formData.items.length === 0) {
+      alert('Debes agregar al menos un item al albarán');
+      return;
+    }
+
+    // Validar que todos los items tengan descripción y precios válidos
+    const invalidItems = formData.items.filter(item => 
+      !item.description.trim() || item.unitPrice <= 0 || item.quantity <= 0
+    );
+
+    if (invalidItems.length > 0) {
+      alert('Por favor, asegúrate de que todos los items tengan descripción, cantidad y precio válidos');
+      return;
+    }
+
+    console.log('InvoiceForm submitting formData:', formData);
+    console.log('FormData items:', formData.items);
     onGeneratePDF(formData);
   };
+
+  const formatCurrency = (value: number) => `€${value.toFixed(2)}`;
 
   return (
     <AnimatePresence>
@@ -71,7 +145,7 @@ export function InvoiceForm({ sale, onClose, onGeneratePDF }: InvoiceFormProps) 
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.9, opacity: 0 }}
-          className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+          className="bg-white rounded-xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
@@ -206,82 +280,111 @@ export function InvoiceForm({ sale, onClose, onGeneratePDF }: InvoiceFormProps) 
               </div>
             </div>
 
-            {/* Detalles del Servicio */}
+            {/* Items del Albarán */}
             <div className="space-y-4">
-              <h3 className="text-lg font-medium text-gray-900 border-b border-gray-200 pb-2">
-                Detalles del Servicio
-              </h3>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Descripción del Servicio *
-                </label>
-                <textarea
-                  required
-                  value={formData.serviceDescription}
-                  onChange={(e) => handleInputChange('serviceDescription', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Descripción detallada del trabajo realizado"
-                  rows={3}
-                />
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-medium text-gray-900 border-b border-gray-200 pb-2">
+                  Items del Albarán
+                </h3>
+                <button
+                  type="button"
+                  onClick={addItem}
+                  className="flex items-center px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Agregar Item
+                </button>
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Cantidad *
-                  </label>
-                  <input
-                    type="number"
-                    required
-                    min="1"
-                    value={formData.quantity}
-                    onChange={(e) => handleInputChange('quantity', parseInt(e.target.value) || 1)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Precio Unitario (€) *
-                  </label>
-                  <input
-                    type="number"
-                    required
-                    min="0"
-                    step="0.01"
-                    value={formData.unitPrice}
-                    onChange={(e) => handleInputChange('unitPrice', parseFloat(e.target.value) || 0)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Precio Total (€) *
-                  </label>
-                  <input
-                    type="number"
-                    required
-                    min="0"
-                    step="0.01"
-                    value={formData.totalPrice}
-                    onChange={(e) => handleInputChange('totalPrice', parseFloat(e.target.value) || 0)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
+              <div className="space-y-4">
+                {formData.items.map((item, index) => (
+                  <div key={index} className="bg-gray-50 rounded-lg p-4 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-md font-medium text-gray-900">Item {index + 1}</h4>
+                      <button
+                        type="button"
+                        onClick={() => removeItem(index)}
+                        className="flex items-center justify-center w-8 h-8 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors"
+                        title="Eliminar item"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                      <div className="md:col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Descripción *
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={item.description}
+                          onChange={(e) => handleItemChange(index, 'description', e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          placeholder="Descripción del servicio"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Cantidad *
+                        </label>
+                        <input
+                          type="number"
+                          required
+                          min="1"
+                          value={item.quantity}
+                          onChange={(e) => handleItemChange(index, 'quantity', parseInt(e.target.value) || 1)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Precio Unitario (€) *
+                        </label>
+                        <input
+                          type="number"
+                          required
+                          min="0"
+                          step="0.01"
+                          value={item.unitPrice}
+                          onChange={(e) => handleItemChange(index, 'unitPrice', parseFloat(e.target.value) || 0)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="text-right">
+                      <span className="text-sm text-gray-600">Subtotal: </span>
+                      <span className="font-medium">{formatCurrency(item.unitPrice * item.quantity)}</span>
+                    </div>
+                  </div>
+                ))}
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Notas Adicionales
-                </label>
-                <textarea
-                  value={formData.notes}
-                  onChange={(e) => handleInputChange('notes', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Notas adicionales, condiciones, etc."
-                  rows={2}
-                />
+              {/* Totales */}
+              <div className="bg-blue-50 rounded-lg p-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-lg font-medium text-gray-900">Total del Albarán</span>
+                  <span className="text-2xl font-bold text-blue-600">{formatCurrency(formData.totalPrice)}</span>
+                </div>
               </div>
+            </div>
+
+            {/* Notas */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Notas Adicionales
+              </label>
+              <textarea
+                value={formData.notes}
+                onChange={(e) => handleInputChange('notes', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Notas adicionales, condiciones, etc."
+                rows={3}
+              />
             </div>
 
             {/* Actions */}

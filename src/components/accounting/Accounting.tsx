@@ -13,6 +13,7 @@ import { InvoiceForm } from './InvoiceForm';
 import AdvancedStatistics from '@/components/AdvancedStatistics';
 import { AccountingSkeleton } from '@/components/skeletons';
 import { InvoiceService } from '@/services/invoiceService';
+import { salesService } from '@/services/salesService';
 import type { Sale, Expense, SaleFormData, ExpenseFormData } from '@/types';
 
 type TabType = 'sales' | 'expenses';
@@ -55,16 +56,30 @@ export default function Accounting() {
   const handleAddSale = async (saleData: SaleFormData) => {
     try {
       if (editingSale) {
+        // For editing, we need to update the sale and its items
         await updateSale(editingSale.id, {
-          project_name: saleData.projectName,
-          unit_cost: saleData.unitCost,
-          quantity: saleData.quantity,
-          sale_price: saleData.salePrice,
           date: saleData.date,
-          print_hours: saleData.printHours,
           team_id: saleData.team_id,
           client_id: saleData.client_id
         });
+        
+        // Update sale items
+        if (editingSale.items) {
+          const items = saleData.items.map(item => ({
+            id: '', // Will be set by the service
+            sale_id: editingSale.id,
+            project_id: item.project_id || null,
+            project_name: item.project_name,
+            unit_cost: item.unit_cost,
+            quantity: item.quantity,
+            sale_price: item.sale_price,
+            print_hours: item.print_hours,
+            created_at: '',
+            updated_at: ''
+          }));
+          await salesService.updateSaleItems(editingSale.id, items);
+        }
+        
         setEditingSale(null);
       } else {
         await createSale(saleData);
@@ -135,6 +150,10 @@ export default function Accounting() {
   const handleGeneratePDF = async (invoiceData: any) => {
     try {
       console.log('Generating PDF with company data:', companyData);
+      console.log('Invoice data received:', invoiceData);
+      console.log('Invoice data type:', typeof invoiceData);
+      console.log('Invoice items:', invoiceData?.items);
+      
       await InvoiceService.generatePDF(invoiceData, companyData);
       setShowInvoiceForm(false);
       setSelectedSaleForInvoice(null);

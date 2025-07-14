@@ -121,23 +121,35 @@ export interface Client {
 }
 
 // Sales related types
-export interface Sale {
+export interface SaleItem {
   id: string;
-  user_id: string;
+  sale_id: string;
+  project_id?: string | null;
   project_name: string;
-  cost: number;
   unit_cost: number;
   quantity: number;
   sale_price: number;
-  profit: number;
-  margin: number;
+  print_hours: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Sale {
+  id: string;
+  user_id: string;
+  total_amount: number;
+  total_cost: number;
+  total_profit: number;
+  total_margin: number;
+  total_print_hours: number;
+  items_count: number;
   date: string;
   status: 'pending' | 'completed' | 'cancelled';
-  print_hours?: number;
   team_id?: string | null;
   client_id?: string | null;
   created_at: string;
   updated_at: string;
+  items?: SaleItem[];
 }
 
 // Expense related types
@@ -223,15 +235,20 @@ export interface ProjectFormData {
   pieces: Piece[];
 }
 
-export interface SaleFormData {
-  projectName: string;
-  unitCost: number;
+export interface SaleItemFormData {
+  project_id?: string | null;
+  project_name: string;
+  unit_cost: number;
   quantity: number;
-  salePrice: number;
+  sale_price: number;
+  print_hours: number;
+}
+
+export interface SaleFormData {
   date: string;
-  printHours: number;
   team_id?: string | null;
   client_id?: string | null;
+  items: SaleItemFormData[];
 }
 
 export interface ExpenseFormData {
@@ -255,10 +272,16 @@ export interface InvoiceFormData {
   issueDate: string;
   deliveryDate: string;
   
-  // Datos del servicio
-  serviceDescription: string;
-  quantity: number;
-  unitPrice: number;
+  // Datos de los servicios (múltiples items)
+  items: {
+    description: string;
+    quantity: number;
+    unitPrice: number;
+    totalPrice: number;
+  }[];
+  
+  // Totales
+  subtotal: number;
   totalPrice: number;
   
   // Notas adicionales

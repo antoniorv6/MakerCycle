@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase';
-import type { Sale, SaleFormData } from '@/types';
+import type { Sale, SaleFormData, SaleItem } from '@/types';
 import { NotificationService } from './notificationService';
 
 export class SalesService {
@@ -8,7 +8,10 @@ export class SalesService {
   async getSales(userId: string, teamId?: string | null): Promise<Sale[]> {
     let query = this.supabase
       .from('sales')
-      .select('*')
+      .select(`
+        *,
+        items:sale_items(*)
+      `)
       .order('created_at', { ascending: false });
 
     if (teamId) {
@@ -31,7 +34,10 @@ export class SalesService {
   async getSale(id: string): Promise<Sale | null> {
     const { data, error } = await this.supabase
       .from('sales')
-      .select('*')
+      .select(`
+        *,
+        items:sale_items(*)
+      `)
       .eq('id', id)
       .single();
 
@@ -43,36 +49,52 @@ export class SalesService {
   }
 
   async createSale(userId: string, saleData: SaleFormData, teamId?: string | null): Promise<Sale> {
-    const { unitCost, quantity, salePrice, printHours } = saleData;
-    
-    const cost = unitCost * quantity;
-    const profit = salePrice - cost;
-    const margin = cost > 0 ? (profit / cost) * 100 : 0;
-
-    const sale: Omit<Sale, 'id' | 'created_at' | 'updated_at'> = {
+    // Create the sale record
+    const sale: Omit<Sale, 'id' | 'created_at' | 'updated_at' | 'items'> = {
       user_id: userId,
-      project_name: saleData.projectName,
-      cost,
-      unit_cost: unitCost,
-      quantity,
-      sale_price: salePrice,
-      profit,
-      margin,
+      total_amount: 0, // Will be calculated by trigger
+      total_cost: 0, // Will be calculated by trigger
+      total_profit: 0, // Will be calculated by trigger
+      total_margin: 0, // Will be calculated by trigger
+      total_print_hours: 0, // Will be calculated by trigger
+      items_count: saleData.items.length,
       date: saleData.date,
       status: 'completed',
-      print_hours: printHours,
       team_id: teamId || null,
       client_id: saleData.client_id || null
     };
 
-    const { data, error } = await this.supabase
+    const { data: saleRecord, error: saleError } = await this.supabase
       .from('sales')
       .insert([sale])
       .select()
       .single();
 
-    if (error) {
-      throw new Error(`Error creating sale: ${error.message}`);
+    if (saleError) {
+      throw new Error(`Error creating sale: ${saleError.message}`);
+    }
+
+    // Create sale items
+    if (saleData.items.length > 0) {
+      const saleItems: Omit<SaleItem, 'id' | 'created_at' | 'updated_at'>[] = saleData.items.map(item => ({
+        sale_id: saleRecord.id,
+        project_id: item.project_id || null,
+        project_name: item.project_name,
+        unit_cost: item.unit_cost,
+        quantity: item.quantity,
+        sale_price: item.sale_price,
+        print_hours: item.print_hours
+      }));
+
+      const { error: itemsError } = await this.supabase
+        .from('sale_items')
+        .insert(saleItems);
+
+      if (itemsError) {
+        // Delete the sale if items creation fails
+        await this.supabase.from('sales').delete().eq('id', saleRecord.id);
+        throw new Error(`Error creating sale items: ${itemsError.message}`);
+      }
     }
 
     // Create notification for team if sale is team-based
@@ -80,8 +102,8 @@ export class SalesService {
       try {
         await NotificationService.notifyNewSale(
           teamId,
-          sale.sale_price,
-          sale.project_name
+          saleRecord.total_amount,
+          `${saleData.items.length} proyectos`
         );
       } catch (notificationError) {
         console.error('Failed to create notification for new sale:', notificationError);
@@ -89,7 +111,8 @@ export class SalesService {
       }
     }
 
-    return data;
+    // Return the complete sale with items
+    return this.getSale(saleRecord.id) as Promise<Sale>;
   }
 
   async updateSale(id: string, updates: Partial<Sale>): Promise<Sale> {
@@ -107,6 +130,44 @@ export class SalesService {
     return data;
   }
 
+  async updateSaleItems(saleId: string, items: SaleItem[]): Promise<void> {
+    try {
+      // Delete existing items
+      const { error: deleteError } = await this.supabase
+        .from('sale_items')
+        .delete()
+        .eq('sale_id', saleId);
+
+      if (deleteError) {
+        throw new Error(`Error deleting existing sale items: ${deleteError.message}`);
+      }
+
+      // Insert new items if there are any
+      if (items.length > 0) {
+        const saleItems: Omit<SaleItem, 'id' | 'created_at' | 'updated_at'>[] = items.map(item => ({
+          sale_id: saleId,
+          project_id: item.project_id || null,
+          project_name: item.project_name,
+          unit_cost: item.unit_cost,
+          quantity: item.quantity,
+          sale_price: item.sale_price,
+          print_hours: item.print_hours
+        }));
+
+        const { error: insertError } = await this.supabase
+          .from('sale_items')
+          .insert(saleItems);
+
+        if (insertError) {
+          throw new Error(`Error inserting new sale items: ${insertError.message}`);
+        }
+      }
+    } catch (error) {
+      console.error('Error in updateSaleItems:', error);
+      throw error;
+    }
+  }
+
   async deleteSale(id: string): Promise<void> {
     const { error } = await this.supabase
       .from('sales')
@@ -119,14 +180,14 @@ export class SalesService {
   }
 
   calculateSaleStats(sales: Sale[]) {
-    const totalRevenue = sales.reduce((sum, sale) => sum + sale.sale_price, 0);
-    const totalCosts = sales.reduce((sum, sale) => sum + sale.cost, 0);
-    const totalProfit = sales.reduce((sum, sale) => sum + sale.profit, 0);
-    const totalPrintHours = sales.reduce((sum, sale) => sum + (sale.print_hours || 0), 0);
-    const totalProducts = sales.reduce((sum, sale) => sum + sale.quantity, 0);
+    const totalRevenue = sales.reduce((sum, sale) => sum + sale.total_amount, 0);
+    const totalCosts = sales.reduce((sum, sale) => sum + sale.total_cost, 0);
+    const totalProfit = sales.reduce((sum, sale) => sum + sale.total_profit, 0);
+    const totalPrintHours = sales.reduce((sum, sale) => sum + sale.total_print_hours, 0);
+    const totalProducts = sales.reduce((sum, sale) => sum + (sale.items?.reduce((itemSum, item) => itemSum + item.quantity, 0) || 0), 0);
     
     const averageMargin = sales.length > 0 
-      ? sales.reduce((sum, sale) => sum + sale.margin, 0) / sales.length 
+      ? sales.reduce((sum, sale) => sum + sale.total_margin, 0) / sales.length 
       : 0;
     
     const averageEurosPerHour = totalPrintHours > 0 ? totalProfit / totalPrintHours : 0;
