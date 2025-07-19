@@ -16,36 +16,7 @@ import { createClient } from '@/lib/supabase';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useTeam } from '@/components/providers/TeamProvider';
 import { AdvancedStatisticsSkeleton } from '@/components/skeletons';
-
-interface Sale {
-  id: string;
-  user_id: string;
-  project_name: string;
-  cost: number;
-  unit_cost: number;
-  quantity: number;
-  sale_price: number;
-  profit: number;
-  margin: number;
-  date: string;
-  status: 'pending' | 'completed' | 'cancelled';
-  print_hours?: number;
-  created_at: string;
-  updated_at: string;
-}
-
-interface Expense {
-  id: string;
-  user_id: string;
-  description: string;
-  amount: number;
-  category: string;
-  date: string;
-  status: 'pending' | 'paid' | 'cancelled';
-  notes?: string;
-  created_at: string;
-  updated_at: string;
-}
+import type { Sale, Expense } from '@/types';
 
 interface AdvancedStatsProps {
   onBack: () => void;
@@ -174,11 +145,11 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
           expenses: 0
         };
       }
-      acc[date].revenue += sale.sale_price;
-      acc[date].cost += sale.cost;
-      acc[date].profit += sale.profit;
+      acc[date].revenue += sale.total_amount;
+      acc[date].cost += sale.total_cost;
+      acc[date].profit += sale.total_profit;
       acc[date].sales += 1;
-      acc[date].hours += sale.print_hours || 0;
+      acc[date].hours += sale.total_print_hours;
       return acc;
     }, {} as Record<string, any>);
 
@@ -216,7 +187,8 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
   // Datos para gráfico de distribución de proyectos
   const projectDistribution = useMemo(() => {
     const projectStats = filteredSales.reduce((acc, sale) => {
-      const name = sale.project_name;
+      // Use the first item's project name or a default name
+      const name = sale.items && sale.items.length > 0 ? sale.items[0].project_name : 'Sin proyecto';
       if (!acc[name]) {
         acc[name] = {
           name,
@@ -226,10 +198,10 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
           hours: 0
         };
       }
-      acc[name].revenue += sale.sale_price;
-      acc[name].profit += sale.profit;
+      acc[name].revenue += sale.total_amount;
+      acc[name].profit += sale.total_profit;
       acc[name].sales += 1;
-      acc[name].hours += sale.print_hours || 0;
+      acc[name].hours += sale.total_print_hours;
       return acc;
     }, {} as Record<string, any>);
 
@@ -249,7 +221,8 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
     ];
 
     filteredSales.forEach(sale => {
-      const range = ranges.find(r => sale.margin >= r.min && sale.margin < r.max);
+      const margin = sale.total_amount > 0 ? (sale.total_profit / sale.total_amount) * 100 : 0;
+      const range = ranges.find(r => margin >= r.min && margin < r.max);
       if (range) range.count++;
     });
 
@@ -258,14 +231,17 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
 
   // Estadísticas resumidas
   const stats = useMemo(() => {
-    const totalRevenue = filteredSales.reduce((sum, sale) => sum + sale.sale_price, 0);
-    const totalCost = filteredSales.reduce((sum, sale) => sum + sale.cost, 0);
+    const totalRevenue = filteredSales.reduce((sum, sale) => sum + sale.total_amount, 0);
+    const totalCost = filteredSales.reduce((sum, sale) => sum + sale.total_cost, 0);
     const totalExpenses = filteredExpenses.reduce((sum, expense) => sum + expense.amount, 0);
     const totalProfit = totalRevenue - totalCost;
     const netProfit = totalProfit - totalExpenses;
-    const totalHours = filteredSales.reduce((sum, sale) => sum + (sale.print_hours || 0), 0);
+    const totalHours = filteredSales.reduce((sum, sale) => sum + sale.total_print_hours, 0);
     const avgMargin = filteredSales.length > 0 
-      ? filteredSales.reduce((sum, sale) => sum + sale.margin, 0) / filteredSales.length 
+      ? filteredSales.reduce((sum, sale) => {
+          const margin = sale.total_amount > 0 ? (sale.total_profit / sale.total_amount) * 100 : 0;
+          return sum + margin;
+        }, 0) / filteredSales.length 
       : 0;
     const avgSaleValue = filteredSales.length > 0 ? totalRevenue / filteredSales.length : 0;
     const eurosPerHour = totalHours > 0 ? netProfit / totalHours : 0;
@@ -291,9 +267,9 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
              expenseDate <= previousPeriodEnd;
     });
 
-    const previousRevenue = previousSales.reduce((sum, sale) => sum + sale.sale_price, 0);
+    const previousRevenue = previousSales.reduce((sum, sale) => sum + sale.total_amount, 0);
     const previousExpensesTotal = previousExpenses.reduce((sum, expense) => sum + expense.amount, 0);
-    const previousProfit = previousSales.reduce((sum, sale) => sum + sale.profit, 0);
+    const previousProfit = previousSales.reduce((sum, sale) => sum + sale.total_profit, 0);
     const previousNetProfit = previousProfit - previousExpensesTotal;
     
     const revenueGrowth = previousRevenue > 0 ? ((totalRevenue - previousRevenue) / previousRevenue) * 100 : 0;
