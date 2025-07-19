@@ -132,14 +132,14 @@ export function useDashboardData() {
   }, [user, currentTeam, fetchDashboardData]);
 
   const stats = useMemo((): DashboardStats => {
-    const totalRevenue = sales.reduce((sum, sale) => sum + sale.sale_price, 0);
-    const totalProfit = sales.reduce((sum, sale) => sum + sale.profit, 0);
-    const totalPrintHours = sales.reduce((sum, sale) => sum + (sale.print_hours || 0), 0);
-    const totalProducts = sales.reduce((sum, sale) => sum + (sale.quantity || 1), 0);
+    const totalRevenue = sales.reduce((sum, sale) => sum + sale.total_amount, 0);
+    const totalProfit = sales.reduce((sum, sale) => sum + sale.total_profit, 0);
+    const totalPrintHours = sales.reduce((sum, sale) => sum + sale.total_print_hours, 0);
+    const totalProducts = sales.reduce((sum, sale) => sum + sale.items_count, 0);
     const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
     
     const averageMargin = sales.length > 0 
-      ? sales.reduce((sum, sale) => sum + sale.margin, 0) / sales.length 
+      ? sales.reduce((sum, sale) => sum + sale.total_margin, 0) / sales.length 
       : 0;
     
     const averageEurosPerHour = totalPrintHours > 0 ? totalProfit / totalPrintHours : 0;
