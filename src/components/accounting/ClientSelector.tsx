@@ -3,6 +3,7 @@
 import React, { useState } from 'react'
 import { ChevronDown, Plus, User, X } from 'lucide-react'
 import { useClients, type Client, type ClientFormData } from '@/hooks/useClients'
+import { toast } from 'react-hot-toast';
 
 interface ClientSelectorProps {
   selectedClientId: string | null
@@ -27,7 +28,7 @@ export function ClientSelector({ selectedClientId, onClientSelect, className = '
 
   const handleCreateClient = async () => {
     if (!newClientData.name.trim()) {
-      alert('El nombre del cliente es obligatorio')
+      toast.error('El nombre del cliente es obligatorio.');
       return
     }
     

@@ -176,12 +176,12 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
 
   const saveProject = async () => {
     if (!user) {
-      toast.error('Debes iniciar sesión para guardar proyectos');
+      toast.error('Debes iniciar sesión para guardar proyectos.');
       return;
     }
 
     if (!projectName.trim()) {
-      toast.error('Debes especificar un nombre para el proyecto');
+      toast.error('El proyecto debe tener un nombre.');
       return;
     }
 
@@ -206,7 +206,7 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
 
         if (profileError) {
           console.error('Error creating profile:', profileError);
-          toast.error('Error al crear el perfil del usuario. Inténtalo de nuevo.');
+          toast.error('No se pudo crear el perfil de usuario. Intenta de nuevo.');
           return;
         }
       }
@@ -256,7 +256,7 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
       }
 
       if (projectError) {
-        toast.error('Error al guardar el proyecto en Supabase: ' + projectError.message);
+        toast.error('No se pudo guardar el proyecto. Intenta de nuevo.');
         return;
       }
 
@@ -283,7 +283,7 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
 
           if (piecesError) {
             console.error('Error saving pieces:', piecesError);
-            toast.error('Proyecto guardado pero hubo un error al guardar las piezas');
+            toast.error('El proyecto se guardó, pero hubo un error al guardar las piezas.');
           }
         }
       }
@@ -291,9 +291,9 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
       if (projectData) {
         onProjectSaved?.(projectData);
       }
-      toast.success('Proyecto guardado correctamente en Supabase');
+      toast.success('Proyecto guardado correctamente.');
     } catch (error: any) {
-      toast.error('Error inesperado: ' + error.message);
+      toast.error('Ha ocurrido un error inesperado. Intenta de nuevo.');
     }
   };
 
