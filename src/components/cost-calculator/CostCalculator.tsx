@@ -265,17 +265,18 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
         // Always delete all pieces for this project and re-insert
         await supabase.from('pieces').delete().eq('project_id', projectId);
 
-        if (pieces.length > 1 || pieces[0].name !== 'Pieza principal') {
-          const piecesToSave = pieces.map(piece => ({
-            project_id: projectId,
-            name: piece.name,
-            filament_weight: piece.filamentWeight,
-            filament_price: piece.filamentPrice,
-            print_hours: piece.printHours,
-            quantity: piece.quantity,
-            notes: piece.notes || ''
-          }));
+        // Guardar siempre todas las piezas, incluso si solo hay una y tiene el nombre por defecto
+        const piecesToSave = pieces.map(piece => ({
+          project_id: projectId,
+          name: piece.name,
+          filament_weight: piece.filamentWeight,
+          filament_price: piece.filamentPrice,
+          print_hours: piece.printHours,
+          quantity: piece.quantity,
+          notes: piece.notes || ''
+        }));
 
+        if (piecesToSave.length > 0) {
           const { error: piecesError } = await supabase
             .from('pieces')
             .insert(piecesToSave);

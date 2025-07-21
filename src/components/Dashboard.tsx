@@ -58,7 +58,7 @@ export default function Dashboard({ initialPage }: { initialPage?: string } = {}
   }
 
   // Helper to convert AppProject back to DatabaseProject for CostCalculator
-  function projectToDbProject(project: AppProject): DatabaseProject {
+  function projectToDbProject(project: AppProject): DatabaseProject & { pieces?: DatabasePiece[] } {
     return {
       id: project.id,
       user_id: '', // Not available in Project, but not used in CostCalculator
@@ -75,7 +75,18 @@ export default function Dashboard({ initialPage }: { initialPage?: string } = {}
       status: project.status,
       created_at: project.createdAt,
       updated_at: '', // Not available in Project
-      // pieces is not part of DatabaseProject, handled separately
+      pieces: project.pieces?.map(piece => ({
+        id: piece.id,
+        project_id: project.id,
+        name: piece.name,
+        filament_weight: piece.filamentWeight,
+        filament_price: piece.filamentPrice,
+        print_hours: piece.printHours,
+        quantity: piece.quantity,
+        notes: piece.notes || '',
+        created_at: '', // Opcional, puedes ajustar si tienes el dato
+        updated_at: '', // Opcional, puedes ajustar si tienes el dato
+      }))
     };
   }
 
