@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { useState, useEffect } from 'react'
 import { 
   Calculator, 
@@ -24,7 +25,9 @@ import {
   Github,
   Code,
   Download,
-  Star
+  Star,
+  LayoutGrid,
+  Bell
 } from 'lucide-react'
 
 export default function LandingPage() {
@@ -45,99 +48,45 @@ export default function LandingPage() {
   const features = [
     {
       icon: Calculator,
-      title: "Calculadora de Costes",
-      description: "Calcula costes precisos de impresión 3D incluyendo filamento, electricidad, tiempo y materiales",
+      title: "Calculadora de Costes 3D",
+      description: "Calcula de forma precisa todos los costes de impresión: filamento, electricidad, materiales, tiempo y más, en segundos.",
       color: "from-slate-600 to-slate-700",
       delay: "0ms"
     },
     {
-      icon: TrendingUp,
-      title: "Análisis de Rentabilidad",
-      description: "Analiza márgenes de beneficio y optimiza tus precios para maximizar la rentabilidad",
-      color: "from-emerald-600 to-emerald-700",
+      icon: BarChart3,
+      title: "Contabilidad y Rentabilidad",
+      description: "Gestiona ventas, gastos y clientes. Analiza márgenes de beneficio, visualiza estadísticas avanzadas y optimiza tus precios para maximizar la rentabilidad de tu negocio.",
+      color: "from-emerald-700 to-emerald-900",
       delay: "100ms"
     },
     {
-      icon: BarChart3,
-      title: "Gestión de Proyectos",
-      description: "Organiza y gestiona todos tus proyectos de impresión 3D en un solo lugar",
-      color: "from-blue-600 to-blue-700",
+      icon: LayoutGrid,
+      title: "Organización de Proyectos (Kanban)",
+      description: "Organiza y prioriza tus proyectos de impresión 3D con un tablero Kanban intuitivo. Arrastra tareas, gestiona estados y mantén el control total de tu flujo de trabajo.",
+      color: "from-purple-700 to-slate-800",
       delay: "200ms"
     },
     {
-      icon: Shield,
-      title: "Datos Seguros",
-      description: "Tus datos están protegidos con encriptación de nivel empresarial en la nube",
-      color: "from-indigo-600 to-indigo-700",
+      icon: Users,
+      title: "Gestión de Equipos y Roles",
+      description: "Colabora con tu equipo, asigna roles personalizados y controla los permisos de acceso para una gestión profesional y segura.",
+      color: "from-slate-700 to-slate-900",
       delay: "300ms"
     },
     {
-      icon: Zap,
-      title: "Interfaz Optimizada",
-      description: "Diseñada para ser rápida y eficiente. Calcula costes en segundos",
+      icon: Bell,
+      title: "Notificaciones Inteligentes",
+      description: "Recibe alertas automáticas sobre cambios, tareas y eventos importantes para no perderte nada en tus proyectos.",
       color: "from-amber-600 to-amber-700",
       delay: "400ms"
     },
     {
-      icon: Users,
-      title: "Colaboración en Equipo",
-      description: "Trabaja con tu equipo compartiendo proyectos y configuraciones",
-      color: "from-purple-600 to-purple-700",
+      icon: Shield,
+      title: "Seguridad y Privacidad",
+      description: "Tus datos están protegidos con cifrado y políticas de acceso avanzadas. Control total sobre tu información y la de tu equipo.",
+      color: "from-indigo-700 to-indigo-900",
       delay: "500ms"
-    }
-  ]
-
-  const pricingPlans = [
-    {
-      name: "Gratis",
-      price: "€0",
-      period: "/mes",
-      description: "Todas las funcionalidades",
-      features: [
-        "Proyectos ilimitados",
-        "Calculadora avanzada",
-        "Análisis completo",
-        "Gestión de clientes",
-        "Equipos colaborativos",
-        "Soporte comunitario"
-      ],
-      cta: "Empezar Gratis",
-      popular: false,
-      icon: MousePointer
-    },
-    {
-      name: "Apoyo",
-      price: "€2",
-      period: "/mes",
-      description: "Apoya el proyecto",
-      features: [
-        "Todo lo de Gratis",
-        "Soporte prioritario",
-        "Acceso a nuevas funciones",
-        "Badge de 'Supporter'",
-        "Voz en el roadmap",
-        "Acceso a beta features"
-      ],
-      cta: "Apoyar Proyecto",
-      popular: true,
-      icon: Target
-    },
-    {
-      name: "Patrocinador",
-      price: "€5",
-      period: "/mes",
-      description: "Máximo apoyo",
-      features: [
-        "Todo lo de Apoyo",
-        "Soporte directo",
-        "Funciones exclusivas",
-        "Badge de 'Patrocinador'",
-        "Influencia en decisiones",
-        "Acceso a código fuente"
-      ],
-      cta: "Ser Patrocinador",
-      popular: false,
-      icon: Zap
     }
   ]
 
@@ -148,7 +97,6 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center space-x-3">
-              <img src="/logo.webp" alt="Logo MakerCycle" className="w-10 h-10 object-contain" />
               <div>
                 <h1 className="text-xl font-bold text-slate-900">
                   MakerCycle
@@ -194,19 +142,17 @@ export default function LandingPage() {
         
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <div className={`transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+            <div className={`transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>              
               <div className="inline-flex items-center px-4 py-2 rounded-full bg-slate-100 text-slate-700 text-sm font-medium mb-8 hover:bg-slate-200 transition-colors duration-200">
                 <Sparkles className="w-4 h-4 mr-2" />
-                Open Source • Profesional • Confiable
+                ¡Profesionaliza tu negocio 3D hoy! 🚀
               </div>
-              
               <h1 className="text-5xl md:text-7xl font-bold text-slate-900 mb-6 leading-tight">
-                Calculadora de costes y gestor de proyectos para
-                <span className="bg-gradient-to-r from-slate-700 to-slate-800 bg-clip-text text-transparent"> impresión 3D</span>
+                Gestión visual y cálculo profesional para
+                <span className="bg-gradient-to-r from-purple-700 to-slate-800 bg-clip-text text-transparent"> impresión 3D</span>
               </h1>
-              
               <p className="text-xl md:text-2xl text-slate-600 mb-8 max-w-4xl mx-auto leading-relaxed">
-                MakerCycle es la plataforma open source definitiva para calcular costes, gestionar proyectos y analizar la rentabilidad de tu negocio de impresión 3D. Profesional, colaborativa y segura.
+                MakerCycle es la suite open source definitiva para makers y empresas: gestiona proyectos con Kanban, calcula costes, colabora en equipo, recibe notificaciones y analiza la rentabilidad de tu negocio de impresión 3D.
               </p>
               
               <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
@@ -247,10 +193,10 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-6">
-              Herramientas profesionales para impresión 3D
+              Todo lo que necesitas para tu negocio 3D
             </h2>
             <p className="text-xl text-slate-600 max-w-3xl mx-auto">
-              MakerCycle reúne todas las herramientas que necesitas para profesionalizar y optimizar tu negocio de impresión 3D.
+              MakerCycle reúne herramientas profesionales para organizar, calcular, analizar y colaborar en tus proyectos de impresión 3D.
             </p>
           </div>
 
@@ -362,64 +308,40 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-slate-900 mb-6">
-              Gratis para todos, apoyo opcional
+              MakerCycle es gratis para todos
             </h2>
             <p className="text-xl text-slate-600 max-w-2xl mx-auto">
-              Creemos que las herramientas profesionales deben ser accesibles para todos. Si te gusta el proyecto, puedes apoyarlo.
+              Todas las funcionalidades son gratuitas y open source. Si quieres apoyar el proyecto, puedes invitarme a un café ☕️
             </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            {pricingPlans.map((plan, index) => (
-              <div 
-                key={index}
-                className={`relative bg-white p-8 rounded-2xl shadow-lg border-2 transition-all duration-300 transform hover:-translate-y-2 ${
-                  plan.popular 
-                    ? 'border-slate-500 shadow-2xl scale-105' 
-                    : 'border-slate-200 hover:border-slate-300'
-                }`}
+            <div className="mt-8 flex justify-center gap-4 flex-col sm:flex-row">
+              <Link
+                href="/auth"
+                className="inline-flex items-center bg-gradient-to-r from-slate-700 to-slate-800 hover:from-slate-800 hover:to-slate-900 text-white px-8 py-4 rounded-xl text-lg font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105"
               >
-                {plan.popular && (
-                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                    <span className="bg-gradient-to-r from-slate-600 to-slate-700 text-white px-4 py-2 rounded-full text-sm font-semibold">
-                      Recomendado
-                    </span>
-                  </div>
-                )}
-                
-                <div className="text-center mb-8">
-                  <div className="w-12 h-12 bg-gradient-to-br from-slate-600 to-slate-700 rounded-xl flex items-center justify-center mx-auto mb-4">
-                    <plan.icon className="w-6 h-6 text-white" />
-                  </div>
-                  <h3 className="text-2xl font-bold text-slate-900 mb-2">{plan.name}</h3>
-                  <div className="mb-4">
-                    <span className="text-4xl font-bold text-slate-900">{plan.price}</span>
-                    <span className="text-slate-500">{plan.period}</span>
-                  </div>
-                  <p className="text-slate-600">{plan.description}</p>
-                </div>
-
-                <ul className="space-y-4 mb-8">
-                  {plan.features.map((feature, featureIndex) => (
-                    <li key={featureIndex} className="flex items-center">
-                      <CheckCircle className="w-5 h-5 text-emerald-500 mr-3 flex-shrink-0" />
-                      <span className="text-slate-700">{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-
-                <Link
-                  href="/auth"
-                  className={`w-full py-3 px-6 rounded-xl font-semibold text-center transition-all duration-300 ${
-                    plan.popular
-                      ? 'bg-gradient-to-r from-slate-600 to-slate-700 text-white hover:from-slate-700 hover:to-slate-800'
-                      : 'bg-slate-100 text-slate-900 hover:bg-slate-200'
-                  }`}
-                >
-                  {plan.cta}
-                </Link>
-              </div>
-            ))}
+                Empezar Gratis
+                <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform duration-200" />
+              </Link>
+              <a
+                href="https://coff.ee/3dmaniaconh"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center bg-yellow-400 hover:bg-yellow-500 text-slate-900 font-bold px-8 py-4 rounded-xl shadow-lg transition-all duration-300 text-lg"
+              >
+                <Star className="w-5 h-5 mr-2" />
+                Invítame a un café
+              </a>
+            </div>
+          </div>
+          <div className="max-w-2xl mx-auto">
+            <ul className="space-y-4 text-lg text-slate-700">
+              <li className="flex items-center"><CheckCircle className="w-5 h-5 text-emerald-500 mr-3 flex-shrink-0" /> Proyectos ilimitados</li>
+              <li className="flex items-center"><CheckCircle className="w-5 h-5 text-emerald-500 mr-3 flex-shrink-0" /> Calculadora avanzada de costes</li>
+              <li className="flex items-center"><CheckCircle className="w-5 h-5 text-emerald-500 mr-3 flex-shrink-0" /> Contabilidad y análisis de rentabilidad</li>
+              <li className="flex items-center"><CheckCircle className="w-5 h-5 text-emerald-500 mr-3 flex-shrink-0" /> Gestión de clientes</li>
+              <li className="flex items-center"><CheckCircle className="w-5 h-5 text-emerald-500 mr-3 flex-shrink-0" /> Equipos colaborativos y roles</li>
+              <li className="flex items-center"><CheckCircle className="w-5 h-5 text-emerald-500 mr-3 flex-shrink-0" /> Seguridad y privacidad</li>
+              <li className="flex items-center"><CheckCircle className="w-5 h-5 text-emerald-500 mr-3 flex-shrink-0" /> Notificaciones inteligentes</li>
+            </ul>
           </div>
         </div>
       </section>
@@ -459,7 +381,6 @@ export default function LandingPage() {
           <div className="grid md:grid-cols-4 gap-8">
             <div>
               <div className="flex items-center space-x-3 mb-6">
-                <img src="/logo.webp" alt="Logo MakerCycle" className="w-10 h-10 object-contain" />
                 <span className="text-xl font-bold">MakerCycle</span>
               </div>
               <p className="text-slate-400 mb-6">
@@ -479,7 +400,6 @@ export default function LandingPage() {
               <h3 className="text-lg font-semibold mb-6">Producto</h3>
               <ul className="space-y-3 text-slate-400">
                 <li><a href="#" className="hover:text-white transition-colors duration-200">Características</a></li>
-                <li><a href="#" className="hover:text-white transition-colors duration-200">Precios</a></li>
                 <li><a href="#" className="hover:text-white transition-colors duration-200">Demo</a></li>
                 <li><a href="#" className="hover:text-white transition-colors duration-200">API</a></li>
               </ul>
@@ -498,10 +418,12 @@ export default function LandingPage() {
             <div>
               <h3 className="text-lg font-semibold mb-6">Legal</h3>
               <ul className="space-y-3 text-slate-400">
-                <li><a href="#" className="hover:text-white transition-colors duration-200">Licencia MIT</a></li>
-                <li><a href="#" className="hover:text-white transition-colors duration-200">Privacidad</a></li>
-                <li><a href="#" className="hover:text-white transition-colors duration-200">Términos</a></li>
-                <li><a href="#" className="hover:text-white transition-colors duration-200">Seguridad</a></li>
+                <li><a href="/legal/aviso-legal" className="hover:text-white transition-colors duration-200">Aviso Legal</a></li>
+                <li><a href="/legal/privacidad" className="hover:text-white transition-colors duration-200">Privacidad</a></li>
+                <li><a href="/legal/cookies" className="hover:text-white transition-colors duration-200">Cookies</a></li>
+                <li><a href="/legal/terminos" className="hover:text-white transition-colors duration-200">Términos</a></li>
+                <li><a href="/legal/seguridad" className="hover:text-white transition-colors duration-200">Seguridad</a></li>
+                <li><a href="/legal/licencia" className="hover:text-white transition-colors duration-200">Licencia MIT</a></li>
               </ul>
             </div>
           </div>

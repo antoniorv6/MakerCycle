@@ -24,6 +24,11 @@ export async function middleware(req: NextRequest) {
     data: { session },
   } = await supabase.auth.getSession()
 
+  // Permitir acceso público a /legal/*
+  if (req.nextUrl.pathname.startsWith('/legal/')) {
+    return res;
+  }
+
   // If user is not signed in and the current path is not /auth or /, redirect to /auth
   if (!session && req.nextUrl.pathname !== '/auth' && req.nextUrl.pathname !== '/') {
     return NextResponse.redirect(new URL('/auth', req.url))
