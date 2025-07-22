@@ -1,10 +1,10 @@
-# 🚀 3DCraftFlow
+# 🚀 MakerCycle
 
-> **Tu aliado definitivo para la gestión profesional de impresión 3D**
+![MakerCycle Logo](public/logo.webp)
 
-3DCraftFlow es una plataforma SaaS moderna que revoluciona la forma en que gestionas tus proyectos de impresión 3D. Desde el cálculo preciso de costos hasta el análisis detallado de rentabilidad, todo en una interfaz intuitiva y elegante.
+MakerCycle es una plataforma SaaS moderna que revoluciona la forma en que gestionas tus proyectos de impresión 3D. Desde el cálculo preciso de costos hasta el análisis detallado de rentabilidad, todo
 
-![3DCraftFlow Dashboard](https://via.placeholder.com/800x400/1f2937/ffffff?text=3DCraftFlow+Dashboard)
+![MakerCycle Dashboard](https://via.placeholder.com/800x400/1f2937/ffffff?text=MakerCycle+Dashboard)
 
 ## ✨ Características principales
 
@@ -52,8 +52,8 @@
 
 1. **Clona el repositorio**
    ```bash
-   git clone https://github.com/tu-usuario/3DCraftFlow.git
-   cd 3DCraftFlow
+   git clone https://github.com/tu-usuario/MakerCycle.git
+   cd MakerCycle
    ```
 
 2. **Instala las dependencias**
@@ -87,7 +87,7 @@
 ## 📁 Estructura del proyecto
 
 ```
-3DCraftFlow/
+MakerCycle/
 ├── 📁 app/                    # Páginas y layouts (Next.js App Router)
 │   ├── 📁 auth/              # Páginas de autenticación
 │   ├── 📁 dashboard/         # Dashboard principal
@@ -152,13 +152,13 @@ Este proyecto está bajo la Licencia MIT. Ver el archivo `LICENSE` para más det
 
 ## 📞 Contacto
 
-- **Issues**: [GitHub Issues](https://github.com/tu-usuario/3DCraftFlow/issues)
-- **Discusiones**: [GitHub Discussions](https://github.com/tu-usuario/3DCraftFlow/discussions)
+- **Issues**: [GitHub Issues](https://github.com/tu-usuario/MakerCycle/issues)
+- **Discusiones**: [GitHub Discussions](https://github.com/tu-usuario/MakerCycle/discussions)
 
 ---
 
 <div align="center">
 
-**¿Te gusta 3DCraftFlow? ¡Dale una ⭐ al repositorio!**
+**¿Te gusta MakerCycle? ¡Dale una ⭐ al repositorio!**
 
 </div> 

@@ -8,9 +8,52 @@ import { Toaster } from 'react-hot-toast'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: '3D Printing SaaS - Gestión Profesional de Impresión 3D',
-  description: 'Plataforma profesional para gestionar proyectos, costes y ventas de impresión 3D',
-}
+  title: 'MakerCycle - Calculadora de Costes y Gestor de Proyectos de Impresión 3D',
+  description: 'MakerCycle es la plataforma profesional definitiva para calcular costes, gestionar proyectos y optimizar la rentabilidad de tu negocio de impresión 3D. Open source, colaborativa y segura.',
+  keywords: [
+    'calculadora de costes impresión 3D',
+    'gestor de proyectos impresión 3D',
+    'software impresión 3D',
+    'MakerCycle',
+    'cost calculator 3D printing',
+    'gestión impresión 3D',
+    'presupuestos impresión 3D',
+    'open source impresión 3D',
+    'colaboración impresión 3D',
+    'negocio impresión 3D'
+  ],
+  openGraph: {
+    title: 'MakerCycle - Calculadora de Costes y Gestor de Proyectos de Impresión 3D',
+    description: 'MakerCycle es la plataforma profesional definitiva para calcular costes, gestionar proyectos y optimizar la rentabilidad de tu negocio de impresión 3D.',
+    url: 'https://makercycle.com',
+    siteName: 'MakerCycle',
+    images: [
+      {
+        url: '/logo.webp',
+        width: 512,
+        height: 512,
+        alt: 'Logo MakerCycle',
+      },
+    ],
+    locale: 'es_ES',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'MakerCycle - Calculadora de Costes y Gestor de Proyectos de Impresión 3D',
+    description: 'MakerCycle es la plataforma profesional definitiva para calcular costes, gestionar proyectos y optimizar la rentabilidad de tu negocio de impresión 3D.',
+    images: ['/logo.webp'],
+    site: '@makercycle',
+  },
+  robots: {
+    index: true,
+    follow: true,
+    nocache: false,
+  },
+  alternates: {
+    canonical: 'https://makercycle.com',
+  },
+};
 
 export default function RootLayout({
   children,
@@ -22,6 +65,20 @@ export default function RootLayout({
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+        <link rel="icon" href="/logo.webp" type="image/webp" />
+        <meta name="theme-color" content="#1e293b" />
+        <meta name="author" content="MakerCycle" />
+        <meta name="copyright" content="2024 MakerCycle" />
+        <meta property="og:image" content="/logo.webp" />
+        <meta property="og:type" content="website" />
+        <meta property="og:locale" content="es_ES" />
+        <meta property="og:site_name" content="MakerCycle" />
+        <meta name="twitter:image" content="/logo.webp" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="MakerCycle - Calculadora de Costes y Gestor de Proyectos de Impresión 3D" />
+        <meta name="twitter:description" content="MakerCycle es la plataforma profesional definitiva para calcular costes, gestionar proyectos y optimizar la rentabilidad de tu negocio de impresión 3D." />
+        <meta name="twitter:site" content="@makercycle" />
+        <link rel="canonical" href="https://makercycle.com" />
       </head>
       <body className={inter.className}>
         <AuthProvider>

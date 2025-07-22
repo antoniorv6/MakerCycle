@@ -16,9 +16,9 @@ export interface CompanyData {
 }
 
 const DEFAULT_COMPANY_DATA: CompanyData = {
-  name: '3DCraftFlow',
+  name: 'MakerCycle',
   description: 'Servicios de Impresión 3D',
-  email: 'info@3dcraftflow.com',
+  email: 'info@makercycle.com',
   phone: '+34 XXX XXX XXX',
   address: '',
   website: '',

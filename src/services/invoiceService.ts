@@ -363,10 +363,10 @@ export class InvoiceService {
             <div class="invoice-info">
               <div class="company-info">
                 <div class="section-title">DATOS DE LA EMPRESA</div>
-                <p><strong>${companyData.name || '3DCraftFlow'}</strong></p>
+                <p><strong>${companyData.name || 'MakerCycle'}</strong></p>
                 <p>${companyData.description || 'Servicios de Impresión 3D'}</p>
                 ${companyData.address ? `<p>${companyData.address}</p>` : ''}
-                <p>Email: ${companyData.email || 'info@3dcraftflow.com'}</p>
+                <p>Email: ${companyData.email || 'info@makercycle.com'}</p>
                 <p>Teléfono: ${companyData.phone || '+34 XXX XXX XXX'}</p>
                 ${companyData.website ? `<p>Web: ${companyData.website}</p>` : ''}
                 ${companyData.taxId ? `<p>CIF/NIF: ${companyData.taxId}</p>` : ''}

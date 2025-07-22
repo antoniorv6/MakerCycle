@@ -59,15 +59,14 @@ export default function Sidebar({ currentPage, onPageChange, isOpen, onToggle }:
         }}
         className="fixed left-0 top-0 h-full w-70 bg-white border-r border-slate-200 shadow-lg z-50 lg:relative lg:translate-x-0 lg:z-auto lg:w-64"
       >
-        <div className="p-6">
-          <div className="flex items-center space-x-3 mb-8">
-            <div className="w-10 h-10 bg-gradient-to-br from-slate-600 to-slate-700 rounded-xl flex items-center justify-center shadow-lg">
-              <Calculator className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-slate-900">3DCraftFlow</h1>
-              <p className="text-sm text-slate-500">Gestión Profesional 3D</p>
-            </div>
+        <div className="p-6 relative">
+          {/* Logo arriba a la derecha */}
+          <div className="flex items-center gap-3 mb-8">
+            <img src="/logo.webp" alt="Logo MakerCycle" className="w-10 h-10 object-contain" />
+            <h1 className="text-xl font-bold text-slate-900">MakerCycle</h1>
+          </div>
+          <div>
+            <p className="text-sm text-slate-500">Gestión Profesional 3D</p>
           </div>
 
           {/* User info */}

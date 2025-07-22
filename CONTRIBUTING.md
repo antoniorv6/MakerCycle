@@ -1,4 +1,4 @@
-# Guía de contribución a 3DCraftFlow
+# Guía de contribución a MakerCycle
 
 ¡Gracias por tu interés en contribuir! Sigue estas pautas para ayudar a mejorar el proyecto.
 
