@@ -356,3 +356,16 @@ export interface PieceCardProps {
 export interface ModeSelectionProps {
   onModeSelect: (mode: ViewMode) => void;
 } 
+
+export type KanbanStatus = 'pending' | 'in_progress' | 'completed';
+
+export interface KanbanCard {
+  id: string;
+  user_id: string;
+  team_id?: string | null;
+  project_id: string;
+  status: KanbanStatus;
+  created_at: string;
+  updated_at: string;
+  project?: Project; // opcional, para joins
+} 
