@@ -176,12 +176,12 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
 
   const saveProject = async () => {
     if (!user) {
-      toast.error('Debes iniciar sesión para guardar proyectos');
+      toast.error('Debes iniciar sesión para guardar proyectos.');
       return;
     }
 
     if (!projectName.trim()) {
-      toast.error('Debes especificar un nombre para el proyecto');
+      toast.error('El proyecto debe tener un nombre.');
       return;
     }
 
@@ -206,7 +206,7 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
 
         if (profileError) {
           console.error('Error creating profile:', profileError);
-          toast.error('Error al crear el perfil del usuario. Inténtalo de nuevo.');
+          toast.error('No se pudo crear el perfil de usuario. Intenta de nuevo.');
           return;
         }
       }
@@ -256,7 +256,7 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
       }
 
       if (projectError) {
-        toast.error('Error al guardar el proyecto en Supabase: ' + projectError.message);
+        toast.error('No se pudo guardar el proyecto. Intenta de nuevo.');
         return;
       }
 
@@ -265,24 +265,25 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
         // Always delete all pieces for this project and re-insert
         await supabase.from('pieces').delete().eq('project_id', projectId);
 
-        if (pieces.length > 1 || pieces[0].name !== 'Pieza principal') {
-          const piecesToSave = pieces.map(piece => ({
-            project_id: projectId,
-            name: piece.name,
-            filament_weight: piece.filamentWeight,
-            filament_price: piece.filamentPrice,
-            print_hours: piece.printHours,
-            quantity: piece.quantity,
-            notes: piece.notes || ''
-          }));
+        // Guardar siempre todas las piezas, incluso si solo hay una y tiene el nombre por defecto
+        const piecesToSave = pieces.map(piece => ({
+          project_id: projectId,
+          name: piece.name,
+          filament_weight: piece.filamentWeight,
+          filament_price: piece.filamentPrice,
+          print_hours: piece.printHours,
+          quantity: piece.quantity,
+          notes: piece.notes || ''
+        }));
 
+        if (piecesToSave.length > 0) {
           const { error: piecesError } = await supabase
             .from('pieces')
             .insert(piecesToSave);
 
           if (piecesError) {
             console.error('Error saving pieces:', piecesError);
-            toast.error('Proyecto guardado pero hubo un error al guardar las piezas');
+            toast.error('El proyecto se guardó, pero hubo un error al guardar las piezas.');
           }
         }
       }
@@ -290,9 +291,9 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
       if (projectData) {
         onProjectSaved?.(projectData);
       }
-      toast.success('Proyecto guardado correctamente en Supabase');
+      toast.success('Proyecto guardado correctamente.');
     } catch (error: any) {
-      toast.error('Error inesperado: ' + error.message);
+      toast.error('Ha ocurrido un error inesperado. Intenta de nuevo.');
     }
   };
 

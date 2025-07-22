@@ -15,6 +15,7 @@ import { AccountingSkeleton } from '@/components/skeletons';
 import { InvoiceService } from '@/services/invoiceService';
 import { salesService } from '@/services/salesService';
 import type { Sale, Expense, SaleFormData, ExpenseFormData } from '@/types';
+import { toast } from 'react-hot-toast';
 
 type TabType = 'sales' | 'expenses';
 
@@ -140,7 +141,7 @@ export default function Accounting() {
   const handleGenerateInvoice = (sale: Sale) => {
     // Validar que la venta tenga un cliente asignado
     if (!sale.client_id) {
-      alert('Esta venta no tiene un cliente asignado. Por favor, edita la venta y asigna un cliente antes de generar el albarán.');
+      toast.error('Esta venta necesita un cliente asignado antes de generar el albarán.');
       return;
     }
     setSelectedSaleForInvoice(sale);

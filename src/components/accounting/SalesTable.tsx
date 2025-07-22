@@ -84,7 +84,7 @@ export function SalesTable({
       </div>
 
       {/* Sales Cards Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
         {filteredSales.map((sale, index) => (
           <motion.div
             key={sale.id}
@@ -94,10 +94,10 @@ export function SalesTable({
             className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden"
           >
             {/* Header */}
-            <div className="p-4 border-b border-gray-100">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center space-x-2 mb-2">
+            <div className="p-4 border-b border-gray-100 min-w-0">
+              <div className="flex items-start justify-between min-w-0">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center space-x-2 mb-2 flex-wrap min-w-0">
                     <Package className="w-4 h-4 text-blue-600" />
                     <span className="text-sm font-semibold text-gray-900">
                       {sale.items_count} proyecto{sale.items_count !== 1 ? 's' : ''}
@@ -113,7 +113,7 @@ export function SalesTable({
                       {sale.items.slice(0, 2).map((item, itemIndex) => (
                         <div key={itemIndex} className="flex items-center space-x-2 text-sm text-gray-600">
                           <span className="w-1.5 h-1.5 bg-blue-400 rounded-full"></span>
-                          <span className="truncate flex-1">{item.project_name}</span>
+                          <span className="truncate flex-1 max-w-[120px] sm:max-w-[180px] md:max-w-[220px]">{item.project_name}</span>
                           <span className="text-xs text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
                             x{item.quantity}
                           </span>
@@ -129,7 +129,7 @@ export function SalesTable({
                 </div>
                 
                 {/* Actions */}
-                <div className="flex space-x-1 ml-2">
+                <div className="flex space-x-1 ml-2 sales-actions-scroll overflow-x-auto scrollbar-thin scrollbar-thumb-gray-200 max-w-full">
                   <button
                     onClick={() => onEditSale(sale)}
                     className="flex items-center justify-center w-7 h-7 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition-all duration-200 hover:scale-105"
@@ -157,7 +157,7 @@ export function SalesTable({
 
             {/* Financial Info */}
             <div className="p-4 space-y-3">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="bg-gray-50 rounded-lg p-3">
                   <div className="flex items-center space-x-2 mb-1">
                     <Euro className="w-4 h-4 text-green-600" />
@@ -179,7 +179,7 @@ export function SalesTable({
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="bg-gray-50 rounded-lg p-3">
                   <div className="flex items-center space-x-2 mb-1">
                     <Calendar className="w-4 h-4 text-gray-600" />
@@ -203,11 +203,11 @@ export function SalesTable({
             </div>
 
             {/* Footer */}
-            <div className="px-4 py-3 bg-gray-50 border-t border-gray-100">
+            <div className="px-4 py-3 bg-gray-50 border-t border-gray-100 min-w-0">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <UserCheck className="w-4 h-4 text-gray-600" />
-                  <span className="text-sm text-gray-700 truncate">
+                  <span className="text-sm text-gray-700 truncate max-w-[120px] sm:max-w-[180px] md:max-w-[220px]">
                     {getClientName(sale.client_id || null)}
                   </span>
                 </div>
@@ -238,6 +238,22 @@ export function SalesTable({
           <p className="text-gray-400 text-sm mt-2">Intenta ajustar los filtros de búsqueda</p>
         </div>
       )}
+      <style jsx>{`
+        @media (max-width: 640px) {
+          .sales-actions-scroll {
+            gap: 0.25rem;
+            padding-left: 0.25rem;
+            padding-right: 0.25rem;
+            min-width: 0;
+          }
+          .sales-actions-scroll button {
+            min-width: 32px;
+            width: 32px;
+            height: 32px;
+            padding: 0;
+          }
+        }
+      `}</style>
     </div>
   );
 } 

@@ -9,14 +9,14 @@ import {
   BarChart3, Activity, Filter, Receipt, Zap, Award, Star, 
   ArrowUpRight, ArrowDownRight, PieChart as PieChartIcon, 
   LineChart as LineChartIcon, TrendingDown, Eye, Download,
-  RefreshCw, Settings, Lightbulb, AlertCircle, CheckCircle
+  RefreshCw, Settings, Lightbulb, AlertCircle, CheckCircle, User
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { createClient } from '@/lib/supabase';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useTeam } from '@/components/providers/TeamProvider';
 import { AdvancedStatisticsSkeleton } from '@/components/skeletons';
-import type { Sale, Expense } from '@/types';
+import type { Sale, Expense, Client } from '@/types';
 
 interface AdvancedStatsProps {
   onBack: () => void;
@@ -32,10 +32,12 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
   const { user } = useAuth();
   const { currentTeam, getEffectiveTeam } = useTeam();
   const supabase = createClient();
+  const [clients, setClients] = useState<Client[]>([]);
 
   useEffect(() => {
     if (user) {
       fetchData();
+      fetchClients();
     }
   }, [user, getEffectiveTeam]);
 
@@ -48,7 +50,7 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
       // Prepare queries based on team context
       let salesQuery = supabase
         .from('sales')
-        .select('*')
+        .select('*, items:sale_items(*)')
         .order('created_at', { ascending: false });
 
       let expensesQuery = supabase
@@ -89,6 +91,31 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
       console.error('Error fetching data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Nueva función para obtener clientes
+  const fetchClients = async () => {
+    if (!user) return;
+    try {
+      let clientsQuery = supabase
+        .from('clients')
+        .select('*')
+        .order('created_at', { ascending: true });
+      const effectiveTeam = getEffectiveTeam();
+      if (effectiveTeam) {
+        clientsQuery = clientsQuery.eq('team_id', effectiveTeam.id);
+      } else {
+        clientsQuery = clientsQuery.eq('user_id', user.id).is('team_id', null);
+      }
+      const { data: clientsData, error: clientsError } = await clientsQuery;
+      if (clientsError) {
+        console.error('Error fetching clients:', clientsError);
+      } else {
+        setClients(clientsData || []);
+      }
+    } catch (error) {
+      console.error('Error fetching clients:', error);
     }
   };
 
@@ -186,28 +213,47 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
 
   // Datos para gráfico de distribución de proyectos
   const projectDistribution = useMemo(() => {
-    const projectStats = filteredSales.reduce((acc, sale) => {
-      // Use the first item's project name or a default name
-      const name = sale.items && sale.items.length > 0 ? sale.items[0].project_name : 'Sin proyecto';
-      if (!acc[name]) {
-        acc[name] = {
-          name,
-          revenue: 0,
-          profit: 0,
-          sales: 0,
-          hours: 0
-        };
+    const projectStats: Record<string, { name: string; revenue: number; profit: number; sales: number; hours: number }> = {};
+    filteredSales.forEach(sale => {
+      if (sale.items && sale.items.length > 0) {
+        sale.items.forEach(item => {
+          const name = item.project_name || 'Sin proyecto';
+          if (!projectStats[name]) {
+            projectStats[name] = {
+              name,
+              revenue: 0,
+              profit: 0,
+              sales: 0,
+              hours: 0
+            };
+          }
+          // Sumar los importes proporcionales del item
+          projectStats[name].revenue += item.sale_price * item.quantity;
+          projectStats[name].profit += (item.sale_price - item.unit_cost) * item.quantity;
+          projectStats[name].sales += item.quantity;
+          projectStats[name].hours += item.print_hours * item.quantity;
+        });
+      } else {
+        // Venta sin items (caso raro o legacy)
+        const name = 'Sin proyecto';
+        if (!projectStats[name]) {
+          projectStats[name] = {
+            name,
+            revenue: 0,
+            profit: 0,
+            sales: 0,
+            hours: 0
+          };
+        }
+        projectStats[name].revenue += sale.total_amount;
+        projectStats[name].profit += sale.total_profit;
+        projectStats[name].sales += 1;
+        projectStats[name].hours += sale.total_print_hours;
       }
-      acc[name].revenue += sale.total_amount;
-      acc[name].profit += sale.total_profit;
-      acc[name].sales += 1;
-      acc[name].hours += sale.total_print_hours;
-      return acc;
-    }, {} as Record<string, any>);
-
+    });
     return Object.values(projectStats)
-      .sort((a: any, b: any) => b.revenue - a.revenue)
-      .slice(0, 10); // Top 10 proyectos
+      .sort((a, b) => b.revenue - a.revenue)
+      .slice(0, 10);
   }, [filteredSales]);
 
   // Datos para gráfico de márgenes
@@ -228,6 +274,37 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
 
     return ranges.filter(r => r.count > 0);
   }, [filteredSales]);
+
+  // Breakdown de gastos por categoría
+  const expenseCategoryBreakdown = useMemo(() => {
+    const breakdown: Record<string, number> = {};
+    filteredExpenses.forEach(expense => {
+      if (!breakdown[expense.category]) breakdown[expense.category] = 0;
+      breakdown[expense.category] += expense.amount;
+    });
+    return Object.entries(breakdown).map(([category, amount]) => ({ category, amount }));
+  }, [filteredExpenses]);
+
+  // Evolución de clientes
+  const clientEvolution = useMemo(() => {
+    // Agrupar por mes/año
+    const grouped: Record<string, number> = {};
+    clients.forEach(client => {
+      const date = new Date(client.created_at);
+      const key = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+      if (!grouped[key]) grouped[key] = 0;
+      grouped[key]++;
+    });
+    // Acumulado
+    let total = 0;
+    const sorted = Object.entries(grouped)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([key, count]) => {
+        total += count;
+        return { month: key, count: total };
+      });
+    return sorted;
+  }, [clients]);
 
   // Estadísticas resumidas
   const stats = useMemo(() => {
@@ -352,6 +429,13 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
 
   const formatCurrency = (value: number) => `€${value.toFixed(2)}`;
   const formatPercentage = (value: number) => `${value.toFixed(1)}%`;
+
+  // Utilidad para mensajes vacíos
+  const EmptyChartMessage = ({ message }: { message: string }) => (
+    <div className="flex items-center justify-center h-full text-slate-400 text-lg font-medium">
+      {message}
+    </div>
+  );
 
   if (loading) {
     return <AdvancedStatisticsSkeleton />;
@@ -601,42 +685,46 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
                 <LineChartIcon className="w-5 h-5 text-gray-500" />
               </div>
               <div className="h-80">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={timeSeriesData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="dateFormatted" />
-                    <YAxis />
-                    <Tooltip 
-                      formatter={(value: any, name: string) => {
-                        if (name === 'margin') return [formatPercentage(value), 'Margen'];
-                        if (name === 'eurosPerHour') return [formatCurrency(value), '€/Hora'];
-                        if (name === 'netProfit') return [formatCurrency(value), 'Beneficio Neto'];
-                        if (name === 'expenses') return [formatCurrency(value), 'Gastos'];
-                        return [formatCurrency(value), name === 'revenue' ? 'Ingresos' : name === 'profit' ? 'Beneficio Bruto' : 'Coste'];
-                      }}
-                    />
-                    <Legend />
-                    {chartType === 'revenue' && (
-                      <>
-                        <Line type="monotone" dataKey="revenue" stroke="#3b82f6" strokeWidth={3} name="Ingresos" />
-                        <Line type="monotone" dataKey="cost" stroke="#ef4444" strokeWidth={2} name="Costes" />
-                        <Line type="monotone" dataKey="expenses" stroke="#f59e0b" strokeWidth={2} name="Gastos" />
-                      </>
-                    )}
-                    {chartType === 'profit' && (
-                      <>
-                        <Line type="monotone" dataKey="profit" stroke="#10b981" strokeWidth={3} name="Beneficio Bruto" />
-                        <Line type="monotone" dataKey="netProfit" stroke="#059669" strokeWidth={3} name="Beneficio Neto" />
-                      </>
-                    )}
-                    {chartType === 'margin' && (
-                      <Line type="monotone" dataKey="margin" stroke="#8b5cf6" strokeWidth={3} name="Margen %" />
-                    )}
-                    {chartType === 'expenses' && (
-                      <Line type="monotone" dataKey="expenses" stroke="#f59e0b" strokeWidth={3} name="Gastos" />
-                    )}
-                  </LineChart>
-                </ResponsiveContainer>
+                {timeSeriesData.length === 0 ? (
+                  <EmptyChartMessage message="No hay datos suficientes para mostrar la evolución temporal." />
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={timeSeriesData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="dateFormatted" />
+                      <YAxis />
+                      <Tooltip 
+                        formatter={(value: any, name: string) => {
+                          if (name === 'margin') return [formatPercentage(value), 'Margen'];
+                          if (name === 'eurosPerHour') return [formatCurrency(value), '€/Hora'];
+                          if (name === 'netProfit') return [formatCurrency(value), 'Beneficio Neto'];
+                          if (name === 'expenses') return [formatCurrency(value), 'Gastos'];
+                          return [formatCurrency(value), name === 'revenue' ? 'Ingresos' : name === 'profit' ? 'Beneficio Bruto' : 'Coste'];
+                        }}
+                      />
+                      <Legend />
+                      {chartType === 'revenue' && (
+                        <>
+                          <Line type="monotone" dataKey="revenue" stroke="#3b82f6" strokeWidth={3} name="Ingresos" />
+                          <Line type="monotone" dataKey="cost" stroke="#ef4444" strokeWidth={2} name="Costes" />
+                          <Line type="monotone" dataKey="expenses" stroke="#f59e0b" strokeWidth={2} name="Gastos" />
+                        </>
+                      )}
+                      {chartType === 'profit' && (
+                        <>
+                          <Line type="monotone" dataKey="profit" stroke="#10b981" strokeWidth={3} name="Beneficio Bruto" />
+                          <Line type="monotone" dataKey="netProfit" stroke="#059669" strokeWidth={3} name="Beneficio Neto" />
+                        </>
+                      )}
+                      {chartType === 'margin' && (
+                        <Line type="monotone" dataKey="margin" stroke="#8b5cf6" strokeWidth={3} name="Margen %" />
+                      )}
+                      {chartType === 'expenses' && (
+                        <Line type="monotone" dataKey="expenses" stroke="#f59e0b" strokeWidth={3} name="Gastos" />
+                      )}
+                    </LineChart>
+                  </ResponsiveContainer>
+                )}
               </div>
             </div>
 
@@ -674,30 +762,112 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
           </div>
 
           {/* Gráfico de proyectos más rentables */}
-          <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
+          <div className="grid lg:grid-cols-2 gap-8">
+            {/* Gráfico de pastel de ingresos por proyecto */}
+            <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100 flex flex-col justify-between">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Proporción de Ingresos por Proyecto</h3>
+                  <p className="text-sm text-gray-500">Visualiza qué proyectos generan más ingresos</p>
+                </div>
+                <PieChartIcon className="w-5 h-5 text-gray-500" />
+              </div>
+              <div className="h-72">
+                {projectDistribution.length === 0 ? (
+                  <EmptyChartMessage message="No hay datos de proyectos para mostrar." />
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={projectDistribution}
+                        dataKey="revenue"
+                        nameKey="name"
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={100}
+                        label={({ name, percent }) => percent !== undefined ? `${name}: ${(percent * 100).toFixed(1)}%` : name}
+                      >
+                        {projectDistribution.map((entry, index) => (
+                          <Cell key={`cell-pie-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(value: any) => [formatCurrency(value), 'Ingresos']} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                )}
+              </div>
+            </div>
+            {/* Tabla de proyectos destacados */}
+            <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100 overflow-x-auto">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Top 10 Proyectos Detallados</h3>
+                  <p className="text-sm text-gray-500">Ranking de proyectos más rentables</p>
+                </div>
+                <Activity className="w-5 h-5 text-gray-500" />
+              </div>
+              {projectDistribution.length === 0 ? (
+                <EmptyChartMessage message="No hay datos de proyectos para mostrar." />
+              ) : (
+                <table className="min-w-full text-left text-sm">
+                  <thead>
+                    <tr className="text-slate-500 border-b">
+                      <th className="py-2 pr-4">Proyecto</th>
+                      <th className="py-2 pr-4">Ingresos</th>
+                      <th className="py-2 pr-4">Beneficio</th>
+                      <th className="py-2 pr-4">Ventas</th>
+                      <th className="py-2 pr-4">Horas</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {projectDistribution.map((project, idx) => (
+                      <tr key={project.name} className={idx % 2 === 0 ? 'bg-slate-50' : ''}>
+                        <td className="py-2 pr-4 font-medium text-slate-900">{project.name}</td>
+                        <td className="py-2 pr-4">{formatCurrency(project.revenue)}</td>
+                        <td className="py-2 pr-4 text-green-700">{formatCurrency(project.profit)}</td>
+                        <td className="py-2 pr-4">{project.sales}</td>
+                        <td className="py-2 pr-4">{project.hours.toFixed(1)}h</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </div>
+
+          {/* Breakdown de gastos por categoría */}
+          <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100 mt-8">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">Top 10 Proyectos por Ingresos</h3>
-                <p className="text-sm text-gray-500">Análisis de productos más rentables</p>
+                <h3 className="text-lg font-semibold text-gray-900">Gastos por Categoría</h3>
+                <p className="text-sm text-gray-500">Distribución de gastos en el período</p>
               </div>
-              <Activity className="w-5 h-5 text-gray-500" />
+              <PieChartIcon className="w-5 h-5 text-gray-500" />
             </div>
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={projectDistribution} layout="horizontal">
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis type="number" />
-                  <YAxis dataKey="name" type="category" width={100} />
-                  <Tooltip 
-                    formatter={(value: any, name: string) => [
-                      name === 'revenue' ? formatCurrency(value) : value,
-                      name === 'revenue' ? 'Ingresos' : name === 'profit' ? 'Beneficio' : name === 'sales' ? 'Ventas' : 'Horas'
-                    ]}
-                  />
-                  <Bar dataKey="revenue" fill="#3b82f6" name="Ingresos" />
-                  <Bar dataKey="profit" fill="#10b981" name="Beneficio" />
-                </BarChart>
-              </ResponsiveContainer>
+            <div className="h-72">
+              {expenseCategoryBreakdown.length === 0 ? (
+                <EmptyChartMessage message="No hay gastos registrados en este período." />
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={expenseCategoryBreakdown}
+                      dataKey="amount"
+                      nameKey="category"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={100}
+                      label={({ category, percent }) => percent !== undefined ? `${category}: ${(percent * 100).toFixed(1)}%` : category}
+                    >
+                      {expenseCategoryBreakdown.map((entry, index) => (
+                        <Cell key={`cell-expense-${index}`} fill={COLORS[(index + 2) % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value: any) => [formatCurrency(value), 'Gasto']} />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              )}
             </div>
           </div>
         </motion.div>
@@ -820,6 +990,33 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
                   <Line type="monotone" dataKey="expenses" stroke="#f59e0b" strokeWidth={2} name="Gastos" />
                 </ComposedChart>
               </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Evolución de clientes */}
+          <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100 mt-8">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Evolución de Clientes</h3>
+                <p className="text-sm text-gray-500">Clientes acumulados por mes</p>
+              </div>
+              <User className="w-5 h-5 text-gray-500" />
+            </div>
+            <div className="h-72">
+              {clientEvolution.length === 0 ? (
+                <EmptyChartMessage message="No hay clientes registrados aún." />
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={clientEvolution}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="month" />
+                    <YAxis allowDecimals={false} />
+                    <Tooltip formatter={(value: any) => [value, 'Clientes acumulados']} />
+                    <Legend />
+                    <Line type="monotone" dataKey="count" stroke="#3b82f6" strokeWidth={3} name="Clientes acumulados" />
+                  </LineChart>
+                </ResponsiveContainer>
+              )}
             </div>
           </div>
         </motion.div>

@@ -148,14 +148,12 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-slate-700 to-slate-800 rounded-xl flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-110">
-                <Calculator className="w-6 h-6 text-white" />
-              </div>
+              <img src="/logo.webp" alt="Logo MakerCycle" className="w-10 h-10 object-contain" />
               <div>
                 <h1 className="text-xl font-bold text-slate-900">
-                  3DCraftFlow
+                  MakerCycle
                 </h1>
-                <p className="text-sm text-slate-500">Gestión Profesional 3D</p>
+                <p className="text-sm text-slate-500">Calculadora y Gestión Profesional de Impresión 3D</p>
               </div>
             </div>
             <div className="flex items-center space-x-4">
@@ -203,13 +201,12 @@ export default function LandingPage() {
               </div>
               
               <h1 className="text-5xl md:text-7xl font-bold text-slate-900 mb-6 leading-tight">
-                Gestiona tu negocio de
+                Calculadora de costes y gestor de proyectos para
                 <span className="bg-gradient-to-r from-slate-700 to-slate-800 bg-clip-text text-transparent"> impresión 3D</span>
               </h1>
               
               <p className="text-xl md:text-2xl text-slate-600 mb-8 max-w-4xl mx-auto leading-relaxed">
-                Plataforma open source para calcular costes, gestionar proyectos y analizar la rentabilidad 
-                de tu negocio de impresión 3D. Profesional, seguro y accesible.
+                MakerCycle es la plataforma open source definitiva para calcular costes, gestionar proyectos y analizar la rentabilidad de tu negocio de impresión 3D. Profesional, colaborativa y segura.
               </p>
               
               <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
@@ -250,10 +247,10 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-6">
-              Herramientas profesionales para makers
+              Herramientas profesionales para impresión 3D
             </h2>
             <p className="text-xl text-slate-600 max-w-3xl mx-auto">
-              Desarrollado por makers, para makers. Todas las herramientas que necesitas para profesionalizar tu negocio de impresión 3D.
+              MakerCycle reúne todas las herramientas que necesitas para profesionalizar y optimizar tu negocio de impresión 3D.
             </p>
           </div>
 
@@ -298,7 +295,7 @@ export default function LandingPage() {
               <p className="text-slate-600 mb-6">
                 Todo el código está disponible en GitHub bajo licencia MIT. Revisa, contribuye o haz fork.
               </p>
-              <a href="https://github.com/antoniorv6/3DCraftFlow" className="inline-flex items-center text-slate-700 hover:text-slate-900 font-medium">
+              <a href="https://github.com/antoniorv6/MakerCycle" className="inline-flex items-center text-slate-700 hover:text-slate-900 font-medium">
                 Ver en GitHub
                 <ArrowRight className="w-4 h-4 ml-2" />
               </a>
@@ -312,7 +309,7 @@ export default function LandingPage() {
               <p className="text-slate-600 mb-6">
                 ¿Tienes ideas para mejorar? Contribuye al proyecto. Cada pull request es bienvenido.
               </p>
-              <a href="https://github.com/antoniorv6/3DCraftFlow/blob/main/CONTRIBUTING.md" className="inline-flex items-center text-slate-700 hover:text-slate-900 font-medium">
+              <a href="https://github.com/antoniorv6/MakerCycle/blob/main/CONTRIBUTING.md" className="inline-flex items-center text-slate-700 hover:text-slate-900 font-medium">
                 Guía de Contribución
                 <ArrowRight className="w-4 h-4 ml-2" />
               </a>
@@ -446,7 +443,7 @@ export default function LandingPage() {
               <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform duration-200" />
             </Link>
             <a
-              href="https://github.com/antoniorv6/3DCraftFlow"
+              href="https://github.com/antoniorv6/MakerCycle"
               className="group border-2 border-white/20 hover:border-white/40 text-white px-8 py-4 rounded-xl text-lg font-semibold transition-all duration-300 transform hover:scale-105 inline-flex items-center"
             >
               <Github className="w-5 h-5 mr-2" />
@@ -462,16 +459,14 @@ export default function LandingPage() {
           <div className="grid md:grid-cols-4 gap-8">
             <div>
               <div className="flex items-center space-x-3 mb-6">
-                <div className="w-10 h-10 bg-gradient-to-br from-slate-600 to-slate-700 rounded-xl flex items-center justify-center">
-                  <Calculator className="w-6 h-6 text-white" />
-                </div>
-                <span className="text-xl font-bold">3DCraftFlow</span>
+                <img src="/logo.webp" alt="Logo MakerCycle" className="w-10 h-10 object-contain" />
+                <span className="text-xl font-bold">MakerCycle</span>
               </div>
               <p className="text-slate-400 mb-6">
-                Plataforma open source para la gestión profesional de impresión 3D.
+                MakerCycle: Calculadora de costes y gestor de proyectos para impresión 3D. Open source, profesional y colaborativa.
               </p>
               <div className="flex space-x-4">
-                <a href="https://github.com/antoniorv6/3DCraftFlow" className="text-slate-400 hover:text-white transition-colors duration-200">
+                <a href="https://github.com/antoniorv6/MakerCycle" className="text-slate-400 hover:text-white transition-colors duration-200">
                   <Github className="w-5 h-5" />
                 </a>
                 <a href="#" className="text-slate-400 hover:text-white transition-colors duration-200">
@@ -493,10 +488,10 @@ export default function LandingPage() {
             <div>
               <h3 className="text-lg font-semibold mb-6">Desarrollo</h3>
               <ul className="space-y-3 text-slate-400">
-                <li><a href="https://github.com/antoniorv6/3DCraftFlow" className="hover:text-white transition-colors duration-200">Documentación</a></li>
-                <li><a href="https://github.com/antoniorv6/3DCraftFlow/blob/main/CONTRIBUTING.md" className="hover:text-white transition-colors duration-200">Contribuir</a></li>
-                <li><a href="https://github.com/antoniorv6/3DCraftFlow/issues" className="hover:text-white transition-colors duration-200">Issues</a></li>
-                <li><a href="https://github.com/antoniorv6/3DCraftFlow/projects" className="hover:text-white transition-colors duration-200">Roadmap</a></li>
+                <li><a href="https://github.com/antoniorv6/MakerCycle" className="hover:text-white transition-colors duration-200">Documentación</a></li>
+                <li><a href="https://github.com/antoniorv6/MakerCycle/blob/main/CONTRIBUTING.md" className="hover:text-white transition-colors duration-200">Contribuir</a></li>
+                <li><a href="https://github.com/antoniorv6/MakerCycle/issues" className="hover:text-white transition-colors duration-200">Issues</a></li>
+                <li><a href="https://github.com/antoniorv6/MakerCycle/projects" className="hover:text-white transition-colors duration-200">Roadmap</a></li>
               </ul>
             </div>
             
@@ -512,7 +507,7 @@ export default function LandingPage() {
           </div>
           
           <div className="border-t border-slate-800 mt-12 pt-8 text-center text-slate-400">
-                          <p>&copy; 2024 3DCraftFlow. Open Source bajo licencia MIT.</p>
+            <p>&copy; 2024 MakerCycle. Open Source bajo licencia MIT.</p>
           </div>
         </div>
       </footer>

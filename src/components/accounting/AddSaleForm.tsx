@@ -6,6 +6,7 @@ import { useAuth } from '@/components/providers/AuthProvider';
 import { ClientSelector } from './ClientSelector';
 import { SaleItemsForm } from './SaleItemsForm';
 import type { Sale, SaleFormData, SaleItemFormData } from '@/types';
+import { toast } from 'react-hot-toast';
 
 interface AddSaleFormProps {
   sale?: Sale | null;
@@ -56,7 +57,7 @@ export function AddSaleForm({ sale, onSave, onCancel }: AddSaleFormProps) {
     e.preventDefault();
     
     if (formData.items.length === 0) {
-      alert('Debes agregar al menos un proyecto a la venta');
+      toast.error('Agrega al menos un proyecto a la venta.');
       return;
     }
 
@@ -78,7 +79,7 @@ export function AddSaleForm({ sale, onSave, onCancel }: AddSaleFormProps) {
     );
 
     if (invalidItems.length > 0) {
-      alert('Por favor, asegúrate de que todos los proyectos tengan valores válidos:\n- Coste unitario mayor que 0\n- Cantidad mayor que 0\n- Precio de venta mayor que 0\n- Nombre del proyecto no vacío');
+      toast.error('Revisa que todos los proyectos tengan valores correctos: nombre, cantidad, precio y coste unitario.');
       return;
     }
 

@@ -51,7 +51,7 @@ export default function ProjectManager({ onLoadProject }: ProjectManagerProps) {
 
       if (error) {
         console.error('Error fetching projects:', error);
-        toast.error('Error al cargar los proyectos');
+        toast.error('No se pudieron cargar los proyectos. Intenta de nuevo.');
         return;
       }
 
@@ -69,7 +69,7 @@ export default function ProjectManager({ onLoadProject }: ProjectManagerProps) {
       setProjects(projectsWithPieces);
     } catch (error) {
       console.error('Error fetching projects:', error);
-      toast.error('Error al cargar los proyectos');
+      toast.error('No se pudieron cargar los proyectos. Intenta de nuevo.');
     } finally {
       setLoading(false);
     }
@@ -85,14 +85,14 @@ export default function ProjectManager({ onLoadProject }: ProjectManagerProps) {
 
       if (error) {
         console.error('Error fetching pieces:', error);
-        toast.error('Error al cargar las piezas del proyecto');
+        toast.error('No se pudieron cargar las piezas del proyecto. Intenta de nuevo.');
         return;
       }
 
       onLoadProject({ ...project, pieces: pieces || [] });
     } catch (error) {
       console.error('Error loading project:', error);
-      toast.error('Error al cargar el proyecto');
+      toast.error('No se pudo cargar el proyecto. Intenta de nuevo.');
     }
   };
 
@@ -123,17 +123,17 @@ export default function ProjectManager({ onLoadProject }: ProjectManagerProps) {
 
       if (error) {
         console.error('Error creating project:', error);
-        toast.error('Error al crear el proyecto');
+        toast.error('No se pudo crear el proyecto. Intenta de nuevo.');
         return;
       }
 
       setProjects([...projects, { ...data, pieces: [] }]);
       setNewProjectName('');
       setShowCreateModal(false);
-      toast.success('Proyecto creado exitosamente');
+      toast.success('Proyecto creado correctamente.');
     } catch (error) {
       console.error('Error creating project:', error);
-      toast.error('Error al crear el proyecto');
+      toast.error('No se pudo crear el proyecto. Intenta de nuevo.');
     }
   };
 
@@ -147,7 +147,7 @@ export default function ProjectManager({ onLoadProject }: ProjectManagerProps) {
 
       if (piecesError) {
         console.error('Error deleting pieces:', piecesError);
-        toast.error('Error al eliminar las piezas del proyecto');
+        toast.error('No se pudieron eliminar las piezas del proyecto. Intenta de nuevo.');
         return;
       }
 
@@ -159,7 +159,7 @@ export default function ProjectManager({ onLoadProject }: ProjectManagerProps) {
 
       if (error) {
         console.error('Error deleting project:', error);
-        toast.error('Error al eliminar el proyecto');
+        toast.error('No se pudo eliminar el proyecto. Intenta de nuevo.');
         return;
       }
 
@@ -167,7 +167,7 @@ export default function ProjectManager({ onLoadProject }: ProjectManagerProps) {
       setProjects(projects.filter(p => p.id !== id));
     } catch (error) {
       console.error('Error deleting project:', error);
-      toast.error('Error al eliminar el proyecto');
+      toast.error('No se pudo eliminar el proyecto. Intenta de nuevo.');
     }
   };
 

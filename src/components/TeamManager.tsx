@@ -7,6 +7,7 @@ import { useTeam } from '@/components/providers/TeamProvider';
 import type { Team, TeamMember } from '@/types';
 import { Plus, X, Users, User, ChevronDown, Edit } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'react-hot-toast';
 
 interface MemberProfile {
   id: string;
@@ -146,14 +147,14 @@ const TeamManager: React.FC = () => {
       
       if (error) {
         console.error('Error creating missing profiles:', error);
-        alert('Error al crear perfiles faltantes.');
+        toast.error('No se pudieron crear los perfiles. Por favor, inténtalo de nuevo.');
         return;
       }
       
-      alert('Perfiles faltantes creados exitosamente.');
+      toast.success('Perfiles creados correctamente.');
     } catch (error) {
       console.error('Unexpected error:', error);
-      alert('Error inesperado al crear perfiles faltantes.');
+      toast.error('Ha ocurrido un error al crear los perfiles.');
     }
   };
 
@@ -185,7 +186,7 @@ const TeamManager: React.FC = () => {
       
       if (userError) {
         console.error('Error searching for user:', userError);
-        alert('Error al buscar el usuario. Inténtalo de nuevo.');
+        toast.error('No se pudo encontrar el usuario. Intenta de nuevo.');
         return;
       }
       
@@ -210,7 +211,7 @@ const TeamManager: React.FC = () => {
           });
         }
         
-        alert(errorMessage);
+        toast.error(errorMessage);
         return;
       }
 
@@ -224,12 +225,12 @@ const TeamManager: React.FC = () => {
 
       if (memberCheckError) {
         console.error('Error checking existing membership:', memberCheckError);
-        alert('Error al verificar la membresía. Inténtalo de nuevo.');
+        toast.error('No se pudo verificar la membresía. Intenta de nuevo.');
         return;
       }
 
       if (existingMember) {
-        alert(`El usuario ${userData.email} ya es miembro de este equipo.`);
+        toast('El usuario ya forma parte de este equipo.');
         return;
       }
 
@@ -244,16 +245,16 @@ const TeamManager: React.FC = () => {
 
       if (memberError) {
         console.error('Error inviting member:', memberError);
-        alert('Error al invitar miembro al equipo. Inténtalo de nuevo.');
+        toast.error('No se pudo invitar al miembro. Intenta de nuevo.');
         return;
       }
 
       setInviteEmail('');
       handleSelectTeam(selectedTeam); // Refresh members
-      alert(`Usuario ${userData.email} invitado exitosamente al equipo.`);
+      toast.success('Usuario invitado correctamente al equipo.');
     } catch (error) {
       console.error('Unexpected error during invitation:', error);
-      alert('Error inesperado al invitar miembro. Inténtalo de nuevo.');
+      toast.error('Ha ocurrido un error al invitar al miembro.');
     }
   };
 

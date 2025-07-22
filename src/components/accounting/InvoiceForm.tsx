@@ -3,6 +3,7 @@ import { X, Download, FileText, Plus, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useClients } from '@/hooks/useClients';
 import type { Sale, InvoiceFormData } from '@/types';
+import { toast } from 'react-hot-toast';
 
 interface InvoiceFormProps {
   sale: Sale;
@@ -52,7 +53,7 @@ export function InvoiceForm({ sale, onClose, onGeneratePDF }: InvoiceFormProps) 
       }
     } else {
       // Si no hay cliente asignado, mostrar advertencia
-      alert('Esta venta no tiene un cliente asignado. Por favor, completa los datos del cliente manualmente.');
+      toast('Completa los datos del cliente manualmente para este albarán.');
     }
   }, [sale.client_id, clients]);
 
@@ -111,7 +112,7 @@ export function InvoiceForm({ sale, onClose, onGeneratePDF }: InvoiceFormProps) 
     e.preventDefault();
     
     if (formData.items.length === 0) {
-      alert('Debes agregar al menos un item al albarán');
+      toast.error('Agrega al menos un concepto al albarán.');
       return;
     }
 
@@ -121,7 +122,7 @@ export function InvoiceForm({ sale, onClose, onGeneratePDF }: InvoiceFormProps) 
     );
 
     if (invalidItems.length > 0) {
-      alert('Por favor, asegúrate de que todos los items tengan descripción, cantidad y precio válidos');
+      toast.error('Revisa que todos los conceptos tengan descripción, cantidad y precio correctos.');
       return;
     }
 
