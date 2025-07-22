@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { Calculator, TrendingUp, FolderOpen, Settings, Menu, X, LogOut, Home, Users, User } from 'lucide-react'
+import { Calculator, TrendingUp, FolderOpen, Settings, Menu, X, LogOut, Home, Users, User, BarChart3 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '@/components/providers/AuthProvider'
 import TeamContextIndicator from './TeamContextIndicator'
@@ -20,6 +20,7 @@ const menuItems = [
   { id: 'accounting', label: 'Contabilidad', icon: TrendingUp },
   { id: 'clients', label: 'Clientes', icon: User },
   { id: 'projects', label: 'Proyectos', icon: FolderOpen },
+  { id: 'kanban', label: 'Tablero Kanban', icon: BarChart3 },
   { id: 'teams', label: 'Equipos', icon: Users, href: '/dashboard/teams' },
   { id: 'settings', label: 'Configuración', icon: Settings },
 ]

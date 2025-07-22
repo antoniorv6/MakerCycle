@@ -12,6 +12,9 @@ import type { DatabaseProject, DatabasePiece, AppProject } from '@/types'
 import TeamManager from './TeamManager'
 import SettingsPage from './settings/SettingsPage'
 import { ClientsManager } from './accounting/ClientsManager'
+import dynamic from 'next/dynamic';
+const KanbanBoard = dynamic(() => import('./kanban/KanbanBoard'), { ssr: false });
+import { KanbanBoardSkeleton } from './skeletons';
 
 // Import lazy components
 import { 
@@ -143,6 +146,12 @@ export default function Dashboard({ initialPage }: { initialPage?: string } = {}
         return <TeamManager />
       case 'clients':
         return <ClientsManager onBack={() => setCurrentPage('home')} />
+      case 'kanban':
+        return (
+          <Suspense fallback={<KanbanBoardSkeleton />}>
+            <KanbanBoard />
+          </Suspense>
+        );
       default:
         return (
           <Suspense fallback={<DashboardSkeleton />}>

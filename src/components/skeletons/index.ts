@@ -7,4 +7,5 @@ export { default as AuthSkeleton } from './AuthSkeleton'
 export { default as SidebarSkeleton } from './SidebarSkeleton'
 export { default as GenericSkeleton } from './GenericSkeleton'
 export { default as TableSkeleton } from './TableSkeleton'
-export { default as CardSkeleton } from './CardSkeleton' 
+export { default as CardSkeleton } from './CardSkeleton'
+export { default as KanbanBoardSkeleton } from './KanbanBoardSkeleton'; 
