@@ -2,10 +2,10 @@
 
 import posthog from "posthog-js"
 import { PostHogProvider as PHProvider } from "posthog-js/react"
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, Suspense } from "react"
 import { usePathname, useSearchParams } from "next/navigation"
 
-export function PostHogProvider({ children }: { children: React.ReactNode }) {
+function PostHogTracker() {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const previousPathname = useRef<string | null>(null)
@@ -23,8 +23,6 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
       disable_session_recording: false, // Enable session recordings
       session_recording: {
         maskAllInputs: false, // Don't mask all inputs by default
-        maskTextInputs: true, // But mask text inputs for privacy
-        recordCanvas: false, // Don't record canvas for performance
       },
       // Enable automatic page leave tracking
       loaded: (posthog) => {
@@ -77,8 +75,15 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
+  return null
+}
+
+export function PostHogProvider({ children }: { children: React.ReactNode }) {
   return (
     <PHProvider client={posthog}>
+      <Suspense fallback={null}>
+        <PostHogTracker />
+      </Suspense>
       {children}
     </PHProvider>
   )

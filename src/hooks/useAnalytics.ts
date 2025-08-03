@@ -21,7 +21,7 @@ export const useAnalytics = () => {
 
   const setUserProperties = useCallback((properties: Record<string, any>) => {
     try {
-      posthog.set(properties)
+      posthog.people.set(properties)
     } catch (error) {
       console.warn('PostHog set failed:', error)
     }
@@ -29,7 +29,7 @@ export const useAnalytics = () => {
 
   const isFeatureEnabled = useCallback((flag: FEATURE_FLAGS): boolean => {
     try {
-      return posthog.isFeatureEnabled(flag)
+      return posthog.isFeatureEnabled(flag) ?? false
     } catch (error) {
       console.warn('PostHog feature flag check failed:', error)
       return false
