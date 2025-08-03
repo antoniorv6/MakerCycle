@@ -4,6 +4,7 @@ import React, { useState, Suspense } from 'react'
 import { Settings } from 'lucide-react'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { useDashboardData } from '@/hooks/useDashboardData'
+import { useAnalytics } from '@/hooks/useAnalytics'
 
 // Import existing components
 import Sidebar from './Sidebar'
@@ -31,6 +32,7 @@ export default function Dashboard({ initialPage }: { initialPage?: string } = {}
   const [loadedProject, setLoadedProject] = useState<AppProject | null>(null)
   const { user } = useAuth()
   const { stats } = useDashboardData()
+  const { trackNavigation } = useAnalytics()
 
   // Helper to convert DatabaseProject to AppProject
   function dbProjectToProject(db: DatabaseProject & { pieces?: DatabasePiece[] }): AppProject {
@@ -104,19 +106,24 @@ export default function Dashboard({ initialPage }: { initialPage?: string } = {}
     setLoadedProject(null)
   }
 
+  const handlePageChange = (page: string) => {
+    setCurrentPage(page)
+    trackNavigation(page)
+  }
+
   const renderContent = () => {
     switch (currentPage) {
       case 'home':
         return (
           <Suspense fallback={<DashboardSkeleton />}>
-            <LazyDashboardHome stats={stats} onNavigate={setCurrentPage} />
+            <LazyDashboardHome stats={stats} onNavigate={handlePageChange} />
           </Suspense>
         )
       case 'project-info':
         return loadedProject ? (
           <ProjectInfoView
             project={loadedProject}
-            onEdit={() => setCurrentPage('calculator')}
+            onEdit={() => handlePageChange('calculator')}
           />
         ) : null;
       case 'calculator':
@@ -145,7 +152,7 @@ export default function Dashboard({ initialPage }: { initialPage?: string } = {}
       case 'teams':
         return <TeamManager />
       case 'clients':
-        return <ClientsManager onBack={() => setCurrentPage('home')} />
+        return <ClientsManager onBack={() => handlePageChange('home')} />
       case 'kanban':
         return (
           <Suspense fallback={<KanbanBoardSkeleton />}>
@@ -168,7 +175,7 @@ export default function Dashboard({ initialPage }: { initialPage?: string } = {}
     <div className="flex h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       <Sidebar
         currentPage={currentPage}
-        onPageChange={setCurrentPage}
+        onPageChange={handlePageChange}
         isOpen={sidebarOpen}
         onToggle={() => setSidebarOpen(!sidebarOpen)}
       />

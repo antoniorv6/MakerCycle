@@ -369,3 +369,60 @@ export interface KanbanCard {
   updated_at: string;
   project?: Project; // opcional, para joins
 } 
+
+// Feature Flags
+export enum FEATURE_FLAGS {
+  ADVANCED_STATISTICS = 'advanced_statistics',
+  TEAM_COLLABORATION = 'team_collaboration',
+  KANBAN_BOARD = 'kanban_board',
+  INVOICE_GENERATION = 'invoice_generation',
+  EXPORT_FUNCTIONALITY = 'export_functionality',
+  BETA_FEATURES = 'beta_features',
+}
+
+// Analytics Events
+export enum ANALYTICS_EVENTS {
+  // User Events
+  USER_SIGNED_IN = 'user_signed_in',
+  USER_SIGNED_OUT = 'user_signed_out',
+  USER_REGISTERED = 'user_registered',
+  
+  // Project Events
+  PROJECT_CREATED = 'project_created',
+  PROJECT_UPDATED = 'project_updated',
+  PROJECT_DELETED = 'project_deleted',
+  PROJECT_SAVED = 'project_saved',
+  PROJECT_LOADED = 'project_loaded',
+  
+  // Calculator Events
+  CALCULATOR_USED = 'calculator_used',
+  COST_CALCULATED = 'cost_calculated',
+  PRICE_RECOMMENDATION_GENERATED = 'price_recommendation_generated',
+  
+  // Sales Events
+  SALE_CREATED = 'sale_created',
+  SALE_UPDATED = 'sale_updated',
+  SALE_DELETED = 'sale_deleted',
+  
+  // Client Events
+  CLIENT_CREATED = 'client_created',
+  CLIENT_UPDATED = 'client_updated',
+  CLIENT_DELETED = 'client_deleted',
+  
+  // Team Events
+  TEAM_CREATED = 'team_created',
+  TEAM_JOINED = 'team_joined',
+  TEAM_LEFT = 'team_left',
+  
+  // Navigation Events
+  DASHBOARD_ACCESSED = 'dashboard_accessed',
+  CALCULATOR_ACCESSED = 'calculator_accessed',
+  PROJECTS_ACCESSED = 'projects_accessed',
+  ACCOUNTING_ACCESSED = 'accounting_accessed',
+  SETTINGS_ACCESSED = 'settings_accessed',
+  
+  // Feature Usage
+  FEATURE_USED = 'feature_used',
+  EXPORT_USED = 'export_used',
+  IMPORT_USED = 'import_used',
+} 

@@ -3,6 +3,7 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import { AuthProvider } from '@/components/providers/AuthProvider'
 import { TeamProvider } from '@/components/providers/TeamProvider'
+import { PostHogProvider } from '@/components/providers/PostHogProvider'
 import { Toaster } from 'react-hot-toast'
 
 const inter = Inter({ subsets: ['latin'] })
@@ -53,7 +54,7 @@ export const metadata: Metadata = {
   alternates: {
     canonical: 'https://makercycle.com',
   },
-};
+}
 
 export default function RootLayout({
   children,
@@ -81,35 +82,37 @@ export default function RootLayout({
         <link rel="canonical" href="https://makercycle.com" />
       </head>
       <body className={inter.className}>
-        <AuthProvider>
-          <TeamProvider>
-            {children}
-          </TeamProvider>
-        </AuthProvider>
-        <Toaster
-          position="bottom-right"
-          toastOptions={{
-            duration: 4000,
-            style: {
-              background: '#363636',
-              color: '#fff',
-            },
-            success: {
-              duration: 3000,
-              iconTheme: {
-                primary: '#10b981',
-                secondary: '#fff',
+        <PostHogProvider>
+          <AuthProvider>
+            <TeamProvider>
+              {children}
+            </TeamProvider>
+          </AuthProvider>
+          <Toaster
+            position="bottom-right"
+            toastOptions={{
+              duration: 4000,
+              style: {
+                background: '#363636',
+                color: '#fff',
               },
-            },
-            error: {
-              duration: 5000,
-              iconTheme: {
-                primary: '#ef4444',
-                secondary: '#fff',
+              success: {
+                duration: 3000,
+                iconTheme: {
+                  primary: '#10b981',
+                  secondary: '#fff',
+                },
               },
-            },
-          }}
-        />
+              error: {
+                duration: 5000,
+                iconTheme: {
+                  primary: '#ef4444',
+                  secondary: '#fff',
+                },
+              },
+            }}
+          />
+        </PostHogProvider>
       </body>
     </html>
   )

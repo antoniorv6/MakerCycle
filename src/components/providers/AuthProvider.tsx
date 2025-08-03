@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import type { User, Session } from '@supabase/supabase-js'
+import posthog from 'posthog-js'
 
 type AuthContextType = {
   user: User | null
@@ -43,6 +44,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(session)
       setUser(session?.user ?? null)
       setLoading(false)
+
+      // Identify user in PostHog when session is loaded
+      if (session?.user) {
+        posthog.identify(session.user.id, {
+          email: session.user.email,
+          name: session.user.user_metadata?.full_name || session.user.email,
+          created_at: session.user.created_at,
+        })
+      } else {
+        posthog.reset() // Clear identification for anonymous users
+      }
     }
 
     getSession()
@@ -53,6 +65,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(session)
       setUser(session?.user ?? null)
       setLoading(false)
+
+      // Handle PostHog identification on auth state changes
+      if (event === 'SIGNED_IN' && session?.user) {
+        posthog.identify(session.user.id, {
+          email: session.user.email,
+          name: session.user.user_metadata?.full_name || session.user.email,
+          created_at: session.user.created_at,
+        })
+        posthog.capture('user_signed_in')
+      } else if (event === 'SIGNED_OUT') {
+        posthog.reset()
+        posthog.capture('user_signed_out')
+      }
     })
 
     return () => subscription.unsubscribe()
