@@ -45,3 +45,4 @@ next-env.d.ts
 yarn.lock
 # pnpm-lock.yaml
 migrations_backup/
+.env.local
