@@ -1,4 +1,4 @@
-# 🚀 MakerFlow
+# MakerCycle
 
 <img src="public/logo.webp" alt="MakerFlow Logo" width="200" height="auto" />
 
