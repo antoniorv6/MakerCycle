@@ -1,10 +1,8 @@
 # MakerCycle
 
-<img src="public/logo.webp" alt="MakerFlow Logo" width="200" height="auto" />
+<img src="public/logo.webp" alt="MakerCycle Logo" width="200" height="auto" />
 
-**MakerFlow** es una plataforma SaaS moderna para la gestión integral de negocios de impresión 3D. Desde el cálculo preciso de costos hasta la gestión completa de ventas, clientes y equipos, MakerFlow revoluciona la forma en que gestionas tu negocio de impresión 3D.
-
-![MakerFlow Dashboard](https://via.placeholder.com/800x400/1f2937/ffffff?text=MakerFlow+Dashboard)
+**MakerCycle** es una plataforma SaaS moderna para la gestión integral de negocios de impresión 3D. Desde el cálculo preciso de costos hasta la gestión completa de ventas, clientes y equipos.
 
 ## ✨ Características Principales
 
@@ -88,8 +86,8 @@
 ### Paso 1: Clonar el Repositorio
 
 ```bash
-git clone https://github.com/tu-usuario/MakerFlow.git
-cd MakerFlow
+git clone https://github.com/tu-usuario/MakerCycle.git
+cd MakerCycle
 ```
 
 ### Paso 2: Instalar Dependencias
@@ -165,12 +163,12 @@ Abre [http://localhost:3000](http://localhost:3000) en tu navegador 🎉
 1. Ve a [http://localhost:3000](http://localhost:3000)
 2. Haz clic en "Registrarse"
 3. Crea tu cuenta de usuario
-4. ¡Ya puedes empezar a usar MakerFlow!
+4. ¡Ya puedes empezar a usar MakerCycle!
 
 ## 📁 Estructura del Proyecto
 
 ```
-MakerFlow/
+MakerCycle/
 ├── 📁 app/                    # Páginas y layouts (Next.js App Router)
 │   ├── 📁 auth/              # Páginas de autenticación
 │   ├── 📁 dashboard/         # Dashboard principal
@@ -259,7 +257,7 @@ El proyecto incluye una configuración optimizada de Supabase en `supabase/confi
 
 ### Esquema Consolidado
 
-MakerFlow utiliza un esquema de base de datos consolidado y optimizado:
+MakerCycle utiliza un esquema de base de datos consolidado y optimizado:
 
 #### Tablas Principales (12)
 - **profiles** - Usuarios del sistema
@@ -333,9 +331,9 @@ Este proyecto está bajo la **Licencia MIT**. Ver el archivo `LICENSE` para más
 
 ## 📞 Soporte
 
-- **Issues**: [GitHub Issues](https://github.com/tu-usuario/MakerFlow/issues)
-- **Discusiones**: [GitHub Discussions](https://github.com/tu-usuario/MakerFlow/discussions)
-- **Documentación**: [Wiki del proyecto](https://github.com/tu-usuario/MakerFlow/wiki)
+- **Issues**: [GitHub Issues](https://github.com/tu-usuario/MakerCycle/issues)
+- **Discusiones**: [GitHub Discussions](https://github.com/tu-usuario/MakerCycle/discussions)
+- **Documentación**: [Wiki del proyecto](https://github.com/tu-usuario/MakerCycle/wiki)
 
 ## 🎉 Agradecimientos
 
@@ -348,7 +346,7 @@ Este proyecto está bajo la **Licencia MIT**. Ver el archivo `LICENSE` para más
 
 <div align="center">
 
-**¿Te gusta MakerFlow? ¡Dale una ⭐ al repositorio!**
+**¿Te gusta MakerCycle? ¡Dale una ⭐ al repositorio!**
 
 **Hecho con ❤️ para la comunidad de impresión 3D**
 
