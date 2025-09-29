@@ -4,7 +4,7 @@ import { createContext, useContext, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import type { User, Session } from '@supabase/supabase-js'
-import posthog from 'posthog-js'
+import WelcomePopup from '@/components/WelcomePopup'
 
 type AuthContextType = {
   user: User | null
@@ -32,6 +32,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
+  const [showWelcomePopup, setShowWelcomePopup] = useState(false)
+  const [hasShownWelcome, setHasShownWelcome] = useState(false)
   const supabase = createClient()
   const router = useRouter()
 
@@ -45,16 +47,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(session?.user ?? null)
       setLoading(false)
 
-      // Identify user in PostHog when session is loaded
-      if (session?.user) {
-        posthog.identify(session.user.id, {
-          email: session.user.email,
-          name: session.user.user_metadata?.full_name || session.user.email,
-          created_at: session.user.created_at,
-        })
-      } else {
-        posthog.reset() // Clear identification for anonymous users
-      }
     }
 
     getSession()
@@ -66,17 +58,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(session?.user ?? null)
       setLoading(false)
 
-      // Handle PostHog identification on auth state changes
-      if (event === 'SIGNED_IN' && session?.user) {
-        posthog.identify(session.user.id, {
-          email: session.user.email,
-          name: session.user.user_metadata?.full_name || session.user.email,
-          created_at: session.user.created_at,
-        })
-        posthog.capture('user_signed_in')
-      } else if (event === 'SIGNED_OUT') {
-        posthog.reset()
-        posthog.capture('user_signed_out')
+      // Mostrar popup de bienvenida cuando el usuario se autentica
+      if (event === 'SIGNED_IN' && session?.user && !hasShownWelcome) {
+        setShowWelcomePopup(true)
+        setHasShownWelcome(true)
       }
     })
 
@@ -86,6 +71,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = async () => {
     try {
       await supabase.auth.signOut()
+      // Resetear el estado del popup de bienvenida
+      setShowWelcomePopup(false)
+      setHasShownWelcome(false)
       // Redirigir a la landing page después del logout
       router.push('/')
     } catch (error) {
@@ -95,9 +83,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  const handleCloseWelcomePopup = () => {
+    setShowWelcomePopup(false)
+  }
+
   return (
     <AuthContext.Provider value={{ user, session, loading, signOut }}>
       {children}
+      <WelcomePopup 
+        isOpen={showWelcomePopup}
+        onClose={handleCloseWelcomePopup}
+        userName={user?.user_metadata?.full_name || user?.email?.split('@')[0]}
+      />
     </AuthContext.Provider>
   )
 }

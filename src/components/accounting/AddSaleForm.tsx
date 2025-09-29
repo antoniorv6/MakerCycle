@@ -3,7 +3,6 @@ import { X, Save, Euro, Package, Calendar, Clock, Users, User } from 'lucide-rea
 import { motion } from 'framer-motion';
 import { useTeam } from '@/components/providers/TeamProvider';
 import { useAuth } from '@/components/providers/AuthProvider';
-import { useAnalytics } from '@/hooks/useAnalytics';
 import { ClientSelector } from './ClientSelector';
 import { SaleItemsForm } from './SaleItemsForm';
 import type { Sale, SaleFormData, SaleItemFormData } from '@/types';
@@ -18,7 +17,6 @@ interface AddSaleFormProps {
 export function AddSaleForm({ sale, onSave, onCancel }: AddSaleFormProps) {
   const { currentTeam, userTeams, getEffectiveTeam } = useTeam();
   const { user } = useAuth();
-  const { trackSaleCreated } = useAnalytics();
   
   const [formData, setFormData] = useState<SaleFormData>({
     date: new Date().toISOString().split('T')[0],
@@ -96,11 +94,6 @@ export function AddSaleForm({ sale, onSave, onCancel }: AddSaleFormProps) {
     
     onSave(saleData);
     
-    // Track sale creation (we'll need to get the sale ID from the parent component)
-    // This will be called after the sale is successfully saved
-    setTimeout(() => {
-      trackSaleCreated('new_sale', totalAmount, itemsCount, formData.client_id || undefined);
-    }, 100);
   };
 
   const handleInputChange = (field: keyof Omit<SaleFormData, 'items'>, value: string | null) => {
