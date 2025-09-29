@@ -3,7 +3,6 @@ import { Calculator } from 'lucide-react';
 import { createClient } from '@/lib/supabase';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useTeam } from '@/components/providers/TeamProvider';
-import { useAnalytics } from '@/hooks/useAnalytics';
 import { toast } from 'react-hot-toast';
 import CalculatorSkeleton from '@/components/skeletons/CalculatorSkeleton';
 import TeamContextBanner from '@/components/TeamContextBanner';
@@ -27,7 +26,6 @@ interface CostCalculatorProps {
 const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjectSaved }: CostCalculatorProps) => {
   const { user } = useAuth();
   const { getEffectiveTeam } = useTeam();
-  const { trackCalculatorUsed, trackProjectSaved, trackProjectCreated } = useAnalytics();
   const supabase = createClient();
   const [loading, setLoading] = useState(true);
   const [projectName, setProjectName] = useState('');
@@ -291,12 +289,6 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
       }
 
       if (projectData) {
-        // Track analytics
-        if (loadedProject?.id) {
-          trackProjectSaved(projectData.id, projectData.name, projectData.total_cost, projectData.recommended_price);
-        } else {
-          trackProjectCreated(projectData.id, projectData.name, getEffectiveTeam()?.id);
-        }
         
         onProjectSaved?.(projectData);
       }
@@ -308,12 +300,6 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
     }
   };
 
-  // Track calculator usage when calculations are performed
-  useEffect(() => {
-    if (totalPrintHours > 0 && totalFilamentWeight > 0) {
-      trackCalculatorUsed(costs.total, totalPrintHours, pieces.length);
-    }
-  }, [costs.total, totalPrintHours, pieces.length, trackCalculatorUsed]);
 
   if (loading) {
     return <CalculatorSkeleton />;

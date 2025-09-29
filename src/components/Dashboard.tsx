@@ -4,7 +4,6 @@ import React, { useState, Suspense } from 'react'
 import { Settings } from 'lucide-react'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { useDashboardData } from '@/hooks/useDashboardData'
-import { useAnalytics } from '@/hooks/useAnalytics'
 
 // Import existing components
 import Sidebar from './Sidebar'
@@ -32,7 +31,6 @@ export default function Dashboard({ initialPage }: { initialPage?: string } = {}
   const [loadedProject, setLoadedProject] = useState<AppProject | null>(null)
   const { user } = useAuth()
   const { stats } = useDashboardData()
-  const { trackNavigation } = useAnalytics()
 
   // Helper to convert DatabaseProject to AppProject
   function dbProjectToProject(db: DatabaseProject & { pieces?: DatabasePiece[] }): AppProject {
@@ -108,7 +106,6 @@ export default function Dashboard({ initialPage }: { initialPage?: string } = {}
 
   const handlePageChange = (page: string) => {
     setCurrentPage(page)
-    trackNavigation(page)
   }
 
   const renderContent = () => {
