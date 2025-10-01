@@ -2,7 +2,6 @@
 export interface ElectricitySectionProps {
   printHours: number;
   electricityCost: number;
-  onPrintHoursChange: (hours: number) => void;
   onElectricityCostChange: (cost: number) => void;
 }
 

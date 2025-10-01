@@ -349,7 +349,6 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
           <ElectricitySection
             printHours={totalPrintHours}
             electricityCost={electricityCost}
-            onPrintHoursChange={setPrintHours}
             onElectricityCostChange={setElectricityCost}
           />
 

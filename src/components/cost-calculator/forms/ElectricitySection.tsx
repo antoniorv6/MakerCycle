@@ -1,11 +1,10 @@
 import React from 'react';
-import { Zap } from 'lucide-react';
+import { Zap, Info } from 'lucide-react';
 import type { ElectricitySectionProps } from '../types';
 
 const ElectricitySection: React.FC<ElectricitySectionProps> = ({
   printHours,
   electricityCost,
-  onPrintHoursChange,
   onElectricityCostChange
 }) => {
   return (
@@ -16,17 +15,20 @@ const ElectricitySection: React.FC<ElectricitySectionProps> = ({
       </div>
       <div className="grid md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Tiempo de impresión (horas)
-          </label>
-          <input
-            type="number"
-            value={printHours || ''}
-            onChange={(e) => onPrintHoursChange(Number(e.target.value) || 0)}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200"
-            min="0"
-            step="0.1"
-          />
+          <div className="flex items-center mb-2">
+            <span className="text-sm font-medium text-gray-700">
+              Tiempo total de impresión
+            </span>
+            <div className="group relative ml-2">
+              <Info className="w-4 h-4 text-gray-400 hover:text-gray-600 cursor-help" />
+              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
+                Calculado automáticamente sumando las horas de todas las piezas
+              </div>
+            </div>
+          </div>
+          <div className="text-lg font-semibold text-gray-900">
+            {printHours.toFixed(1)} horas
+          </div>
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
