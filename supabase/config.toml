@@ -42,8 +42,8 @@ file_size_limit = "50MiB"
 [auth]
 enabled = true
 port = 54324
-site_url = "http://localhost:3000"
-additional_redirect_urls = ["https://localhost:3000"]
+site_url = "https://makercycle.es"
+additional_redirect_urls = ["https://makercycle.es", "http://localhost:3000", "https://localhost:3000"]
 jwt_expiry = 3600
 refresh_token_rotation_enabled = true
 security_update_password_require_reauthentication = true
@@ -51,7 +51,7 @@ security_update_password_require_reauthentication = true
 [auth.email]
 enable_signup = true
 double_confirm_changes = true
-enable_confirmations = false
+enable_confirmations = true
 
 [auth.sms]
 enable_signup = true
