@@ -355,7 +355,55 @@ export interface PieceCardProps {
 
 export interface ModeSelectionProps {
   onModeSelect: (mode: ViewMode) => void;
-} 
+}
+
+// Material preset types
+export interface MaterialPreset {
+  id: string;
+  user_id: string;
+  team_id?: string | null;
+  name: string;
+  price_per_unit: number;
+  unit: string;
+  material_type: string;
+  category: 'filament' | 'resin' | 'other';
+  color?: string;
+  brand?: string;
+  notes?: string;
+  is_default: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DatabaseMaterialPreset {
+  id: string;
+  user_id: string;
+  team_id?: string | null;
+  name: string;
+  price_per_unit: number;
+  unit: string;
+  material_type: string;
+  category: 'filament' | 'resin' | 'other';
+  color?: string;
+  brand?: string;
+  notes?: string;
+  is_default: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AppMaterialPreset {
+  id: string;
+  name: string;
+  pricePerUnit: number;
+  unit: string;
+  materialType: string;
+  category: 'filament' | 'resin' | 'other';
+  color?: string;
+  brand?: string;
+  notes?: string;
+  isDefault: boolean;
+}
 
 export type KanbanStatus = 'pending' | 'in_progress' | 'completed';
 

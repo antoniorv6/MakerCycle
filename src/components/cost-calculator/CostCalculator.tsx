@@ -21,9 +21,10 @@ import type { DatabaseProject, DatabasePiece } from '@/types';
 interface CostCalculatorProps {
   loadedProject?: DatabaseProject & { pieces?: DatabasePiece[] };
   onProjectSaved?: (project: DatabaseProject) => void;
+  onNavigateToSettings?: () => void;
 }
 
-const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjectSaved }: CostCalculatorProps) => {
+const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjectSaved, onNavigateToSettings }: CostCalculatorProps) => {
   const { user } = useAuth();
   const { getEffectiveTeam } = useTeam();
   const supabase = createClient();
@@ -344,6 +345,7 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
             onUpdatePiece={updatePiece}
             onRemovePiece={removePiece}
             onDuplicatePiece={duplicatePiece}
+            onNavigateToSettings={onNavigateToSettings}
           />
 
           <ElectricitySection

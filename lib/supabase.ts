@@ -121,6 +121,55 @@ export type Database = {
           updated_at?: string
         }
       }
+      material_presets: {
+        Row: {
+          id: string
+          user_id: string
+          team_id: string | null
+          name: string
+          price_per_unit: number
+          unit: string
+          material_type: string
+          category: 'filament' | 'resin' | 'other'
+          color: string | null
+          brand: string | null
+          notes: string | null
+          is_default: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          team_id?: string | null
+          name: string
+          price_per_unit: number
+          unit?: string
+          material_type?: string
+          category?: 'filament' | 'resin' | 'other'
+          color?: string | null
+          brand?: string | null
+          notes?: string | null
+          is_default?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          team_id?: string | null
+          name?: string
+          price_per_unit?: number
+          unit?: string
+          material_type?: string
+          category?: 'filament' | 'resin' | 'other'
+          color?: string | null
+          brand?: string | null
+          notes?: string | null
+          is_default?: boolean
+          updated_at?: string
+        }
+      }
       profiles: {
         Row: {
           id: string

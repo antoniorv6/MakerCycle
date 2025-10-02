@@ -9,7 +9,7 @@ import { Notifications } from './Notifications'
 
 interface SidebarProps {
   currentPage: string
-  onPageChange: (page: string) => void
+  onPageChange: (page: string, tab?: string) => void
   isOpen: boolean
   onToggle: () => void
 }

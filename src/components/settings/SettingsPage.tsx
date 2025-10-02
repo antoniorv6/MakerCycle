@@ -1,11 +1,16 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { Save, Building2, User, Shield, Bell, Palette, Settings } from 'lucide-react'
+import { Save, Building2, User, Shield, Bell, Palette, Settings, Package } from 'lucide-react'
 import { useCompanySettings } from '@/hooks/useCompanySettings'
+import MaterialPresetsManager from './MaterialPresetsManager'
 
-export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState('company')
+interface SettingsPageProps {
+  initialTab?: string;
+}
+
+export default function SettingsPage({ initialTab = 'company' }: SettingsPageProps) {
+  const [activeTab, setActiveTab] = useState(initialTab)
   const { companyData, saveCompanyData, isLoading } = useCompanySettings()
   const [formData, setFormData] = useState(companyData)
   const [isSaving, setIsSaving] = useState(false)
@@ -40,6 +45,7 @@ export default function SettingsPage() {
 
   const tabs = [
     { id: 'company', label: 'Empresa', icon: Building2 },
+    { id: 'materials', label: 'Perfiles Materiales', icon: Package },
     { id: 'profile', label: 'Perfil', icon: User },
     { id: 'security', label: 'Seguridad', icon: Shield },
     { id: 'notifications', label: 'Notificaciones', icon: Bell },
@@ -88,6 +94,10 @@ export default function SettingsPage() {
 
           {/* Content */}
           <div className="flex-1 p-8">
+            {activeTab === 'materials' && (
+              <MaterialPresetsManager />
+            )}
+
             {activeTab === 'company' && (
               <div className="space-y-6">
                 <div>
