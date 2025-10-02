@@ -60,7 +60,7 @@ const PricingConfig: React.FC<PricingConfigProps> = ({
           <ul className="text-xs space-y-1">
             <li>• El IVA se aplica sobre el precio con margen</li>
             <li>• El precio final se redondea a 0.50€ más cercano</li>
-            <li>• Margen típico para impresión 3D: 15-30%</li>
+            <li>• Margen típico para impresión 3D: 15-30% (recomendado)</li>
           </ul>
         </div>
       </div>
