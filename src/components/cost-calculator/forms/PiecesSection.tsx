@@ -186,7 +186,7 @@ const PieceCard: React.FC<PieceCardProps & { onNavigateToSettings?: () => void }
                         : 'text-gray-600 hover:text-gray-900'
                     }`}
                   >
-                    Filamentos ({presets.filter(p => p.category === 'filament').length})
+                    Filamentos
                   </button>
                   <button
                     onClick={() => setSelectedPresetCategory('resin')}
@@ -196,7 +196,7 @@ const PieceCard: React.FC<PieceCardProps & { onNavigateToSettings?: () => void }
                         : 'text-gray-600 hover:text-gray-900'
                     }`}
                   >
-                    Resinas ({presets.filter(p => p.category === 'resin').length})
+                    Resinas
                   </button>
                 </div>
               </div>
@@ -257,7 +257,7 @@ const PieceCard: React.FC<PieceCardProps & { onNavigateToSettings?: () => void }
                   className="w-full px-4 py-3 text-sm text-purple-700 hover:text-purple-800 hover:bg-purple-50 rounded-lg transition-colors font-medium flex items-center justify-center gap-2 border border-purple-200 hover:border-purple-300"
                 >
                   <Settings className="w-4 h-4" />
-                  Gestionar perfiles de materiales
+                  Gestionar materiales
                 </button>
                 <button
                   onClick={() => setShowPresetSelector(false)}
