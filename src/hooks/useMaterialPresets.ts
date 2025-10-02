@@ -13,7 +13,7 @@ import {
 import type { MaterialPreset, DatabaseMaterialPreset } from '@/types';
 import { toast } from 'react-hot-toast';
 
-export function useMaterialPresets(category?: 'filament' | 'resin' | 'other') {
+export function useMaterialPresets(category?: 'filament' | 'resin') {
   const { user } = useAuth();
   const { getEffectiveTeam } = useTeam();
   const [presets, setPresets] = useState<MaterialPreset[]>([]);
@@ -160,7 +160,7 @@ export function useMaterialPresets(category?: 'filament' | 'resin' | 'other') {
   };
 
   // Obtener presets filtrados por categoría
-  const getPresetsByCategory = (cat: 'filament' | 'resin' | 'other'): MaterialPreset[] => {
+  const getPresetsByCategory = (cat: 'filament' | 'resin'): MaterialPreset[] => {
     return presets.filter(preset => preset.category === cat);
   };
 

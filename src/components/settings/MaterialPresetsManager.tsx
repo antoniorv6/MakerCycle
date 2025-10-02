@@ -5,18 +5,17 @@ import type { DatabaseMaterialPreset } from '@/types';
 
 const MATERIAL_TYPES = {
   filament: ['PLA', 'ABS', 'PETG', 'TPU', 'ASA', 'Nylon', 'PC', 'PVA', 'HIPS', 'Otro'],
-  resin: ['Resina Estándar', 'Resina Flexible', 'Resina Transparente', 'Resina de Alta Temperatura', 'Resina Dental', 'Otro'],
-  other: ['Metal', 'Cerámica', 'Madera', 'Otro']
+  resin: ['Resina Estándar', 'Resina Flexible', 'Resina Transparente', 'Resina de Alta Temperatura', 'Resina Dental', 'Otro']
 };
 
 const UNITS = {
   filament: ['kg', 'g'],
-  resin: ['ml', 'l'],
-  other: ['kg', 'g', 'ml', 'l', 'unidad']
+  resin: ['ml', 'l']
 };
 
 export default function MaterialPresetsManager() {
-  const [selectedCategory, setSelectedCategory] = useState<'filament' | 'resin' | 'other'>('filament');
+  const [selectedCategory, setSelectedCategory] = useState<'filament' | 'resin'>('filament');
+  const [showTypeSelector, setShowTypeSelector] = useState(false);
   const { presets, loading, addPreset, updatePreset, removePreset, setAsDefault, stats } = useMaterialPresets();
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -51,7 +50,7 @@ export default function MaterialPresetsManager() {
     setEditingId(null);
   };
 
-  const handleCategoryChange = (category: 'filament' | 'resin' | 'other') => {
+  const handleCategoryChange = (category: 'filament' | 'resin') => {
     setSelectedCategory(category);
     setFormData(prev => ({
       ...prev,
@@ -59,6 +58,22 @@ export default function MaterialPresetsManager() {
       material_type: MATERIAL_TYPES[category][0],
       unit: UNITS[category][0],
     }));
+  };
+
+  const handleStartAdding = () => {
+    setShowTypeSelector(true);
+  };
+
+  const handleTypeSelection = (type: 'filament' | 'resin') => {
+    setSelectedCategory(type);
+    setFormData(prev => ({
+      ...prev,
+      category: type,
+      material_type: MATERIAL_TYPES[type][0],
+      unit: UNITS[type][0],
+    }));
+    setShowTypeSelector(false);
+    setIsAdding(true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -143,9 +158,9 @@ export default function MaterialPresetsManager() {
             Guarda tus materiales favoritos para acceder rápidamente a sus precios
           </p>
         </div>
-        {!isAdding && !editingId && (
+        {!isAdding && !editingId && !showTypeSelector && (
           <button
-            onClick={() => setIsAdding(true)}
+            onClick={handleStartAdding}
             className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
           >
             <Plus className="w-5 h-5" />
@@ -154,38 +169,93 @@ export default function MaterialPresetsManager() {
         )}
       </div>
 
-      {/* Category Filter */}
-      <div className="mb-6">
-        <div className="flex items-center gap-2 mb-4">
-          <Filter className="w-5 h-5 text-gray-500" />
-          <span className="font-medium text-gray-700">Categoría:</span>
-        </div>
-        <div className="flex gap-2">
-          {[
-            { id: 'filament', label: 'Filamentos', count: stats.byCategory.filament || 0 },
-            { id: 'resin', label: 'Resinas', count: stats.byCategory.resin || 0 },
-            { id: 'other', label: 'Otros', count: stats.byCategory.other || 0 },
-          ].map(({ id, label, count }) => (
+      {/* Type Selector */}
+      {showTypeSelector && (
+        <div className="mb-6 p-6 bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl border border-purple-200">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4 text-center">
+            ¿Qué tipo de material quieres crear?
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <button
-              key={id}
-              onClick={() => handleCategoryChange(id as 'filament' | 'resin' | 'other')}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                selectedCategory === id
-                  ? 'bg-purple-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+              onClick={() => handleTypeSelection('filament')}
+              className="p-6 bg-white rounded-xl border-2 border-gray-200 hover:border-purple-300 hover:shadow-lg transition-all duration-200 group"
             >
-              {label} ({count})
+              <div className="text-center">
+                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-blue-200 transition-colors">
+                  <Package className="w-8 h-8 text-blue-600" />
+                </div>
+                <h4 className="text-lg font-semibold text-gray-900 mb-2">Filamento</h4>
+                <p className="text-sm text-gray-600 mb-3">
+                  PLA, ABS, PETG, TPU y otros filamentos para impresión 3D
+                </p>
+                <div className="text-xs text-gray-500">
+                  Unidades: kg, g
+                </div>
+              </div>
             </button>
-          ))}
+            
+            <button
+              onClick={() => handleTypeSelection('resin')}
+              className="p-6 bg-white rounded-xl border-2 border-gray-200 hover:border-purple-300 hover:shadow-lg transition-all duration-200 group"
+            >
+              <div className="text-center">
+                <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-purple-200 transition-colors">
+                  <Package className="w-8 h-8 text-purple-600" />
+                </div>
+                <h4 className="text-lg font-semibold text-gray-900 mb-2">Resina</h4>
+                <p className="text-sm text-gray-600 mb-3">
+                  Resinas estándar, flexibles, transparentes y especializadas
+                </p>
+                <div className="text-xs text-gray-500">
+                  Unidades: ml, l
+                </div>
+              </div>
+            </button>
+          </div>
+          <div className="text-center mt-4">
+            <button
+              onClick={() => setShowTypeSelector(false)}
+              className="text-sm text-gray-500 hover:text-gray-700 underline"
+            >
+              Cancelar
+            </button>
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* Category Filter */}
+      {!showTypeSelector && (
+        <div className="mb-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Filter className="w-5 h-5 text-gray-500" />
+            <span className="font-medium text-gray-700">Tipo de material:</span>
+          </div>
+          <div className="flex gap-2">
+            {[
+              { id: 'filament', label: 'Filamentos', count: stats.byCategory.filament || 0 },
+              { id: 'resin', label: 'Resinas', count: stats.byCategory.resin || 0 },
+            ].map(({ id, label, count }) => (
+              <button
+                key={id}
+                onClick={() => handleCategoryChange(id as 'filament' | 'resin')}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                  selectedCategory === id
+                    ? 'bg-purple-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                {label} ({count})
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Form for adding/editing preset */}
       {(isAdding || editingId) && (
         <form onSubmit={handleSubmit} className="mb-6 p-4 bg-purple-50 rounded-lg border border-purple-200">
           <h3 className="font-semibold text-gray-900 mb-4">
-            {editingId ? 'Editar Perfil' : 'Nuevo Perfil de Material'}
+            {editingId ? 'Editar Perfil' : `Nuevo Perfil de ${selectedCategory === 'filament' ? 'Filamento' : 'Resina'}`}
           </h3>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -334,14 +404,14 @@ export default function MaterialPresetsManager() {
         <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
           <Package className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-gray-900 mb-2">
-            No tienes perfiles de {selectedCategory === 'filament' ? 'filamentos' : selectedCategory === 'resin' ? 'resinas' : 'materiales'}
+            No tienes perfiles de {selectedCategory === 'filament' ? 'filamentos' : 'resinas'}
           </h3>
           <p className="text-gray-600 mb-4">
-            Crea tu primer perfil para acceder rápidamente a tus materiales favoritos
+            Crea tu primer perfil de {selectedCategory === 'filament' ? 'filamento' : 'resina'} para acceder rápidamente a tus materiales favoritos
           </p>
-          {!isAdding && (
+          {!isAdding && !showTypeSelector && (
             <button
-              onClick={() => setIsAdding(true)}
+              onClick={handleStartAdding}
               className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
             >
               <Plus className="w-5 h-5" />

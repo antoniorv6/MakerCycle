@@ -6,7 +6,7 @@ import type { DatabaseMaterialPreset, MaterialPreset } from '@/types';
  */
 
 // Obtener todos los presets del usuario
-export async function getMaterialPresets(userId: string, teamId?: string | null, category?: 'filament' | 'resin' | 'other'): Promise<MaterialPreset[]> {
+export async function getMaterialPresets(userId: string, teamId?: string | null, category?: 'filament' | 'resin'): Promise<MaterialPreset[]> {
   const supabase = createClient();
 
   try {
@@ -66,7 +66,7 @@ export async function getMaterialPresetById(presetId: string): Promise<MaterialP
 }
 
 // Obtener el preset por defecto del usuario
-export async function getDefaultMaterialPreset(userId: string, teamId?: string | null, category?: 'filament' | 'resin' | 'other'): Promise<MaterialPreset | null> {
+export async function getDefaultMaterialPreset(userId: string, teamId?: string | null, category?: 'filament' | 'resin'): Promise<MaterialPreset | null> {
   const supabase = createClient();
 
   try {

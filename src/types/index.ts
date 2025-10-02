@@ -366,7 +366,7 @@ export interface MaterialPreset {
   price_per_unit: number;
   unit: string;
   material_type: string;
-  category: 'filament' | 'resin' | 'other';
+  category: 'filament' | 'resin';
   color?: string;
   brand?: string;
   notes?: string;
@@ -383,7 +383,7 @@ export interface DatabaseMaterialPreset {
   price_per_unit: number;
   unit: string;
   material_type: string;
-  category: 'filament' | 'resin' | 'other';
+  category: 'filament' | 'resin';
   color?: string;
   brand?: string;
   notes?: string;
@@ -398,7 +398,7 @@ export interface AppMaterialPreset {
   pricePerUnit: number;
   unit: string;
   materialType: string;
-  category: 'filament' | 'resin' | 'other';
+  category: 'filament' | 'resin';
   color?: string;
   brand?: string;
   notes?: string;

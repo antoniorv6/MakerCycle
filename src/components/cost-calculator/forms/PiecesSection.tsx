@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Copy, Trash2, Package, Edit3, Save, Sparkles, Heart, Bookmark, Settings } from 'lucide-react';
+import { Plus, Copy, Trash2, Package, Edit3, Save, Heart, Bookmark, Settings } from 'lucide-react';
 import type { PiecesSectionProps, PieceCardProps } from '../types';
 import { useMaterialPresets } from '@/hooks/useMaterialPresets';
 
@@ -13,8 +13,9 @@ const PieceCard: React.FC<PieceCardProps & { onNavigateToSettings?: () => void }
 }) => {
   const [isEditingName, setIsEditingName] = useState(false);
   const [tempName, setTempName] = useState(piece.name);
-  const { presets, loading: presetsLoading, convertPrice } = useMaterialPresets('filament');
+  const { presets, loading: presetsLoading, convertPrice } = useMaterialPresets();
   const [showPresetSelector, setShowPresetSelector] = useState(false);
+  const [selectedPresetCategory, setSelectedPresetCategory] = useState<'filament' | 'resin'>('filament');
 
   const handleNameSave = () => {
     onUpdate('name', tempName);
@@ -25,6 +26,9 @@ const PieceCard: React.FC<PieceCardProps & { onNavigateToSettings?: () => void }
     setTempName(piece.name);
     setIsEditingName(false);
   };
+
+  // Filtrar presets por categoría seleccionada
+  const filteredPresets = presets.filter(preset => preset.category === selectedPresetCategory);
 
   const handlePresetSelect = (presetId: string) => {
     const selectedPreset = presets.find(p => p.id === presetId);
@@ -45,6 +49,7 @@ const PieceCard: React.FC<PieceCardProps & { onNavigateToSettings?: () => void }
       onNavigateToSettings();
     }
   };
+
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-all duration-200">
@@ -160,63 +165,92 @@ const PieceCard: React.FC<PieceCardProps & { onNavigateToSettings?: () => void }
           
           {/* Material Profile Selector Dropdown */}
           {showPresetSelector && presets.length > 0 && (
-            <div className="absolute z-20 mt-2 w-full max-w-lg bg-white border border-gray-200 rounded-xl shadow-xl ring-1 ring-black ring-opacity-5">
-              <div className="p-4 border-b border-gray-100 bg-gradient-to-r from-purple-50 to-blue-50 rounded-t-xl">
+            <div className="absolute z-20 mt-2 w-full max-w-lg bg-white border border-gray-200 rounded-xl shadow-xl">
+              {/* Header */}
+              <div className="p-4 border-b border-gray-100 bg-gray-50 rounded-t-xl">
                 <h4 className="font-semibold text-gray-900 text-sm flex items-center gap-2">
                   <Bookmark className="w-4 h-4 text-purple-600" />
                   Perfiles de Materiales
                 </h4>
                 <p className="text-xs text-gray-600 mt-1">Selecciona un perfil para aplicar su precio</p>
               </div>
-              <div className="max-h-80 overflow-y-auto">
-                {presets.map((preset) => (
+
+              {/* Category Tabs */}
+              <div className="p-3 border-b border-gray-100">
+                <div className="flex bg-gray-100 rounded-lg p-1">
                   <button
-                    key={preset.id}
-                    onClick={() => handlePresetSelect(preset.id)}
-                    className="w-full px-4 py-4 text-left hover:bg-gradient-to-r hover:from-purple-50 hover:to-blue-50 transition-all duration-200 border-b border-gray-50 last:border-b-0 group"
+                    onClick={() => setSelectedPresetCategory('filament')}
+                    className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                      selectedPresetCategory === 'filament'
+                        ? 'bg-white text-gray-900 shadow-sm'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h5 className="font-semibold text-gray-900 truncate group-hover:text-purple-700 transition-colors">
-                            {preset.name}
-                          </h5>
-                          {preset.is_default && (
-                            <span className="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium">
-                              <Heart className="w-3 h-3 fill-current" />
-                              Favorito
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                          <span className="font-medium">{preset.material_type}</span>
-                          {preset.brand && (
-                            <>
-                              <span className="text-gray-400">•</span>
-                              <span>{preset.brand}</span>
-                            </>
-                          )}
-                          {preset.color && (
-                            <div className="flex items-center gap-1 ml-2">
-                              <span
-                                className="inline-block w-4 h-4 rounded-full border-2 border-gray-300 shadow-sm"
-                                style={{ backgroundColor: preset.color }}
-                                title={`Color: ${preset.color}`}
-                              />
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex flex-col items-end ml-4">
-                        <div className="text-lg font-bold text-purple-600 group-hover:text-purple-700 transition-colors">
-                          {preset.price_per_unit.toFixed(2)}€
-                        </div>
-                        <div className="text-xs text-gray-500">por {preset.unit}</div>
-                      </div>
-                    </div>
+                    Filamentos ({presets.filter(p => p.category === 'filament').length})
                   </button>
-                ))}
+                  <button
+                    onClick={() => setSelectedPresetCategory('resin')}
+                    className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                      selectedPresetCategory === 'resin'
+                        ? 'bg-white text-gray-900 shadow-sm'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    Resinas ({presets.filter(p => p.category === 'resin').length})
+                  </button>
+                </div>
               </div>
+
+              {/* Presets List */}
+              <div className="max-h-80 overflow-y-auto">
+                {filteredPresets.length > 0 ? (
+                  filteredPresets.map((preset) => (
+                    <button
+                      key={preset.id}
+                      onClick={() => handlePresetSelect(preset.id)}
+                      className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-b-0 group"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h5 className="font-semibold text-gray-900 truncate group-hover:text-purple-700 transition-colors">
+                              {preset.name}
+                            </h5>
+                            {preset.is_default && (
+                              <span className="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium">
+                                <Heart className="w-3 h-3 fill-current" />
+                                Favorito
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-sm text-gray-600">
+                            {preset.material_type}
+                            {preset.brand && ` • ${preset.brand}`}
+                            {preset.color && (
+                              <span className="ml-2 inline-block w-3 h-3 rounded-full border border-gray-300" 
+                                    style={{ backgroundColor: preset.color }}
+                                    title={`Color: ${preset.color}`} />
+                            )}
+                          </div>
+                        </div>
+                        <div className="text-right ml-4">
+                          <div className="text-lg font-bold text-purple-600 group-hover:text-purple-700 transition-colors">
+                            {preset.price_per_unit.toFixed(2)}€
+                          </div>
+                          <div className="text-xs text-gray-500">por {preset.unit}</div>
+                        </div>
+                      </div>
+                    </button>
+                  ))
+                ) : (
+                  <div className="p-6 text-center text-gray-500">
+                    <Package className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+                    <p className="text-sm">No hay perfiles de {selectedPresetCategory === 'filament' ? 'filamentos' : 'resinas'}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Footer */}
               <div className="p-3 bg-gray-50 border-t border-gray-100 rounded-b-xl space-y-2">
                 <button
                   onClick={handleManageProfiles}
@@ -244,7 +278,7 @@ const PieceCard: React.FC<PieceCardProps & { onNavigateToSettings?: () => void }
                 onClick={handleManageProfiles}
                 className="text-xs text-blue-600 hover:text-blue-800 font-medium underline"
               >
-                Crear tu primer perfil →
+                Crear perfiles de filamentos y resinas →
               </button>
             </div>
           )}
