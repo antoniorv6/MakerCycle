@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calculator } from 'lucide-react';
+import { Calculator, Zap } from 'lucide-react';
 import { createClient } from '@/lib/supabase';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useTeam } from '@/components/providers/TeamProvider';
@@ -15,6 +15,7 @@ import PricingConfig from './forms/PricingConfig';
 import ProjectSummaryPanel from './panels/ProjectSummaryPanel';
 import CostBreakdownPanel from './panels/CostBreakdownPanel';
 import SalePricePanel from './panels/SalePricePanel';
+import StickyNotesManager from './StickyNotesManager';
 import { useCostCalculations } from './hooks/useCostCalculations';
 import type { DatabaseProject, DatabasePiece } from '@/types';
 
@@ -53,6 +54,7 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
     quantity: 1,
     notes: ''
   }]);
+  const [isDisasterMode, setIsDisasterMode] = useState(false);
 
   useEffect(() => {
     if (loadedProject) {
@@ -319,6 +321,26 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
         </div>
         <h1 className="text-3xl font-bold text-slate-900 mb-2">Calculadora de Costes 3D</h1>
         <p className="text-slate-600">Calcula el coste total de tus proyectos de impresión 3D</p>
+        
+        {/* Modo Desastre Toggle */}
+        <div className="mt-4">
+          <button
+            onClick={() => setIsDisasterMode(!isDisasterMode)}
+            className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+              isDisasterMode
+                ? 'bg-orange-100 text-orange-700 border-2 border-orange-300 hover:bg-orange-200'
+                : 'bg-slate-100 text-slate-700 border-2 border-slate-300 hover:bg-slate-200'
+            }`}
+          >
+            <Zap className={`w-4 h-4 ${isDisasterMode ? 'text-orange-600' : 'text-slate-600'}`} />
+            {isDisasterMode ? 'Modo Desastre Activo' : 'Activar Modo Desastre'}
+          </button>
+          {isDisasterMode && (
+            <p className="text-sm text-orange-600 mt-2">
+              💡 Usa los post-its para organizar tus ideas y notas durante el presupuesto
+            </p>
+          )}
+        </div>
       </div>
 
       {/* Layout principal */}
@@ -389,6 +411,12 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
           />
         </div>
       </div>
+
+      {/* Gestor de Post-its del Modo Desastre */}
+      <StickyNotesManager 
+        isVisible={isDisasterMode}
+        onToggle={() => setIsDisasterMode(false)}
+      />
     </div>
   );
 };
