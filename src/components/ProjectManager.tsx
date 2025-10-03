@@ -8,6 +8,7 @@ import type { DatabaseProject, DatabasePiece } from '@/types';
 import { toast } from 'react-hot-toast';
 import ProjectInfo from './cost-calculator/forms/ProjectInfo';
 import ProjectManagerSkeleton from './skeletons/ProjectManagerSkeleton';
+import ConfirmModal from './cost-calculator/ConfirmModal';
 
 interface ProjectManagerProps {
   onLoadProject: (project: DatabaseProject & { pieces?: DatabasePiece[] }) => void;
@@ -23,6 +24,8 @@ export default function ProjectManager({ onLoadProject }: ProjectManagerProps) {
   const [filterStatus, setFilterStatus] = useState('all');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newProjectName, setNewProjectName] = useState('');
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -137,13 +140,20 @@ export default function ProjectManager({ onLoadProject }: ProjectManagerProps) {
     }
   };
 
-  const handleDeleteProject = async (id: string) => {
+  const handleDeleteProject = (id: string) => {
+    setProjectToDelete(id);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeleteProject = async () => {
+    if (!projectToDelete) return;
+
     try {
       // Delete pieces first
       const { error: piecesError } = await supabase
         .from('pieces')
         .delete()
-        .eq('project_id', id);
+        .eq('project_id', projectToDelete);
 
       if (piecesError) {
         console.error('Error deleting pieces:', piecesError);
@@ -155,7 +165,7 @@ export default function ProjectManager({ onLoadProject }: ProjectManagerProps) {
       const { error } = await supabase
         .from('projects')
         .delete()
-        .eq('id', id);
+        .eq('id', projectToDelete);
 
       if (error) {
         console.error('Error deleting project:', error);
@@ -164,10 +174,14 @@ export default function ProjectManager({ onLoadProject }: ProjectManagerProps) {
       }
 
       // Update local state
-      setProjects(projects.filter(p => p.id !== id));
+      setProjects(projects.filter(p => p.id !== projectToDelete));
+      toast.success('Proyecto eliminado correctamente.');
     } catch (error) {
       console.error('Error deleting project:', error);
       toast.error('No se pudo eliminar el proyecto. Intenta de nuevo.');
+    } finally {
+      setShowDeleteModal(false);
+      setProjectToDelete(null);
     }
   };
 
@@ -361,6 +375,21 @@ export default function ProjectManager({ onLoadProject }: ProjectManagerProps) {
           </div>
         </div>
       )}
+
+      {/* Modal de confirmación para eliminar proyecto */}
+      <ConfirmModal
+        isOpen={showDeleteModal}
+        onClose={() => {
+          setShowDeleteModal(false);
+          setProjectToDelete(null);
+        }}
+        onConfirm={confirmDeleteProject}
+        title="Eliminar proyecto"
+        message="¿Estás seguro de que quieres eliminar este proyecto? Esta acción no se puede deshacer y se eliminarán todas las piezas asociadas."
+        confirmText="Eliminar"
+        cancelText="Cancelar"
+        type="danger"
+      />
     </div>
   );
 }
