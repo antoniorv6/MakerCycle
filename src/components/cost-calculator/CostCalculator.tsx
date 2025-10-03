@@ -16,6 +16,9 @@ import ProjectSummaryPanel from './panels/ProjectSummaryPanel';
 import CostBreakdownPanel from './panels/CostBreakdownPanel';
 import SalePricePanel from './panels/SalePricePanel';
 import StickyNotesManager from './StickyNotesManager';
+import DisasterModeButton from './DisasterModeButton';
+import StickyNote from './StickyNote';
+import ConfirmModal from './ConfirmModal';
 import { useCostCalculations } from './hooks/useCostCalculations';
 import type { DatabaseProject, DatabasePiece } from '@/types';
 
@@ -55,6 +58,16 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
     notes: ''
   }]);
   const [isDisasterMode, setIsDisasterMode] = useState(false);
+  const [disasterModeNotes, setDisasterModeNotes] = useState<Array<{
+    id: string;
+    title: string;
+    content: string;
+    position: { x: number; y: number };
+    color: string;
+    size: 'small' | 'medium' | 'large';
+  }>>([]);
+  const [nextNoteId, setNextNoteId] = useState(1);
+  const [showClearModal, setShowClearModal] = useState(false);
 
   useEffect(() => {
     if (loadedProject) {
@@ -175,6 +188,68 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
       quantity: 1,
       notes: ''
     }]);
+  };
+
+  const colors = ['yellow', 'pink', 'blue', 'green', 'purple', 'orange'];
+
+  const addDisasterNote = () => {
+    const newNote = {
+      id: `disaster-note-${nextNoteId}`,
+      title: '',
+      content: '',
+      position: {
+        x: Math.random() * (window.innerWidth - 200) + 50,
+        y: Math.random() * (window.innerHeight - 250) + 50
+      },
+      color: colors[Math.floor(Math.random() * colors.length)],
+      size: 'medium' as const
+    };
+    
+    setDisasterModeNotes(prev => [...prev, newNote]);
+    setNextNoteId(prev => prev + 1);
+  };
+
+  const updateDisasterNote = (id: string, field: 'title' | 'content', value: string) => {
+    setDisasterModeNotes(prev => prev.map(note => 
+      note.id === id ? { ...note, [field]: value } : note
+    ));
+  };
+
+  const deleteDisasterNote = (id: string) => {
+    setDisasterModeNotes(prev => prev.filter(note => note.id !== id));
+  };
+
+  const moveDisasterNote = (id: string, position: { x: number; y: number }) => {
+    setDisasterModeNotes(prev => prev.map(note => 
+      note.id === id ? { ...note, position } : note
+    ));
+  };
+
+  const changeDisasterNoteColor = (id: string) => {
+    setDisasterModeNotes(prev => prev.map(note => 
+      note.id === id 
+        ? { ...note, color: colors[(colors.indexOf(note.color) + 1) % colors.length] }
+        : note
+    ));
+  };
+
+  const changeDisasterNoteSize = (id: string) => {
+    setDisasterModeNotes(prev => prev.map(note => 
+      note.id === id 
+        ? { ...note, size: note.size === 'small' ? 'medium' : note.size === 'medium' ? 'large' : 'small' }
+        : note
+    ));
+  };
+
+  const clearAllDisasterNotes = () => {
+    if (disasterModeNotes.length > 0) {
+      setShowClearModal(true);
+    }
+  };
+
+  const handleConfirmClear = () => {
+    setDisasterModeNotes([]);
+    setShowClearModal(false);
   };
 
   const saveProject = async () => {
@@ -321,26 +396,6 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
         </div>
         <h1 className="text-3xl font-bold text-slate-900 mb-2">Calculadora de Costes 3D</h1>
         <p className="text-slate-600">Calcula el coste total de tus proyectos de impresión 3D</p>
-        
-        {/* Modo Desastre Toggle */}
-        <div className="mt-4">
-          <button
-            onClick={() => setIsDisasterMode(!isDisasterMode)}
-            className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
-              isDisasterMode
-                ? 'bg-orange-100 text-orange-700 border-2 border-orange-300 hover:bg-orange-200'
-                : 'bg-slate-100 text-slate-700 border-2 border-slate-300 hover:bg-slate-200'
-            }`}
-          >
-            <Zap className={`w-4 h-4 ${isDisasterMode ? 'text-orange-600' : 'text-slate-600'}`} />
-            {isDisasterMode ? 'Modo Desastre Activo' : 'Activar Modo Desastre'}
-          </button>
-          {isDisasterMode && (
-            <p className="text-sm text-orange-600 mt-2">
-              💡 Usa los post-its para organizar tus ideas y notas durante el presupuesto
-            </p>
-          )}
-        </div>
       </div>
 
       {/* Layout principal */}
@@ -412,10 +467,43 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
         </div>
       </div>
 
-      {/* Gestor de Post-its del Modo Desastre */}
-      <StickyNotesManager 
-        isVisible={isDisasterMode}
-        onToggle={() => setIsDisasterMode(false)}
+      {/* Botón sticky de modo desastre */}
+      <DisasterModeButton
+        isActive={isDisasterMode}
+        onToggle={() => setIsDisasterMode(!isDisasterMode)}
+        onAddNote={addDisasterNote}
+        onClearAll={clearAllDisasterNotes}
+        noteCount={disasterModeNotes.length}
+      />
+
+      {/* Notas del modo desastre */}
+      {isDisasterMode && disasterModeNotes.map(note => (
+        <StickyNote
+          key={note.id}
+          id={note.id}
+          title={note.title}
+          content={note.content}
+          position={note.position}
+          color={note.color}
+          size={note.size}
+          onUpdate={updateDisasterNote}
+          onDelete={deleteDisasterNote}
+          onMove={moveDisasterNote}
+          onChangeColor={changeDisasterNoteColor}
+          onChangeSize={changeDisasterNoteSize}
+        />
+      ))}
+
+      {/* Modal de confirmación para limpiar notas */}
+      <ConfirmModal
+        isOpen={showClearModal}
+        onClose={() => setShowClearModal(false)}
+        onConfirm={handleConfirmClear}
+        title="Limpiar todas las notas"
+        message={`¿Estás seguro de que quieres eliminar las ${disasterModeNotes.length} notas? Esta acción no se puede deshacer.`}
+        confirmText="Eliminar todas"
+        cancelText="Cancelar"
+        type="danger"
       />
     </div>
   );

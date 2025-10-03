@@ -4,9 +4,11 @@ import StickyNote from './StickyNote';
 
 interface StickyNoteData {
   id: string;
+  title: string;
   content: string;
   position: { x: number; y: number };
   color: string;
+  size: 'small' | 'medium' | 'large';
 }
 
 interface StickyNotesManagerProps {
@@ -23,21 +25,23 @@ const StickyNotesManager: React.FC<StickyNotesManagerProps> = ({ isVisible, onTo
   const addNote = useCallback(() => {
     const newNote: StickyNoteData = {
       id: `note-${nextId}`,
+      title: '',
       content: '',
       position: {
         x: Math.random() * (window.innerWidth - 200) + 50,
         y: Math.random() * (window.innerHeight - 250) + 50
       },
-      color: colors[Math.floor(Math.random() * colors.length)]
+      color: colors[Math.floor(Math.random() * colors.length)],
+      size: 'medium'
     };
     
     setNotes(prev => [...prev, newNote]);
     setNextId(prev => prev + 1);
   }, [nextId]);
 
-  const updateNote = useCallback((id: string, content: string) => {
+  const updateNote = useCallback((id: string, field: 'title' | 'content', value: string) => {
     setNotes(prev => prev.map(note => 
-      note.id === id ? { ...note, content } : note
+      note.id === id ? { ...note, [field]: value } : note
     ));
   }, []);
 
@@ -65,6 +69,14 @@ const StickyNotesManager: React.FC<StickyNotesManagerProps> = ({ isVisible, onTo
     ));
   }, []);
 
+  const changeNoteSize = useCallback((id: string) => {
+    setNotes(prev => prev.map(note => 
+      note.id === id 
+        ? { ...note, size: note.size === 'small' ? 'medium' : note.size === 'medium' ? 'large' : 'small' }
+        : note
+    ));
+  }, []);
+
   if (!isVisible) return null;
 
   return (
@@ -75,56 +87,21 @@ const StickyNotesManager: React.FC<StickyNotesManagerProps> = ({ isVisible, onTo
         style={{ pointerEvents: 'none' }}
       />
       
-      {/* Panel de control flotante */}
-      <div className="fixed top-4 right-4 z-50 bg-white rounded-lg shadow-lg border border-slate-200 p-4">
-        <div className="flex items-center gap-2 mb-3">
-          <Zap className="w-5 h-5 text-orange-500" />
-          <h3 className="font-semibold text-slate-900">Modo Desastre</h3>
-          <button
-            onClick={onToggle}
-            className="ml-2 text-slate-400 hover:text-slate-600 transition-colors"
-          >
-            ✕
-          </button>
-        </div>
-        
-        <div className="flex gap-2 mb-3">
-          <button
-            onClick={addNote}
-            className="flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-sm font-medium text-slate-700 transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            Nueva nota
-          </button>
-          
-          {notes.length > 0 && (
-            <button
-              onClick={clearAllNotes}
-              className="flex items-center gap-2 px-3 py-2 bg-red-100 hover:bg-red-200 rounded-lg text-sm font-medium text-red-700 transition-colors"
-            >
-              <Trash2 className="w-4 h-4" />
-              Limpiar todo
-            </button>
-          )}
-        </div>
-        
-        <div className="text-xs text-slate-500">
-          {notes.length} nota{notes.length !== 1 ? 's' : ''} activa{notes.length !== 1 ? 's' : ''}
-        </div>
-      </div>
-
       {/* Notas flotantes */}
       {notes.map(note => (
         <StickyNote
           key={note.id}
           id={note.id}
+          title={note.title}
           content={note.content}
           position={note.position}
           color={note.color}
+          size={note.size}
           onUpdate={updateNote}
           onDelete={deleteNote}
           onMove={moveNote}
           onChangeColor={changeNoteColor}
+          onChangeSize={changeNoteSize}
         />
       ))}
     </>
