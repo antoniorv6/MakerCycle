@@ -213,7 +213,7 @@ export interface AccountingStats {
 }
 
 // Cost calculator types
-export type ViewMode = 'manual-entry';
+export type ViewMode = 'manual-entry' | 'file-import';
 
 export interface CostCalculatorProps {
   loadedProject?: DatabaseProject;

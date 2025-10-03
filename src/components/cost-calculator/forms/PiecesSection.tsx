@@ -269,19 +269,6 @@ const PieceCard: React.FC<PieceCardProps & { onNavigateToSettings?: () => void }
             </div>
           )}
           
-          {presets.length === 0 && !presetsLoading && (
-            <div className="mt-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
-              <p className="text-xs text-blue-700 mb-2">
-                No tienes perfiles de materiales creados
-              </p>
-              <button
-                onClick={handleManageProfiles}
-                className="text-xs text-blue-600 hover:text-blue-800 font-medium underline"
-              >
-                Crear perfiles de filamentos y resinas →
-              </button>
-            </div>
-          )}
         </div>
 
         <div>

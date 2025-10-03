@@ -26,9 +26,21 @@ interface CostCalculatorProps {
   loadedProject?: DatabaseProject & { pieces?: DatabasePiece[] };
   onProjectSaved?: (project: DatabaseProject) => void;
   onNavigateToSettings?: () => void;
+  importedData?: {
+    pieces: Array<{
+      id: string;
+      name: string;
+      filamentWeight: number;
+      filamentPrice: number;
+      printHours: number;
+      quantity: number;
+      notes?: string;
+    }>;
+    projectName: string;
+  };
 }
 
-const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjectSaved, onNavigateToSettings }: CostCalculatorProps) => {
+const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjectSaved, onNavigateToSettings, importedData }: CostCalculatorProps) => {
   const { user } = useAuth();
   const { getEffectiveTeam } = useTeam();
   const supabase = createClient();
@@ -90,9 +102,19 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
           notes: piece.notes || ''
         })));
       }
+    } else if (importedData) {
+      // Manejar datos importados desde archivo
+      setProjectName(importedData.projectName);
+      setPieces(importedData.pieces);
+      
+      // Calcular precio promedio del filamento de las piezas importadas
+      if (importedData.pieces.length > 0) {
+        const avgFilamentPrice = importedData.pieces.reduce((sum, piece) => sum + piece.filamentPrice, 0) / importedData.pieces.length;
+        setFilamentPrice(avgFilamentPrice);
+      }
     }
     setLoading(false);
-  }, [loadedProject]);
+  }, [loadedProject, importedData]);
 
   const calculateTotalFilamentWeight = () => {
     return pieces.reduce((sum, piece) => sum + (piece.filamentWeight * piece.quantity), 0);

@@ -80,18 +80,19 @@ export async function getDefaultMaterialPreset(userId: string, teamId?: string |
       query = query.eq('category', category);
     }
 
-    const { data, error } = await query.single();
+    const { data, error } = await query.limit(1);
 
     if (error) {
-      // Si no hay preset por defecto, no es un error crítico
-      if (error.code === 'PGRST116') {
-        return null;
-      }
       console.error('Error fetching default material preset:', error);
       return null;
     }
 
-    return data;
+    // Si no hay datos o el array está vacío, devolver null
+    if (!data || data.length === 0) {
+      return null;
+    }
+
+    return data[0];
   } catch (error) {
     console.error('Error in getDefaultMaterialPreset:', error);
     return null;
