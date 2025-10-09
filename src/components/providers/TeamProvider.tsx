@@ -60,6 +60,7 @@ export function TeamProvider({ children }: TeamProviderProps) {
 
       if (error) {
         console.error('Error fetching teams:', error);
+        console.error('Error details:', JSON.stringify(error, null, 2));
         return;
       }
 

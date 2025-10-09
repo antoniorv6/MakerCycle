@@ -30,9 +30,10 @@ const DEFAULT_COMPANY_DATA: CompanyData = {
 }
 
 // Convert CompanyData to database format
-function toDatabaseFormat(data: CompanyData, userId: string): Database['public']['Tables']['company_settings']['Insert'] {
+function toDatabaseFormat(data: CompanyData, userId: string, teamId?: string | null): Database['public']['Tables']['company_settings']['Insert'] {
   return {
     user_id: userId,
+    team_id: teamId || null,
     name: data.name,
     description: data.description,
     email: data.email,
@@ -64,16 +65,24 @@ function fromDatabaseFormat(dbData: Database['public']['Tables']['company_settin
   }
 }
 
-export async function getCompanySettings(userId: string): Promise<CompanyData> {
+export async function getCompanySettings(userId: string, teamId?: string | null): Promise<CompanyData> {
   const supabase = createClient()
   
   try {
-    console.log('Fetching company settings for user:', userId);
-    const { data, error } = await supabase
+    console.log('Fetching company settings for user:', userId, 'team:', teamId);
+    let query = supabase
       .from('company_settings')
-      .select('*')
-      .eq('user_id', userId)
-      .single()
+      .select('*');
+
+    if (teamId) {
+      // Get team settings
+      query = query.eq('team_id', teamId);
+    } else {
+      // Get personal settings (where team_id is null)
+      query = query.eq('user_id', userId).is('team_id', null);
+    }
+
+    const { data, error } = await query.single()
 
     if (error) {
       console.log('Database error:', error);
@@ -100,16 +109,24 @@ export async function getCompanySettings(userId: string): Promise<CompanyData> {
   }
 }
 
-export async function saveCompanySettings(userId: string, data: CompanyData): Promise<void> {
+export async function saveCompanySettings(userId: string, data: CompanyData, teamId?: string | null): Promise<void> {
   const supabase = createClient()
   
   try {
     console.log('Attempting to save company settings to Supabase');
+    
+    let query = supabase.from('company_settings');
+    
+    if (teamId) {
+      // Update team settings
+      query = query.update(toDatabaseFormat(data, userId, teamId)).eq('team_id', teamId);
+    } else {
+      // Update personal settings (where team_id is null)
+      query = query.update(toDatabaseFormat(data, userId, null)).eq('user_id', userId).is('team_id', null);
+    }
+    
     // First, try to update existing settings
-    const { error: updateError } = await supabase
-      .from('company_settings')
-      .update(toDatabaseFormat(data, userId))
-      .eq('user_id', userId)
+    const { error: updateError } = await query
 
     if (updateError) {
       console.log('Update error:', updateError);
@@ -118,7 +135,7 @@ export async function saveCompanySettings(userId: string, data: CompanyData): Pr
         console.log('No existing settings, inserting new ones');
         const { error: insertError } = await supabase
           .from('company_settings')
-          .insert(toDatabaseFormat(data, userId))
+          .insert(toDatabaseFormat(data, userId, teamId))
 
         if (insertError) {
           console.log('Insert error:', insertError);
@@ -150,6 +167,6 @@ export async function saveCompanySettings(userId: string, data: CompanyData): Pr
   }
 }
 
-export async function createDefaultCompanySettings(userId: string): Promise<void> {
-  await saveCompanySettings(userId, DEFAULT_COMPANY_DATA)
+export async function createDefaultCompanySettings(userId: string, teamId?: string | null): Promise<void> {
+  await saveCompanySettings(userId, DEFAULT_COMPANY_DATA, teamId)
 } 
