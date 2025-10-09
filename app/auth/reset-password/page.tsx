@@ -1,12 +1,12 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useRouter, useSearchParams } from 'next/navigation'
 import PasswordResetForm from '@/components/auth/PasswordResetForm'
 import { AuthSkeleton } from '@/components/skeletons'
 
-export default function ResetPasswordPage() {
+function ResetPasswordContent() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [session, setSession] = useState<any>(null)
@@ -166,5 +166,30 @@ export default function ResetPasswordPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-md w-full space-y-8">
+          <div className="text-center">
+            <h1 className="text-3xl font-bold text-slate-900">
+              MakerCycle
+            </h1>
+            <p className="mt-2 text-sm text-slate-600">
+              Verificando enlace de recuperación...
+            </p>
+          </div>
+          
+          <div className="bg-white py-8 px-6 shadow-xl rounded-xl">
+            <AuthSkeleton />
+          </div>
+        </div>
+      </div>
+    }>
+      <ResetPasswordContent />
+    </Suspense>
   )
 }
