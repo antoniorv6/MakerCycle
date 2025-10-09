@@ -24,8 +24,11 @@ export async function middleware(req: NextRequest) {
     data: { session },
   } = await supabase.auth.getSession()
 
-  // Permitir acceso público a /legal/*
-  if (req.nextUrl.pathname.startsWith('/legal/')) {
+  // Permitir acceso público a /legal/* y rutas de autenticación
+  if (req.nextUrl.pathname.startsWith('/legal/') || 
+      req.nextUrl.pathname.startsWith('/auth/forgot-password') ||
+      req.nextUrl.pathname.startsWith('/auth/reset-password') ||
+      req.nextUrl.pathname.startsWith('/auth/error')) {
     return res;
   }
 

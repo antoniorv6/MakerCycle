@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import type { User, Session } from '@supabase/supabase-js'
 import WelcomePopup from '@/components/WelcomePopup'
 
@@ -36,6 +36,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [hasShownWelcome, setHasShownWelcome] = useState(false)
   const supabase = createClient()
   const router = useRouter()
+  const pathname = usePathname()
 
   useEffect(() => {
     const getSession = async () => {
@@ -59,14 +60,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(false)
 
       // Mostrar popup de bienvenida cuando el usuario se autentica
-      if (event === 'SIGNED_IN' && session?.user && !hasShownWelcome) {
+      // Pero no en páginas de autenticación (auth, reset-password, forgot-password, error)
+      const isAuthPage = pathname?.startsWith('/auth') || pathname === '/'
+      
+      if (event === 'SIGNED_IN' && session?.user && !hasShownWelcome && !isAuthPage) {
         setShowWelcomePopup(true)
         setHasShownWelcome(true)
       }
     })
 
     return () => subscription.unsubscribe()
-  }, [supabase.auth])
+  }, [supabase.auth, pathname])
 
   const signOut = async () => {
     try {
