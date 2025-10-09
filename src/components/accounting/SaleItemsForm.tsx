@@ -135,7 +135,7 @@ export function SaleItemsForm({ items, onItemsChange }: SaleItemsFormProps) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-medium text-gray-900">Proyectos de la Venta</h3>
+        <h3 className="text-lg font-medium text-gray-900">Elementos de la venta</h3>
         <button
           type="button"
           onClick={addItem}
