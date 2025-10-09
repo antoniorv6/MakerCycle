@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/components/providers/AuthProvider';
+import { useTeam } from '@/components/providers/TeamProvider';
 import { getCompanySettings, saveCompanySettings, type CompanyData } from '@/services/companySettingsService';
 
 export { type CompanyData } from '@/services/companySettingsService';
@@ -20,6 +21,7 @@ const DEFAULT_COMPANY_DATA: CompanyData = {
 
 export function useCompanySettings() {
   const { user } = useAuth();
+  const { currentTeam } = useTeam();
   const [companyData, setCompanyData] = useState<CompanyData>(DEFAULT_COMPANY_DATA);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -44,7 +46,7 @@ export function useCompanySettings() {
           }
           
           // Intentar cargar desde Supabase
-          const data = await getCompanySettings(user.id);
+          const data = await getCompanySettings(user.id, currentTeam?.id);
           console.log('Loaded company settings from Supabase:', data);
           
           // Solo actualizar si los datos de Supabase son diferentes de los por defecto
@@ -66,7 +68,7 @@ export function useCompanySettings() {
     } else {
       setIsLoading(false);
     }
-  }, [user]);
+  }, [user, currentTeam]);
 
   // Guardar datos de la empresa en Supabase
   const saveCompanyData = async (data: CompanyData): Promise<void> => {
@@ -74,7 +76,7 @@ export function useCompanySettings() {
 
     try {
       console.log('Saving company settings to Supabase:', data);
-      await saveCompanySettings(user.id, data);
+      await saveCompanySettings(user.id, data, currentTeam?.id);
       setCompanyData(data);
       
       // También guardar en localStorage como backup
@@ -108,7 +110,7 @@ export function useCompanySettings() {
     if (!user) return;
     
     try {
-      await saveCompanySettings(user.id, DEFAULT_COMPANY_DATA);
+      await saveCompanySettings(user.id, DEFAULT_COMPANY_DATA, currentTeam?.id);
       setCompanyData(DEFAULT_COMPANY_DATA);
     } catch (error) {
       console.error('Error resetting company settings:', error);

@@ -379,7 +379,7 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
       insights.push({
         type: 'warning',
         title: 'Margen bajo detectado',
-        description: 'Tu margen promedio está por debajo del 20%. Considera revisar tus precios.',
+        description: 'Tu margen promedio está por debajo del umbral recomendado. Considera revisar tus precios.',
         icon: AlertCircle,
         color: 'text-orange-600',
         bgColor: 'bg-orange-50'
@@ -401,7 +401,7 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
       insights.push({
         type: 'success',
         title: 'Crecimiento excelente',
-        description: 'Tus ingresos han crecido más del 10%. ¡Sigue así!',
+        description: 'Tus ingresos han crecido significativamente. ¡Sigue así!',
         icon: TrendingUp,
         color: 'text-green-600',
         bgColor: 'bg-green-50'
@@ -414,7 +414,7 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
         insights.push({
           type: 'info',
           title: 'Producto estrella',
-          description: `${topProject.name} representa más del 30% de tus ingresos.`,
+          description: `${topProject.name} representa una gran parte de tus ingresos.`,
           icon: Star,
           color: 'text-blue-600',
           bgColor: 'bg-blue-50'

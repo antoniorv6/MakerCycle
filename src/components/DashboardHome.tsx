@@ -67,7 +67,7 @@ export default function DashboardHome({ stats, onNavigate }: DashboardHomeProps)
       icon: Zap,
       color: 'from-yellow-500 to-orange-500',
       bgColor: 'bg-yellow-50',
-      trend: '+12.5%',
+      trend: null,
       trendUp: true
     },
     {
@@ -77,7 +77,7 @@ export default function DashboardHome({ stats, onNavigate }: DashboardHomeProps)
       icon: Target,
       color: 'from-emerald-500 to-teal-500',
       bgColor: 'bg-emerald-50',
-      trend: '+8.3%',
+      trend: null,
       trendUp: true
     },
     {
@@ -87,7 +87,7 @@ export default function DashboardHome({ stats, onNavigate }: DashboardHomeProps)
       icon: Award,
       color: 'from-indigo-500 to-purple-500',
       bgColor: 'bg-indigo-50',
-      trend: '+15.2%',
+      trend: null,
       trendUp: true
     }
   ];
@@ -125,12 +125,10 @@ export default function DashboardHome({ stats, onNavigate }: DashboardHomeProps)
             <div className="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center">
               <FileText className="w-6 h-6 text-white" />
             </div>
-            <TrendingUp className="w-5 h-5 text-blue-600" />
           </div>
           <div>
             <p className="text-sm font-medium text-blue-600 mb-1">Proyectos Totales</p>
             <p className="text-3xl font-bold text-blue-900">{stats.totalProjects}</p>
-            <p className="text-xs text-blue-700 mt-2">+5 este mes</p>
           </div>
         </div>
 
@@ -139,12 +137,10 @@ export default function DashboardHome({ stats, onNavigate }: DashboardHomeProps)
             <div className="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center">
               <Euro className="w-6 h-6 text-white" />
             </div>
-            <TrendingUp className="w-5 h-5 text-green-600" />
           </div>
           <div>
             <p className="text-sm font-medium text-green-600 mb-1">Ventas Totales</p>
             <p className="text-3xl font-bold text-green-900">{stats.totalSales}</p>
-            <p className="text-xs text-green-700 mt-2">+12 este mes</p>
           </div>
         </div>
 
@@ -153,12 +149,10 @@ export default function DashboardHome({ stats, onNavigate }: DashboardHomeProps)
             <div className="w-12 h-12 bg-purple-500 rounded-xl flex items-center justify-center">
               <DollarSign className="w-6 h-6 text-white" />
             </div>
-            <TrendingUp className="w-5 h-5 text-purple-600" />
           </div>
           <div>
             <p className="text-sm font-medium text-purple-600 mb-1">Ingresos Totales</p>
             <p className="text-3xl font-bold text-purple-900">{formatCurrency(stats.totalRevenue)}</p>
-            <p className="text-xs text-purple-700 mt-2">+18.5% vs mes anterior</p>
           </div>
         </div>
 
@@ -167,12 +161,10 @@ export default function DashboardHome({ stats, onNavigate }: DashboardHomeProps)
             <div className="w-12 h-12 bg-orange-500 rounded-xl flex items-center justify-center">
               <Clock className="w-6 h-6 text-white" />
             </div>
-            <TrendingUp className="w-5 h-5 text-orange-600" />
           </div>
           <div>
             <p className="text-sm font-medium text-orange-600 mb-1">Horas de Impresión</p>
             <p className="text-3xl font-bold text-orange-900">{stats.totalPrintHours}h</p>
-            <p className="text-xs text-orange-700 mt-2">+8.2% vs mes anterior</p>
           </div>
         </div>
       </motion.div>
@@ -192,16 +184,18 @@ export default function DashboardHome({ stats, onNavigate }: DashboardHomeProps)
                 <div className={`w-12 h-12 bg-gradient-to-br ${metric.color} rounded-xl flex items-center justify-center`}>
                   <Icon className="w-6 h-6 text-white" />
                 </div>
-                <div className="flex items-center space-x-1">
-                  {metric.trendUp ? (
-                    <ArrowUpRight className="w-4 h-4 text-green-600" />
-                  ) : (
-                    <ArrowDownRight className="w-4 h-4 text-red-600" />
-                  )}
-                  <span className={`text-xs font-medium ${metric.trendUp ? 'text-green-600' : 'text-red-600'}`}>
-                    {metric.trend}
-                  </span>
-                </div>
+                {metric.trend && (
+                  <div className="flex items-center space-x-1">
+                    {metric.trendUp ? (
+                      <ArrowUpRight className="w-4 h-4 text-green-600" />
+                    ) : (
+                      <ArrowDownRight className="w-4 h-4 text-red-600" />
+                    )}
+                    <span className={`text-xs font-medium ${metric.trendUp ? 'text-green-600' : 'text-red-600'}`}>
+                      {metric.trend}
+                    </span>
+                  </div>
+                )}
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-600 mb-1">{metric.title}</p>

@@ -29,6 +29,7 @@ export default function Dashboard({ initialPage }: { initialPage?: string } = {}
   const [currentPage, setCurrentPage] = useState(initialPage || 'home')
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [loadedProject, setLoadedProject] = useState<AppProject | null>(null)
+  const [settingsTab, setSettingsTab] = useState<string>('company')
   const { user } = useAuth()
   const { stats } = useDashboardData()
 
@@ -104,8 +105,13 @@ export default function Dashboard({ initialPage }: { initialPage?: string } = {}
     setLoadedProject(null)
   }
 
-  const handlePageChange = (page: string) => {
+  const handlePageChange = (page: string, tab?: string) => {
     setCurrentPage(page)
+    if (page === 'settings' && tab) {
+      setSettingsTab(tab)
+    } else if (page === 'settings') {
+      setSettingsTab('company') // Default tab when accessing from sidebar
+    }
   }
 
   const renderContent = () => {
@@ -129,6 +135,7 @@ export default function Dashboard({ initialPage }: { initialPage?: string } = {}
             <LazyCostCalculator 
               loadedProject={loadedProject ? projectToDbProject(loadedProject) : undefined} 
               onProjectSaved={handleProjectSaved}
+              onNavigateToSettings={() => handlePageChange('settings', 'materials')}
             />
           </Suspense>
         )
@@ -145,7 +152,7 @@ export default function Dashboard({ initialPage }: { initialPage?: string } = {}
           </Suspense>
         )
       case 'settings':
-        return <SettingsPage />
+        return <SettingsPage initialTab={settingsTab} />
       case 'teams':
         return <TeamManager />
       case 'clients':
@@ -161,7 +168,8 @@ export default function Dashboard({ initialPage }: { initialPage?: string } = {}
           <Suspense fallback={<DashboardSkeleton />}>
             <LazyCostCalculator 
               loadedProject={loadedProject ? projectToDbProject(loadedProject) : undefined} 
-              onProjectSaved={handleProjectSaved} 
+              onProjectSaved={handleProjectSaved}
+              onNavigateToSettings={() => handlePageChange('settings', 'materials')}
             />
           </Suspense>
         )

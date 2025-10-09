@@ -5,6 +5,7 @@ import { useTeam } from '@/components/providers/TeamProvider';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { ClientSelector } from './ClientSelector';
 import { SaleItemsForm } from './SaleItemsForm';
+import { roundCurrency, roundTime, formatCurrency } from '@/utils/numberUtils';
 import type { Sale, SaleFormData, SaleItemFormData } from '@/types';
 import { toast } from 'react-hot-toast';
 
@@ -61,13 +62,13 @@ export function AddSaleForm({ sale, onSave, onCancel }: AddSaleFormProps) {
       return;
     }
 
-    // Validate all items have valid numeric values
+    // Validate all items have valid numeric values and round to appropriate decimal places
     const validatedItems = formData.items.map(item => ({
       ...item,
-      unit_cost: Number(item.unit_cost) || 0,
+      unit_cost: roundCurrency(Number(item.unit_cost) || 0),
       quantity: Number(item.quantity) || 1,
-      sale_price: Number(item.sale_price) || 0,
-      print_hours: Number(item.print_hours) || 0
+      sale_price: roundCurrency(Number(item.sale_price) || 0),
+      print_hours: roundTime(Number(item.print_hours) || 0)
     }));
 
     // Check if any item has invalid values
@@ -138,8 +139,9 @@ export function AddSaleForm({ sale, onSave, onCancel }: AddSaleFormProps) {
     return formData.items.reduce((sum, item) => sum + item.print_hours, 0);
   };
 
-  const formatCurrency = (value: number) => `€${value.toFixed(2)}`;
-  const formatPercentage = (value: number) => `${value.toFixed(1)}%`;
+  // Use utility functions for formatting
+  const formatCurrencyValue = (value: number) => formatCurrency(value);
+  const formatPercentageValue = (value: number) => `${roundCurrency(value).toFixed(1)}%`;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -239,25 +241,25 @@ export function AddSaleForm({ sale, onSave, onCancel }: AddSaleFormProps) {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="text-center">
                   <div className="text-2xl font-bold text-blue-600">
-                    {formatCurrency(calculateTotalAmount())}
+                    {formatCurrencyValue(calculateTotalAmount())}
                   </div>
                   <div className="text-sm text-gray-600">Total Venta</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-gray-600">
-                    {formatCurrency(calculateTotalCost())}
+                    {formatCurrencyValue(calculateTotalCost())}
                   </div>
                   <div className="text-sm text-gray-600">Total Coste</div>
                 </div>
                 <div className="text-center">
                   <div className={`text-2xl font-bold ${calculateTotalProfit() >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {formatCurrency(calculateTotalProfit())}
+                    {formatCurrencyValue(calculateTotalProfit())}
                   </div>
                   <div className="text-sm text-gray-600">Beneficio</div>
                 </div>
                 <div className="text-center">
                   <div className={`text-2xl font-bold ${calculateTotalMargin() >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {formatPercentage(calculateTotalMargin())}
+                    {formatPercentageValue(calculateTotalMargin())}
                   </div>
                   <div className="text-sm text-gray-600">Margen</div>
                 </div>

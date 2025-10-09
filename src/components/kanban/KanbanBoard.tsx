@@ -8,6 +8,7 @@ import type { Project, KanbanCard, KanbanStatus } from '@/types';
 import { Plus, Trash2, PauseCircle, PlayCircle, CheckCircle2, FolderOpen } from 'lucide-react';
 import { ProjectCard } from './ProjectCard';
 import { ColumnHeader } from './ColumnHeader';
+import ConfirmModal from '../cost-calculator/ConfirmModal';
 
 const columnOrder: KanbanStatus[] = ['pending', 'in_progress', 'completed'];
 const columnTitles: Record<KanbanStatus, string> = {
@@ -24,6 +25,8 @@ export default function KanbanBoard() {
   const [adding, setAdding] = useState(false);
   const [selectedProject, setSelectedProject] = useState('');
   const [loading, setLoading] = useState(true);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [cardToDelete, setCardToDelete] = useState<string | null>(null);
 
   // Cargar proyectos y tarjetas Kanban
   useEffect(() => {
@@ -91,15 +94,24 @@ export default function KanbanBoard() {
   };
 
   // Eliminar tarjeta
-  const handleDeleteCard = async (cardId: string) => {
+  const handleDeleteCard = (cardId: string) => {
+    setCardToDelete(cardId);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeleteCard = async () => {
+    if (!cardToDelete) return;
+
     setLoading(true);
     try {
-      await kanbanBoardService.deleteKanbanCard(cardId);
+      await kanbanBoardService.deleteKanbanCard(cardToDelete);
       fetchKanbanCards();
     } catch (e) {
       // error
     } finally {
       setLoading(false);
+      setShowDeleteModal(false);
+      setCardToDelete(null);
     }
   };
 
@@ -232,6 +244,21 @@ export default function KanbanBoard() {
           <span className="text-slate-500 text-lg">Cargando...</span>
         </div>
       )}
+
+      {/* Modal de confirmación para eliminar tarjeta */}
+      <ConfirmModal
+        isOpen={showDeleteModal}
+        onClose={() => {
+          setShowDeleteModal(false);
+          setCardToDelete(null);
+        }}
+        onConfirm={confirmDeleteCard}
+        title="Eliminar proyecto de la organización"
+        message="¿Estás seguro de que quieres eliminar este proyecto de la organización? El proyecto no se borrará, solo se quitará del tablero Kanban."
+        confirmText="Eliminar"
+        cancelText="Cancelar"
+        type="danger"
+      />
     </div>
   );
 } 

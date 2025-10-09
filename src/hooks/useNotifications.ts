@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { NotificationService, Notification } from '@/services/notificationService';
+import { useTeam } from '@/components/providers/TeamProvider';
 
 export function useNotifications() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -7,28 +8,31 @@ export function useNotifications() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showAll, setShowAll] = useState(false);
+  const { currentTeam } = useTeam();
 
   const fetchNotifications = useCallback(async (includeRead = false) => {
     try {
       setLoading(true);
       setError(null);
-      const data = await NotificationService.getNotifications(50, includeRead);
+      const data = await NotificationService.getNotifications(50, includeRead, currentTeam?.id);
       setNotifications(data);
     } catch (err) {
+      console.error('Error fetching notifications:', err);
+      console.error('Error details:', JSON.stringify(err, null, 2));
       setError(err instanceof Error ? err.message : 'Failed to fetch notifications');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [currentTeam]);
 
   const fetchUnreadCount = useCallback(async () => {
     try {
-      const count = await NotificationService.getUnreadCount();
+      const count = await NotificationService.getUnreadCount(currentTeam?.id);
       setUnreadCount(count);
     } catch (err) {
       console.error('Error fetching unread count:', err);
     }
-  }, []);
+  }, [currentTeam]);
 
   const markAsRead = useCallback(async (notificationId: string) => {
     try {

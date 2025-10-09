@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calculator } from 'lucide-react';
+import { Calculator, Zap } from 'lucide-react';
 import { createClient } from '@/lib/supabase';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useTeam } from '@/components/providers/TeamProvider';
@@ -15,15 +15,20 @@ import PricingConfig from './forms/PricingConfig';
 import ProjectSummaryPanel from './panels/ProjectSummaryPanel';
 import CostBreakdownPanel from './panels/CostBreakdownPanel';
 import SalePricePanel from './panels/SalePricePanel';
+import StickyNotesManager from './StickyNotesManager';
+import DisasterModeButton from './DisasterModeButton';
+import StickyNote from './StickyNote';
+import ConfirmModal from './ConfirmModal';
 import { useCostCalculations } from './hooks/useCostCalculations';
 import type { DatabaseProject, DatabasePiece } from '@/types';
 
 interface CostCalculatorProps {
   loadedProject?: DatabaseProject & { pieces?: DatabasePiece[] };
   onProjectSaved?: (project: DatabaseProject) => void;
+  onNavigateToSettings?: () => void;
 }
 
-const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjectSaved }: CostCalculatorProps) => {
+const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjectSaved, onNavigateToSettings }: CostCalculatorProps) => {
   const { user } = useAuth();
   const { getEffectiveTeam } = useTeam();
   const supabase = createClient();
@@ -52,6 +57,17 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
     quantity: 1,
     notes: ''
   }]);
+  const [isDisasterMode, setIsDisasterMode] = useState(false);
+  const [disasterModeNotes, setDisasterModeNotes] = useState<Array<{
+    id: string;
+    title: string;
+    content: string;
+    position: { x: number; y: number };
+    color: string;
+    size: 'small' | 'medium' | 'large';
+  }>>([]);
+  const [nextNoteId, setNextNoteId] = useState(1);
+  const [showClearModal, setShowClearModal] = useState(false);
 
   useEffect(() => {
     if (loadedProject) {
@@ -172,6 +188,68 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
       quantity: 1,
       notes: ''
     }]);
+  };
+
+  const colors = ['yellow', 'pink', 'blue', 'green', 'purple', 'orange'];
+
+  const addDisasterNote = () => {
+    const newNote = {
+      id: `disaster-note-${nextNoteId}`,
+      title: '',
+      content: '',
+      position: {
+        x: Math.random() * (window.innerWidth - 200) + 50,
+        y: Math.random() * (window.innerHeight - 250) + 50
+      },
+      color: colors[Math.floor(Math.random() * colors.length)],
+      size: 'medium' as const
+    };
+    
+    setDisasterModeNotes(prev => [...prev, newNote]);
+    setNextNoteId(prev => prev + 1);
+  };
+
+  const updateDisasterNote = (id: string, field: 'title' | 'content', value: string) => {
+    setDisasterModeNotes(prev => prev.map(note => 
+      note.id === id ? { ...note, [field]: value } : note
+    ));
+  };
+
+  const deleteDisasterNote = (id: string) => {
+    setDisasterModeNotes(prev => prev.filter(note => note.id !== id));
+  };
+
+  const moveDisasterNote = (id: string, position: { x: number; y: number }) => {
+    setDisasterModeNotes(prev => prev.map(note => 
+      note.id === id ? { ...note, position } : note
+    ));
+  };
+
+  const changeDisasterNoteColor = (id: string) => {
+    setDisasterModeNotes(prev => prev.map(note => 
+      note.id === id 
+        ? { ...note, color: colors[(colors.indexOf(note.color) + 1) % colors.length] }
+        : note
+    ));
+  };
+
+  const changeDisasterNoteSize = (id: string) => {
+    setDisasterModeNotes(prev => prev.map(note => 
+      note.id === id 
+        ? { ...note, size: note.size === 'small' ? 'medium' : note.size === 'medium' ? 'large' : 'small' }
+        : note
+    ));
+  };
+
+  const clearAllDisasterNotes = () => {
+    if (disasterModeNotes.length > 0) {
+      setShowClearModal(true);
+    }
+  };
+
+  const handleConfirmClear = () => {
+    setDisasterModeNotes([]);
+    setShowClearModal(false);
   };
 
   const saveProject = async () => {
@@ -344,6 +422,7 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
             onUpdatePiece={updatePiece}
             onRemovePiece={removePiece}
             onDuplicatePiece={duplicatePiece}
+            onNavigateToSettings={onNavigateToSettings}
           />
 
           <ElectricitySection
@@ -387,6 +466,45 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
           />
         </div>
       </div>
+
+      {/* Botón sticky de modo desastre */}
+      <DisasterModeButton
+        isActive={isDisasterMode}
+        onToggle={() => setIsDisasterMode(!isDisasterMode)}
+        onAddNote={addDisasterNote}
+        onClearAll={clearAllDisasterNotes}
+        noteCount={disasterModeNotes.length}
+      />
+
+      {/* Notas del modo desastre */}
+      {isDisasterMode && disasterModeNotes.map(note => (
+        <StickyNote
+          key={note.id}
+          id={note.id}
+          title={note.title}
+          content={note.content}
+          position={note.position}
+          color={note.color}
+          size={note.size}
+          onUpdate={updateDisasterNote}
+          onDelete={deleteDisasterNote}
+          onMove={moveDisasterNote}
+          onChangeColor={changeDisasterNoteColor}
+          onChangeSize={changeDisasterNoteSize}
+        />
+      ))}
+
+      {/* Modal de confirmación para limpiar notas */}
+      <ConfirmModal
+        isOpen={showClearModal}
+        onClose={() => setShowClearModal(false)}
+        onConfirm={handleConfirmClear}
+        title="Limpiar todas las notas"
+        message={`¿Estás seguro de que quieres eliminar las ${disasterModeNotes.length} notas? Esta acción no se puede deshacer.`}
+        confirmText="Eliminar todas"
+        cancelText="Cancelar"
+        type="danger"
+      />
     </div>
   );
 };

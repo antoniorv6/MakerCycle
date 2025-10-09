@@ -1,16 +1,21 @@
 import React, { useState } from 'react';
-import { Plus, Copy, Trash2, Package, Edit3, Save } from 'lucide-react';
+import { Plus, Copy, Trash2, Package, Edit3, Save, Heart, Bookmark, Settings } from 'lucide-react';
 import type { PiecesSectionProps, PieceCardProps } from '../types';
+import { useMaterialPresets } from '@/hooks/useMaterialPresets';
 
-const PieceCard: React.FC<PieceCardProps> = ({ 
+const PieceCard: React.FC<PieceCardProps & { onNavigateToSettings?: () => void }> = ({ 
   piece, 
   onUpdate, 
   onRemove, 
   onDuplicate, 
-  isFirst 
+  isFirst,
+  onNavigateToSettings
 }) => {
   const [isEditingName, setIsEditingName] = useState(false);
   const [tempName, setTempName] = useState(piece.name);
+  const { presets, loading: presetsLoading, convertPrice } = useMaterialPresets();
+  const [showPresetSelector, setShowPresetSelector] = useState(false);
+  const [selectedPresetCategory, setSelectedPresetCategory] = useState<'filament' | 'resin'>('filament');
 
   const handleNameSave = () => {
     onUpdate('name', tempName);
@@ -21,6 +26,30 @@ const PieceCard: React.FC<PieceCardProps> = ({
     setTempName(piece.name);
     setIsEditingName(false);
   };
+
+  // Filtrar presets por categoría seleccionada
+  const filteredPresets = presets.filter(preset => preset.category === selectedPresetCategory);
+
+  const handlePresetSelect = (presetId: string) => {
+    const selectedPreset = presets.find(p => p.id === presetId);
+    if (selectedPreset) {
+      // Convertir el precio a €/kg si es necesario
+      let pricePerKg = selectedPreset.price_per_unit;
+      if (selectedPreset.unit !== 'kg') {
+        pricePerKg = convertPrice(selectedPreset.price_per_unit, selectedPreset.unit, 'kg');
+      }
+      onUpdate('filamentPrice', pricePerKg);
+      setShowPresetSelector(false);
+    }
+  };
+
+  const handleManageProfiles = () => {
+    setShowPresetSelector(false);
+    if (onNavigateToSettings) {
+      onNavigateToSettings();
+    }
+  };
+
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-all duration-200">
@@ -110,18 +139,149 @@ const PieceCard: React.FC<PieceCardProps> = ({
           />
         </div>
 
-        <div>
+        <div className="relative">
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Precio filamento (€/kg)
           </label>
-          <input
-            type="number"
-            step="0.01"
-            value={piece.filamentPrice}
-            onChange={(e) => onUpdate('filamentPrice', parseFloat(e.target.value) || 0)}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-            placeholder="0.00"
-          />
+          <div className="relative">
+            <input
+              type="number"
+              step="0.01"
+              value={piece.filamentPrice}
+              onChange={(e) => onUpdate('filamentPrice', parseFloat(e.target.value) || 0)}
+              className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+              placeholder="0.00"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPresetSelector(!showPresetSelector)}
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors group"
+              title="Seleccionar perfil de material"
+              disabled={presetsLoading || presets.length === 0}
+            >
+              <Bookmark className="w-5 h-5 group-hover:scale-110 transition-transform" />
+            </button>
+          </div>
+          
+          {/* Material Profile Selector Dropdown */}
+          {showPresetSelector && presets.length > 0 && (
+            <div className="absolute z-20 mt-2 w-full max-w-lg bg-white border border-gray-200 rounded-xl shadow-xl">
+              {/* Header */}
+              <div className="p-4 border-b border-gray-100 bg-gray-50 rounded-t-xl">
+                <h4 className="font-semibold text-gray-900 text-sm flex items-center gap-2">
+                  <Bookmark className="w-4 h-4 text-purple-600" />
+                  Perfiles de Materiales
+                </h4>
+                <p className="text-xs text-gray-600 mt-1">Selecciona un perfil para aplicar su precio</p>
+              </div>
+
+              {/* Category Tabs */}
+              <div className="p-3 border-b border-gray-100">
+                <div className="flex bg-gray-100 rounded-lg p-1">
+                  <button
+                    onClick={() => setSelectedPresetCategory('filament')}
+                    className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                      selectedPresetCategory === 'filament'
+                        ? 'bg-white text-gray-900 shadow-sm'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    Filamentos
+                  </button>
+                  <button
+                    onClick={() => setSelectedPresetCategory('resin')}
+                    className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                      selectedPresetCategory === 'resin'
+                        ? 'bg-white text-gray-900 shadow-sm'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    Resinas
+                  </button>
+                </div>
+              </div>
+
+              {/* Presets List */}
+              <div className="max-h-80 overflow-y-auto">
+                {filteredPresets.length > 0 ? (
+                  filteredPresets.map((preset) => (
+                    <button
+                      key={preset.id}
+                      onClick={() => handlePresetSelect(preset.id)}
+                      className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-b-0 group"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h5 className="font-semibold text-gray-900 truncate group-hover:text-purple-700 transition-colors">
+                              {preset.name}
+                            </h5>
+                            {preset.is_default && (
+                              <span className="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium">
+                                <Heart className="w-3 h-3 fill-current" />
+                                Favorito
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-sm text-gray-600">
+                            {preset.material_type}
+                            {preset.brand && ` • ${preset.brand}`}
+                            {preset.color && (
+                              <span className="ml-2 inline-block w-3 h-3 rounded-full border border-gray-300" 
+                                    style={{ backgroundColor: preset.color }}
+                                    title={`Color: ${preset.color}`} />
+                            )}
+                          </div>
+                        </div>
+                        <div className="text-right ml-4">
+                          <div className="text-lg font-bold text-purple-600 group-hover:text-purple-700 transition-colors">
+                            {preset.price_per_unit.toFixed(2)}€
+                          </div>
+                          <div className="text-xs text-gray-500">por {preset.unit}</div>
+                        </div>
+                      </div>
+                    </button>
+                  ))
+                ) : (
+                  <div className="p-6 text-center text-gray-500">
+                    <Package className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+                    <p className="text-sm">No hay perfiles de {selectedPresetCategory === 'filament' ? 'filamentos' : 'resinas'}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Footer */}
+              <div className="p-3 bg-gray-50 border-t border-gray-100 rounded-b-xl space-y-2">
+                <button
+                  onClick={handleManageProfiles}
+                  className="w-full px-4 py-3 text-sm text-purple-700 hover:text-purple-800 hover:bg-purple-50 rounded-lg transition-colors font-medium flex items-center justify-center gap-2 border border-purple-200 hover:border-purple-300"
+                >
+                  <Settings className="w-4 h-4" />
+                  Gestionar materiales
+                </button>
+                <button
+                  onClick={() => setShowPresetSelector(false)}
+                  className="w-full px-4 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors font-medium"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          )}
+          
+          {presets.length === 0 && !presetsLoading && (
+            <div className="mt-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
+              <p className="text-xs text-blue-700 mb-2">
+                No tienes perfiles de materiales creados
+              </p>
+              <button
+                onClick={handleManageProfiles}
+                className="text-xs text-blue-600 hover:text-blue-800 font-medium underline"
+              >
+                Crear perfiles de filamentos y resinas →
+              </button>
+            </div>
+          )}
         </div>
 
         <div>
@@ -193,12 +353,13 @@ const PieceCard: React.FC<PieceCardProps> = ({
   );
 };
 
-const PiecesSection: React.FC<PiecesSectionProps> = ({
+const PiecesSection: React.FC<PiecesSectionProps & { onNavigateToSettings?: () => void }> = ({
   pieces,
   onAddPiece,
   onUpdatePiece,
   onRemovePiece,
-  onDuplicatePiece
+  onDuplicatePiece,
+  onNavigateToSettings
 }) => {
   return (
     <div className="space-y-8">
@@ -245,6 +406,7 @@ const PiecesSection: React.FC<PiecesSectionProps> = ({
               onRemove={() => onRemovePiece(piece.id)}
               onDuplicate={() => onDuplicatePiece(piece.id)}
               isFirst={index === 0}
+              onNavigateToSettings={onNavigateToSettings}
             />
           ))}
         </div>
