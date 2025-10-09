@@ -2,6 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { Upload, FileText, AlertCircle, CheckCircle, ArrowLeft, Loader2, Save, Bookmark } from 'lucide-react';
 import { PrintCostCalculator, type CostSummary } from '@/lib/from_3mf';
 import { useMaterialPresets } from '@/hooks/useMaterialPresets';
+import { SlicerLogoDisplay } from '../SlicerLogos';
 import type { Piece, MaterialPreset } from '@/types';
 
 interface FileImportViewProps {
@@ -37,75 +38,77 @@ const FileImportView: React.FC<FileImportViewProps> = ({ onBack, onImportComplet
 
   const handleFileSelect = useCallback(async (file: File) => {
     if (!file.name.toLowerCase().endsWith('.gcode.3mf')) {
-      setError('Por favor, selecciona un archivo .gcode.3mf válido de OrcaSlicer');
+      setError('Por favor, selecciona un archivo .gcode.3mf válido de OrcaSlicer o BambuStudio');
       return;
     }
 
     setIsProcessing(true);
     setError(null);
     setImportedData(null);
+    setDetectedProfiles([]);
 
     try {
       const result = await calculator.processFile(file);
       setImportedData(result);
       
-      // Asegurar que los perfiles estén cargados desde la base de datos
-      await refreshPresets();
-      // Usar presets directamente del hook en lugar de loadedPresets
-      const currentPresets = presets;
-      
-      // Consolidar perfiles únicos (mismo nombre + mismo precio = mismo perfil)
-      const uniqueProfilesMap = new Map<string, DetectedFilamentProfile>();
-      const profilePlateCount = new Map<string, Set<number>>(); // Para contar placas únicas
-      
-      // Primero, procesar cada placa para contar cuántas placas usan cada perfil
-      for (const plate of result.plates) {
-        for (const filament of plate.filaments) {
+      // Cargar perfiles de forma asíncrona sin bloquear la UI
+      refreshPresets().then(() => {
+        const currentPresets = presets;
+        
+        // Consolidar perfiles únicos (mismo nombre + mismo precio = mismo perfil)
+        const uniqueProfilesMap = new Map<string, DetectedFilamentProfile>();
+        const profilePlateCount = new Map<string, Set<number>>(); // Para contar placas únicas
+        
+        // Primero, procesar cada placa para contar cuántas placas usan cada perfil
+        for (const plate of result.plates) {
+          for (const filament of plate.filaments) {
+            const key = `${filament.profileName}__${filament.costPerKg}`;
+            
+            if (!profilePlateCount.has(key)) {
+              profilePlateCount.set(key, new Set());
+            }
+            profilePlateCount.get(key)!.add(plate.plateId);
+          }
+        }
+        
+        // Luego, consolidar los perfiles con el peso total y conteo de placas
+        for (const filament of result.summary.filamentsUsed) {
           const key = `${filament.profileName}__${filament.costPerKg}`;
           
-          if (!profilePlateCount.has(key)) {
-            profilePlateCount.set(key, new Set());
-          }
-          profilePlateCount.get(key)!.add(plate.plateId);
-        }
-      }
-      
-      // Luego, consolidar los perfiles con el peso total y conteo de placas
-      for (const filament of result.summary.filamentsUsed) {
-        const key = `${filament.profileName}__${filament.costPerKg}`;
-        
-        if (!uniqueProfilesMap.has(key)) {
-          // Verificar si ya existe un perfil con el mismo nombre y precio
-          const existingPreset = currentPresets.find(p => {
-            const nameMatch = p.name.trim().toLowerCase() === filament.profileName.trim().toLowerCase();
-            const priceMatch = Math.abs(p.price_per_unit - filament.costPerKg) < 0.01; // Tolerancia para decimales
-            const categoryMatch = p.category === 'filament';
+          if (!uniqueProfilesMap.has(key)) {
+            // Verificar si ya existe un perfil con el mismo nombre y precio
+            const existingPreset = currentPresets.find(p => {
+              const nameMatch = p.name.trim().toLowerCase() === filament.profileName.trim().toLowerCase();
+              const priceMatch = Math.abs(p.price_per_unit - filament.costPerKg) < 0.01; // Tolerancia para decimales
+              const categoryMatch = p.category === 'filament';
+              
+              return nameMatch && priceMatch && categoryMatch;
+            });
             
-            return nameMatch && priceMatch && categoryMatch;
-          });
+            uniqueProfilesMap.set(key, {
+              profileName: filament.profileName,
+              filamentType: filament.type,
+              color: filament.color,
+              costPerKg: filament.costPerKg,
+              weightG: 0, // Se sumará el peso total
+              willSave: !existingPreset, // Solo seleccionar para guardar si no existe
+              platesCount: profilePlateCount.get(key)?.size || 0,
+              alreadyExists: !!existingPreset, // Marcar si ya existe
+            });
+          }
           
-          uniqueProfilesMap.set(key, {
-            profileName: filament.profileName,
-            filamentType: filament.type,
-            color: filament.color,
-            costPerKg: filament.costPerKg,
-            weightG: 0, // Se sumará el peso total
-            willSave: !existingPreset, // Solo seleccionar para guardar si no existe
-            platesCount: profilePlateCount.get(key)?.size || 0,
-            alreadyExists: !!existingPreset, // Marcar si ya existe
-          });
+          // Sumar el peso total de este filamento
+          const existingProfile = uniqueProfilesMap.get(key)!;
+          existingProfile.weightG += filament.weightG;
         }
         
-        // Sumar el peso total de este filamento
-        const existingProfile = uniqueProfilesMap.get(key)!;
-        existingProfile.weightG += filament.weightG;
-      }
+        const profiles = Array.from(uniqueProfilesMap.values());
+        setDetectedProfiles(profiles);
+      });
       
-      const profiles = Array.from(uniqueProfilesMap.values());
-      setDetectedProfiles(profiles);
     } catch (err) {
       console.error('Error processing file:', err);
-      setError('Error al procesar el archivo. Asegúrate de que es un archivo .gcode.3mf válido de OrcaSlicer.');
+      setError('Error al procesar el archivo. Asegúrate de que es un archivo .gcode.3mf válido de OrcaSlicer o BambuStudio.');
     } finally {
       setIsProcessing(false);
     }
@@ -215,7 +218,7 @@ const FileImportView: React.FC<FileImportViewProps> = ({ onBack, onImportComplet
         </button>
         <div>
           <h1 className="text-3xl font-bold text-slate-900">Importar desde Archivo</h1>
-          <p className="text-slate-600">Sube un archivo .gcode.3mf de OrcaSlicer para importar automáticamente</p>
+          <p className="text-slate-600">Sube un archivo .gcode.3mf de OrcaSlicer o BambuStudio para importar automáticamente</p>
         </div>
       </div>
 
@@ -261,6 +264,17 @@ const FileImportView: React.FC<FileImportViewProps> = ({ onBack, onImportComplet
                 <p className="text-slate-600 mb-4">
                   O haz clic para seleccionar un archivo .gcode.3mf
                 </p>
+                <div className="flex items-center justify-center gap-4 mb-4">
+                  <div className="flex items-center gap-2 text-sm text-slate-500">
+                    <SlicerLogoDisplay slicer="OrcaSlicer" size={20} />
+                    <span>OrcaSlicer</span>
+                  </div>
+                  <div className="text-slate-300">•</div>
+                  <div className="flex items-center gap-2 text-sm text-slate-500">
+                    <SlicerLogoDisplay slicer="BambuStudio" size={20} />
+                    <span>BambuStudio</span>
+                  </div>
+                </div>
                 <div className="inline-flex items-center gap-2 px-4 py-2 bg-slate-600 text-white rounded-lg text-sm font-medium">
                   <FileText className="w-4 h-4" />
                   Seleccionar archivo
@@ -288,9 +302,16 @@ const FileImportView: React.FC<FileImportViewProps> = ({ onBack, onImportComplet
           <div className="bg-white rounded-xl shadow-lg border border-slate-200 p-6">
             <div className="flex items-center gap-3 mb-6">
               <CheckCircle className="w-6 h-6 text-emerald-600" />
-              <div>
+              <div className="flex-1">
                 <h3 className="text-xl font-semibold text-slate-900">Archivo procesado correctamente</h3>
                 <p className="text-slate-600">Se encontraron {importedData.plates.length} placa(s) en el archivo</p>
+              </div>
+              <div className="flex items-center gap-3 bg-slate-50 rounded-lg px-4 py-2 border border-slate-200">
+                <div className="text-sm text-slate-500">Slicer detectado:</div>
+                <div className="flex items-center gap-2">
+                  <SlicerLogoDisplay slicer={importedData.slicer} size={32} />
+                  <span className="text-sm font-semibold text-slate-700">{importedData.slicer}</span>
+                </div>
               </div>
             </div>
 
@@ -461,6 +482,10 @@ const FileImportView: React.FC<FileImportViewProps> = ({ onBack, onImportComplet
                 diámetro del nozzle y tipo de filamento de cada placa. Cada placa se convertirá en una pieza 
                 separada del proyecto que podrás editar después de la importación.
               </p>
+              <p className="text-sm text-blue-700 mb-2">
+                <strong>Soporte:</strong> Compatible con archivos .gcode.3mf de OrcaSlicer y BambuStudio. 
+                El sistema detectará automáticamente el slicer utilizado y mostrará el logo correspondiente.
+              </p>
               <p className="text-sm text-blue-700">
                 <strong>Nuevo:</strong> Los perfiles de filamentos detectados se pueden guardar en tu biblioteca 
                 de materiales para uso futuro. Esto incluye el nombre del perfil, tipo de filamento y precio por kg.
@@ -468,6 +493,7 @@ const FileImportView: React.FC<FileImportViewProps> = ({ onBack, onImportComplet
             </div>
           </div>
         </div>
+
       </div>
     </div>
   );
