@@ -22,16 +22,30 @@ export interface CreateNotificationParams {
 
 export class NotificationService {
   /**
-   * Fetch notifications for the current user
+   * Fetch notifications for the current user based on team context
    */
-  static async getNotifications(limit = 50, includeRead = false): Promise<Notification[]> {
+  static async getNotifications(limit = 50, includeRead = false, teamId?: string | null): Promise<Notification[]> {
     const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      throw new Error('User not authenticated');
+    }
+
     let query = supabase
       .from('notifications')
       .select('*')
-      .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
       .order('created_at', { ascending: false })
       .limit(limit);
+
+    // Filter by team context
+    if (teamId) {
+      // Get team notifications
+      query = query.eq('team_id', teamId);
+    } else {
+      // Get personal notifications (where team_id is null)
+      query = query.eq('user_id', user.id).is('team_id', null);
+    }
 
     // Only fetch unread notifications by default
     if (!includeRead) {
@@ -49,15 +63,31 @@ export class NotificationService {
   }
 
   /**
-   * Get unread notifications count for the current user
+   * Get unread notifications count for the current user based on team context
    */
-  static async getUnreadCount(): Promise<number> {
+  static async getUnreadCount(teamId?: string | null): Promise<number> {
     const supabase = createClient();
-    const { count, error } = await supabase
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      throw new Error('User not authenticated');
+    }
+
+    let query = supabase
       .from('notifications')
       .select('*', { count: 'exact', head: true })
-      .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
       .eq('is_read', false);
+
+    // Filter by team context
+    if (teamId) {
+      // Get team notifications count
+      query = query.eq('team_id', teamId);
+    } else {
+      // Get personal notifications count (where team_id is null)
+      query = query.eq('user_id', user.id).is('team_id', null);
+    }
+
+    const { count, error } = await query;
 
     if (error) {
       console.error('Error fetching unread count:', error);
