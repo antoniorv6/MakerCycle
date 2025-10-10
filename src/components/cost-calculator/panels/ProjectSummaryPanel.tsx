@@ -95,10 +95,34 @@ const ProjectSummaryPanel: React.FC<ProjectSummaryProps> = ({
               </div>
               <div className="text-right">
                 <div className="font-medium text-gray-900">
-                  {((piece.filamentWeight * piece.quantity * piece.filamentPrice) / 1000).toFixed(2)}€
+                  {(() => {
+                    if (piece.materials && piece.materials.length > 0) {
+                      // Usar la nueva estructura de materiales
+                      const pieceCost = piece.materials.reduce((sum, material) => {
+                        const weightInKg = material.unit === 'g' ? material.weight / 1000 : material.weight;
+                        return sum + (weightInKg * material.pricePerKg);
+                      }, 0);
+                      return (pieceCost * piece.quantity).toFixed(2);
+                    } else {
+                      // Fallback a la estructura antigua
+                      return ((piece.filamentWeight * piece.quantity * piece.filamentPrice) / 1000).toFixed(2);
+                    }
+                  })()}€
                 </div>
                 <div className="text-sm text-gray-600">
-                                      {(piece.filamentWeight * piece.quantity).toFixed(1)}g • {(piece.printHours * piece.quantity).toFixed(1)}h
+                  {(() => {
+                    if (piece.materials && piece.materials.length > 0) {
+                      // Usar la nueva estructura de materiales
+                      const pieceWeight = piece.materials.reduce((sum, material) => {
+                        const weightInGrams = material.unit === 'kg' ? material.weight * 1000 : material.weight;
+                        return sum + weightInGrams;
+                      }, 0);
+                      return `${(pieceWeight * piece.quantity).toFixed(1)}g`;
+                    } else {
+                      // Fallback a la estructura antigua
+                      return `${(piece.filamentWeight * piece.quantity).toFixed(1)}g`;
+                    }
+                  })()} • {(piece.printHours * piece.quantity).toFixed(1)}h
                 </div>
               </div>
             </div>

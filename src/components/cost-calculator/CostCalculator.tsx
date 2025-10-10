@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Calculator, Zap } from 'lucide-react';
 import { createClient } from '@/lib/supabase';
 import { useAuth } from '@/components/providers/AuthProvider';
@@ -48,6 +48,18 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
     printHours: number;
     quantity: number;
     notes?: string;
+    materials?: Array<{
+      id: string;
+      materialName: string;
+      materialType: string;
+      weight: number;
+      pricePerKg: number;
+      unit: string;
+      category: 'filament' | 'resin';
+      color?: string;
+      brand?: string;
+      notes?: string;
+    }>;
   }>>([{
     id: '1',
     name: 'Pieza principal',
@@ -55,7 +67,19 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
     filamentPrice: 25,
     printHours: 0,
     quantity: 1,
-    notes: ''
+    notes: '',
+    materials: [{
+      id: 'default-material-1',
+      materialName: 'Material principal',
+      materialType: 'PLA',
+      weight: 0,
+      pricePerKg: 25,
+      unit: 'g',
+      category: 'filament' as const,
+      color: '#808080',
+      brand: '',
+      notes: ''
+    }]
   }]);
   const [isDisasterMode, setIsDisasterMode] = useState(false);
   const [disasterModeNotes, setDisasterModeNotes] = useState<Array<{
@@ -142,7 +166,19 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
       filamentPrice: filamentPrice,
       printHours: 0,
       quantity: 1,
-      notes: ''
+      notes: '',
+      materials: [{
+        id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+        materialName: 'Material principal',
+        materialType: 'PLA',
+        weight: 0,
+        pricePerKg: 25,
+        unit: 'g',
+        category: 'filament' as const,
+        color: '',
+        brand: '',
+        notes: ''
+      }]
     };
     setPieces([...pieces, newPiece]);
   };
@@ -165,11 +201,66 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
       const newPiece = {
         ...pieceToDuplicate,
         id: Date.now().toString(),
-        name: `${pieceToDuplicate.name} (copia)`
+        name: `${pieceToDuplicate.name} (copia)`,
+        materials: pieceToDuplicate.materials?.map(material => ({
+          ...material,
+          id: Date.now().toString() + Math.random().toString(36).substr(2, 9)
+        })) || []
       };
       setPieces([...pieces, newPiece]);
     }
   };
+
+  // Funciones para manejar materiales de piezas (memoizadas)
+  const addMaterialToPiece = useCallback((pieceId: string) => {
+    const newMaterial = {
+      id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+      materialName: 'Nuevo material',
+      materialType: 'PLA',
+      weight: 0,
+      pricePerKg: 25,
+      unit: 'g',
+      category: 'filament' as const,
+      color: '#808080',
+      brand: '',
+      notes: ''
+    };
+
+    setPieces(prevPieces => prevPieces.map(piece => 
+      piece.id === pieceId 
+        ? { 
+            ...piece, 
+            materials: [...(piece.materials || []), newMaterial] 
+          }
+        : piece
+    ));
+  }, []);
+
+  const updatePieceMaterial = useCallback((pieceId: string, materialId: string, field: string, value: string | number) => {
+    setPieces(prevPieces => prevPieces.map(piece => 
+      piece.id === pieceId 
+        ? {
+            ...piece,
+            materials: piece.materials?.map(material =>
+              material.id === materialId 
+                ? { ...material, [field]: value }
+                : material
+            ) || []
+          }
+        : piece
+    ));
+  }, []);
+
+  const removePieceMaterial = useCallback((pieceId: string, materialId: string) => {
+    setPieces(prevPieces => prevPieces.map(piece => 
+      piece.id === pieceId 
+        ? {
+            ...piece,
+            materials: piece.materials?.filter(material => material.id !== materialId) || []
+          }
+        : piece
+    ));
+  }, []);
 
   const resetForm = () => {
     setProjectName('');
@@ -186,7 +277,19 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
       filamentPrice: 25,
       printHours: 0,
       quantity: 1,
-      notes: ''
+      notes: '',
+      materials: [{
+        id: 'default-material-1',
+        materialName: 'Material principal',
+        materialType: 'PLA',
+        weight: 0,
+        pricePerKg: 25,
+        unit: 'g',
+        category: 'filament' as const,
+        color: '#808080',
+        brand: '',
+        notes: ''
+      }]
     }]);
   };
 
@@ -423,6 +526,9 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
             onRemovePiece={removePiece}
             onDuplicatePiece={duplicatePiece}
             onNavigateToSettings={onNavigateToSettings}
+            onAddMaterialToPiece={addMaterialToPiece}
+            onUpdatePieceMaterial={updatePieceMaterial}
+            onRemovePieceMaterial={removePieceMaterial}
           />
 
           <ElectricitySection

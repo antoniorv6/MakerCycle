@@ -65,11 +65,11 @@ export function useMaterialPresets(category?: 'filament' | 'resin') {
     }
 
     try {
-      const newPreset = await createMaterialPreset({
-        ...preset,
-        user_id: user.id,
-        team_id: getEffectiveTeam()?.id || null,
-      });
+      const newPreset = await createMaterialPreset(
+        preset,
+        user.id,
+        getEffectiveTeam()?.id
+      );
 
       if (newPreset) {
         await loadPresets();
@@ -185,6 +185,66 @@ export function useMaterialPresets(category?: 'filament' | 'resin') {
     return price * conversions[fromUnit][toUnit];
   };
 
+  const createPresetFromMaterial = async (material: {
+    materialName: string;
+    materialType: string;
+    weight: number;
+    pricePerKg: number;
+    unit: string;
+    category: 'filament' | 'resin';
+    color?: string;
+    brand?: string;
+    notes?: string;
+  }) => {
+    if (!user) {
+      toast.error('Debes estar autenticado para crear presets');
+      return null;
+    }
+
+    try {
+      setLoading(true);
+      
+      // Convertir precio a la unidad estándar (kg para filamentos, ml para resinas)
+      const standardUnit = material.category === 'filament' ? 'kg' : 'ml';
+      const standardPrice = convertPrice(material.pricePerKg, 'kg', standardUnit);
+      
+      // Manejar el color correctamente - si es vacío o undefined, usar gris por defecto
+      const colorValue = material.color && 
+                        material.color.trim() !== '' 
+                        ? material.color : '#808080';
+      
+      const newPreset = await createMaterialPreset({
+        name: material.materialName,
+        price_per_unit: standardPrice,
+        unit: standardUnit,
+        material_type: material.materialType,
+        category: material.category,
+        color: colorValue,
+        brand: material.brand,
+        notes: material.notes || `Creado desde material: ${material.materialName}`,
+        is_default: false
+      }, user.id, getEffectiveTeam()?.id);
+      
+
+      if (!newPreset) {
+        throw new Error('No se pudo crear el preset');
+      }
+
+      // Recargar presets
+      await loadPresets();
+      
+      toast.success('Preset creado exitosamente');
+      return newPreset;
+    } catch (error) {
+      console.error('Error creating preset from material:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      toast.error(`Error al crear el preset: ${errorMessage}`);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     presets,
     defaultPreset,
@@ -198,6 +258,7 @@ export function useMaterialPresets(category?: 'filament' | 'resin') {
     getPresetsByCategory,
     getPricePerUnit,
     convertPrice,
+    createPresetFromMaterial,
     refreshPresets: loadPresets,
   };
 }

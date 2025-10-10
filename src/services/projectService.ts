@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase';
-import type { DatabaseProject, Project, Material, Piece } from '@/types';
+import type { DatabaseProject, Project, Material, Piece, PieceMaterial } from '@/types';
 import { NotificationService } from './notificationService';
+import { pieceMaterialService } from './pieceMaterialService';
 
 export class ProjectService {
   private supabase = createClient();
@@ -31,7 +32,13 @@ export class ProjectService {
   async getProject(id: string): Promise<Project | null> {
     const { data, error } = await this.supabase
       .from('projects')
-      .select('*')
+      .select(`
+        *,
+        pieces (
+          *,
+          piece_materials (*)
+        )
+      `)
       .eq('id', id)
       .single();
 
@@ -104,15 +111,35 @@ export class ProjectService {
     materials: Material[];
     pieces?: Piece[];
   }) {
-    const totalFilamentWeight = project.pieces 
-      ? project.pieces.reduce((sum, piece) => sum + (piece.filamentWeight * piece.quantity), 0)
-      : project.filament_weight;
+    let totalFilamentWeight = 0;
+    let totalPrintHours = 0;
+    let filamentCost = 0;
 
-    const totalPrintHours = project.pieces
-      ? project.pieces.reduce((sum, piece) => sum + (piece.printHours * piece.quantity), 0)
-      : project.print_hours;
+    if (project.pieces) {
+      // Calcular usando la nueva estructura de materiales por pieza
+      for (const piece of project.pieces) {
+        totalPrintHours += piece.printHours * piece.quantity;
+        
+        if (piece.materials && piece.materials.length > 0) {
+          // Usar la nueva estructura de materiales
+          const pieceWeight = pieceMaterialService.calculatePieceTotalWeight(piece.materials);
+          const pieceCost = pieceMaterialService.calculatePieceMaterialsCost(piece.materials);
+          
+          totalFilamentWeight += pieceWeight * piece.quantity;
+          filamentCost += pieceCost * piece.quantity;
+        } else {
+          // Fallback a la estructura antigua para compatibilidad
+          totalFilamentWeight += piece.filamentWeight * piece.quantity;
+          filamentCost += (piece.filamentWeight * piece.quantity * piece.filamentPrice) / 1000;
+        }
+      }
+    } else {
+      // Usar valores del proyecto (estructura antigua)
+      totalFilamentWeight = project.filament_weight;
+      totalPrintHours = project.print_hours;
+      filamentCost = totalFilamentWeight * (project.filament_price / 1000);
+    }
 
-    const filamentCost = totalFilamentWeight * (project.filament_price / 1000); // Convert to per kg
     const electricityCost = totalPrintHours * project.electricity_cost;
     const materialsCost = project.materials.reduce((sum, material) => sum + material.price, 0);
 
