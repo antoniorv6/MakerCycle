@@ -456,6 +456,7 @@ const PieceMaterialsSection: React.FC<PieceMaterialsSectionProps> = ({
   onSyncPieceFields,
   onSaveAsPreset
 }) => {
+  console.log('🔍 PieceMaterialsSection - materials received:', materials);
   const totalWeight = materials.reduce((sum, material) => {
     const weightInGrams = material.unit === 'kg' ? material.weight * 1000 : material.weight;
     return sum + weightInGrams;

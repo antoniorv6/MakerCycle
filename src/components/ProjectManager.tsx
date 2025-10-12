@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Search, Filter, Calendar, Euro, FileText } from 'lucide-react';
+import { Plus, Search, Filter, Calendar, Euro, FileText, Clock, Package, Layers, Zap } from 'lucide-react';
 import { createClient } from '@/lib/supabase';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useTeam } from '@/components/providers/TeamProvider';
-import type { DatabaseProject, DatabasePiece } from '@/types';
+import type { DatabaseProject, DatabasePiece, PieceMaterial } from '@/types';
 import { toast } from 'react-hot-toast';
 import ProjectInfo from './cost-calculator/forms/ProjectInfo';
 import ProjectManagerSkeleton from './skeletons/ProjectManagerSkeleton';
@@ -12,6 +12,40 @@ import ConfirmModal from './cost-calculator/ConfirmModal';
 
 interface ProjectManagerProps {
   onLoadProject: (project: DatabaseProject & { pieces?: DatabasePiece[] }) => void;
+}
+
+// Function to process pieces (solo sistema multi-material)
+async function processPieces(
+  pieces: (DatabasePiece & { piece_materials?: PieceMaterial[] })[], 
+  supabase: any
+): Promise<DatabasePiece[]> {
+  console.log('🔄 Procesando piezas (sistema multi-material)...');
+  
+  const processedPieces = await Promise.all(
+    pieces.map(async (piece) => {
+      console.log(`  Procesando pieza: ${piece.name}`);
+      console.log(`    - piece_materials: ${piece.piece_materials?.length || 0}`);
+      
+      // Solo usar materiales del sistema multi-material
+      if (piece.piece_materials && piece.piece_materials.length > 0) {
+        console.log(`    ✅ Tiene materiales multi-material`);
+        console.log(`    Materiales:`, piece.piece_materials);
+        return {
+          ...piece,
+          materials: piece.piece_materials
+        };
+      }
+      
+      // Pieza sin materiales
+      console.log(`    ✅ Sin materiales aún`);
+      return {
+        ...piece,
+        materials: []
+      };
+    })
+  );
+  
+  return processedPieces;
 }
 
 export default function ProjectManager({ onLoadProject }: ProjectManagerProps) {
@@ -58,14 +92,21 @@ export default function ProjectManager({ onLoadProject }: ProjectManagerProps) {
         return;
       }
 
-      // Fetch pieces for each project
+      // Fetch pieces for each project with their materials
       const projectsWithPieces = await Promise.all(
         (data || []).map(async (project) => {
           const { data: pieces } = await supabase
             .from('pieces')
-            .select('*')
+            .select(`
+              *,
+              piece_materials (*)
+            `)
             .eq('project_id', project.id);
-          return { ...project, pieces: pieces || [] };
+          
+          // Process pieces (handle both new system and legacy)
+          const processedPieces = await processPieces(pieces || [], supabase);
+          
+          return { ...project, pieces: processedPieces };
         })
       );
 
@@ -80,11 +121,35 @@ export default function ProjectManager({ onLoadProject }: ProjectManagerProps) {
 
   const handleLoadProject = async (project: DatabaseProject) => {
     try {
-      // Fetch pieces for the project
+      // Fetch pieces for the project with their materials
       const { data: pieces, error } = await supabase
         .from('pieces')
-        .select('*')
+        .select(`
+          *,
+          piece_materials (*)
+        `)
         .eq('project_id', project.id);
+
+      console.log('🔍 Debug - Raw pieces from DB:', pieces);
+      console.log('🔍 Debug - Pieces count:', pieces?.length || 0);
+      if (pieces && pieces.length > 0) {
+        pieces.forEach((piece, index) => {
+          console.log(`  Piece ${index}: ${piece.name}`);
+          console.log(`    - piece_materials from DB:`, piece.piece_materials);
+          console.log(`    - piece_materials length:`, piece.piece_materials?.length || 0);
+          console.log(`    - piece_materials type:`, typeof piece.piece_materials);
+          console.log(`    - piece_materials is array:`, Array.isArray(piece.piece_materials));
+          if (piece.piece_materials && piece.piece_materials.length > 0) {
+            console.log(`    - First piece_material:`, piece.piece_materials[0]);
+            console.log(`    - First piece_material keys:`, Object.keys(piece.piece_materials[0]));
+            console.log(`    - First piece_material values:`, Object.values(piece.piece_materials[0]));
+          } else {
+            console.log(`    - No materials found for piece ${piece.name}`);
+          }
+        });
+      } else {
+        console.log('🔍 Debug - No pieces found for this project');
+      }
 
       if (error) {
         console.error('Error fetching pieces:', error);
@@ -92,7 +157,32 @@ export default function ProjectManager({ onLoadProject }: ProjectManagerProps) {
         return;
       }
 
-      onLoadProject({ ...project, pieces: pieces || [] });
+      // Process pieces (handle both new system and legacy)
+      console.log('🔍 Debug - Raw pieces before processing:', pieces);
+      const piecesWithMaterials = await processPieces(pieces || [], supabase);
+      
+      console.log('🔍 Debug - Pieces after migration:', piecesWithMaterials);
+      piecesWithMaterials.forEach((piece, index) => {
+        console.log(`  Piece ${index}: ${piece.name}, materials:`, piece.materials?.length || 0);
+        console.log(`  Piece ${index} full data:`, {
+          id: piece.id,
+          name: piece.name,
+          filament_weight: piece.filament_weight,
+          filament_price: piece.filament_price,
+          materials: piece.materials
+        });
+        if (piece.materials && piece.materials.length > 0) {
+          console.log(`    Material details:`, piece.materials[0]);
+        }
+      });
+
+      const projectWithPieces = { ...project, pieces: piecesWithMaterials };
+      console.log('🔍 Debug - Project being passed to onLoadProject:', projectWithPieces);
+      console.log('🔍 Debug - Pieces in project:', projectWithPieces.pieces);
+      if (projectWithPieces.pieces && projectWithPieces.pieces.length > 0) {
+        console.log('🔍 Debug - First piece materials:', projectWithPieces.pieces[0].materials);
+      }
+      onLoadProject(projectWithPieces);
     } catch (error) {
       console.error('Error loading project:', error);
       toast.error('No se pudo cargar el proyecto. Intenta de nuevo.');
@@ -322,24 +412,164 @@ export default function ProjectManager({ onLoadProject }: ProjectManagerProps) {
                 </div>
               </div>
               
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
-                <div className="bg-gray-50 p-3 rounded-lg">
-                  <div className="font-medium text-gray-700">Filamento</div>
-                  <div className="text-gray-900">{project.filament_weight}g</div>
+              {/* Resumen del proyecto */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-sm mb-6">
+                <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
+                  <div className="flex items-center gap-2 font-medium text-blue-700 mb-1">
+                    <Package className="w-4 h-4" />
+                    Peso Total
+                  </div>
+                  <div className="text-blue-900 font-bold text-lg">
+                    {(() => {
+                      if (project.pieces && project.pieces.length > 0) {
+                        const totalWeight = project.pieces.reduce((sum, piece) => {
+                          if (piece.materials && piece.materials.length > 0) {
+                            const pieceWeight = piece.materials.reduce((materialSum, material) => {
+                              const weightInGrams = material.unit === 'kg' ? material.weight * 1000 : material.weight;
+                              return materialSum + weightInGrams;
+                            }, 0);
+                            return sum + (pieceWeight * piece.quantity);
+                          } else {
+                            return sum + (piece.filament_weight * piece.quantity);
+                          }
+                        }, 0);
+                        return totalWeight >= 1000 ? `${(totalWeight / 1000).toFixed(1)}kg` : `${totalWeight.toFixed(1)}g`;
+                      }
+                      return `${project.filament_weight}g`;
+                    })()}
+                  </div>
                 </div>
-                <div className="bg-gray-50 p-3 rounded-lg">
-                  <div className="font-medium text-gray-700">Tiempo</div>
-                  <div className="text-gray-900">{project.print_hours}h</div>
+                <div className="bg-green-50 p-3 rounded-lg border border-green-100">
+                  <div className="flex items-center gap-2 font-medium text-green-700 mb-1">
+                    <Clock className="w-4 h-4" />
+                    Tiempo Total
+                  </div>
+                  <div className="text-green-900 font-bold text-lg">
+                    {(() => {
+                      if (project.pieces && project.pieces.length > 0) {
+                        const totalHours = project.pieces.reduce((sum, piece) => sum + (piece.print_hours * piece.quantity), 0);
+                        return `${totalHours.toFixed(1)}h`;
+                      }
+                      return `${project.print_hours}h`;
+                    })()}
+                  </div>
                 </div>
-                <div className="bg-gray-50 p-3 rounded-lg">
-                  <div className="font-medium text-gray-700">Materiales</div>
-                  <div className="text-gray-900">{project.materials.length}</div>
+                <div className="bg-purple-50 p-3 rounded-lg border border-purple-100">
+                  <div className="flex items-center gap-2 font-medium text-purple-700 mb-1">
+                    <Layers className="w-4 h-4" />
+                    Piezas
+                  </div>
+                  <div className="text-purple-900 font-bold text-lg">
+                    {project.pieces?.length || 0}
+                  </div>
                 </div>
-                <div className="bg-gray-50 p-3 rounded-lg">
-                  <div className="font-medium text-gray-700">Coste Total</div>
-                  <div className="text-gray-900 font-semibold">€{project.total_cost.toFixed(2)}</div>
+                <div className="bg-orange-50 p-3 rounded-lg border border-orange-100">
+                  <div className="flex items-center gap-2 font-medium text-orange-700 mb-1">
+                    <Euro className="w-4 h-4" />
+                    Coste Total
+                  </div>
+                  <div className="text-orange-900 font-bold text-lg">€{project.total_cost.toFixed(2)}</div>
                 </div>
               </div>
+
+              {/* Desglose de piezas */}
+              {project.pieces && project.pieces.length > 0 && (
+                <div className="space-y-3">
+                  <h4 className="flex items-center gap-2 font-semibold text-gray-900 text-sm mb-3">
+                    <Layers className="w-4 h-4" />
+                    Desglose por piezas
+                  </h4>
+                  <div className="space-y-2">
+                    {project.pieces.map((piece, pieceIndex) => {
+                      const pieceWeight = piece.materials && piece.materials.length > 0 
+                        ? piece.materials.reduce((sum, material) => {
+                            const weightInGrams = material.unit === 'kg' ? material.weight * 1000 : material.weight;
+                            return sum + weightInGrams;
+                          }, 0)
+                        : piece.filament_weight;
+                      
+                      const pieceCost = piece.materials && piece.materials.length > 0
+                        ? piece.materials.reduce((sum, material) => {
+                            const weightInKg = material.unit === 'g' ? material.weight / 1000 : material.weight;
+                            return sum + (weightInKg * material.price_per_kg);
+                          }, 0)
+                        : (piece.filament_weight * piece.filament_price) / 1000;
+
+                      return (
+                        <div key={piece.id} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                          <div className="flex items-center justify-between mb-2">
+                            <h5 className="font-medium text-gray-900">{piece.name}</h5>
+                            <span className="text-sm text-gray-600">x{piece.quantity}</span>
+                          </div>
+                          
+                          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+                            <div>
+                              <div className="flex items-center gap-1 text-gray-600 mb-1">
+                                <Package className="w-3 h-3" />
+                                Peso
+                              </div>
+                              <div className="font-medium text-gray-900">
+                                {pieceWeight >= 1000 ? `${(pieceWeight / 1000).toFixed(1)}kg` : `${pieceWeight.toFixed(1)}g`}
+                              </div>
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-1 text-gray-600 mb-1">
+                                <Clock className="w-3 h-3" />
+                                Tiempo
+                              </div>
+                              <div className="font-medium text-gray-900">{piece.print_hours.toFixed(1)}h</div>
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-1 text-gray-600 mb-1">
+                                <Euro className="w-3 h-3" />
+                                Coste
+                              </div>
+                              <div className="font-medium text-gray-900">€{(pieceCost * piece.quantity).toFixed(2)}</div>
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-1 text-gray-600 mb-1">
+                                <Zap className="w-3 h-3" />
+                                Materiales
+                              </div>
+                              <div className="font-medium text-gray-900">
+                                {piece.materials?.length || 0} tipos
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Desglose de materiales de la pieza */}
+                          {piece.materials && piece.materials.length > 0 && (
+                            <div className="mt-3 pt-3 border-t border-gray-200">
+                              <div className="text-xs text-gray-600 mb-2">Materiales utilizados:</div>
+                              <div className="space-y-1">
+                                {piece.materials.map((material, materialIndex) => (
+                                  <div key={material.id || materialIndex} className="flex items-center justify-between text-xs">
+                                    <div className="flex items-center gap-2">
+                                      <div 
+                                        className="w-3 h-3 rounded-full border border-gray-300" 
+                                        style={{ backgroundColor: material.color || '#808080' }}
+                                      />
+                                      <span className="text-gray-700">
+                                        {material.material_name || 'Material sin nombre'}
+                                      </span>
+                                      <span className="text-gray-500">
+                                        ({material.material_type || 'PLA'})
+                                      </span>
+                                    </div>
+                                    <div className="text-gray-600">
+                                      {material.weight || 0}{material.unit || 'g'} • €{((material.weight || 0) * (material.price_per_kg || 0) / (material.unit === 'kg' ? 1 : 1000)).toFixed(2)}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </motion.div>
           ))
         )}

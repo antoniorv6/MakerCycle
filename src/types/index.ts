@@ -49,11 +49,12 @@ export interface AppProject {
 export interface AppPiece {
   id: string;
   name: string;
-  filamentWeight: number;
-  filamentPrice: number;
+  filamentWeight: number; // DEPRECATED: usar materials array
+  filamentPrice: number; // DEPRECATED: usar materials array
   printHours: number;
   quantity: number;
   notes?: string;
+  materials?: AppPieceMaterial[]; // Nueva estructura para múltiples materiales
 }
 
 export interface DatabaseProject {

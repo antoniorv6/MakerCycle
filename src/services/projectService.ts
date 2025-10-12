@@ -9,7 +9,13 @@ export class ProjectService {
   async getProjects(userId: string, teamId?: string | null): Promise<Project[]> {
     let query = this.supabase
       .from('projects')
-      .select('*')
+      .select(`
+        *,
+        pieces (
+          *,
+          piece_materials (*)
+        )
+      `)
       .order('created_at', { ascending: false });
 
     if (teamId) {
@@ -26,7 +32,25 @@ export class ProjectService {
       throw new Error(`Error fetching projects: ${error.message}`);
     }
 
-    return data || [];
+    if (!data) {
+      return [];
+    }
+
+    // Migrate legacy pieces for each project
+    const projectsWithMigratedPieces = await Promise.all(
+      data.map(async (project) => {
+        if (project.pieces && project.pieces.length > 0) {
+          const processedPieces = await this.processPieces(project.pieces);
+          return {
+            ...project,
+            pieces: processedPieces
+          };
+        }
+        return project;
+      })
+    );
+
+    return projectsWithMigratedPieces;
   }
 
   async getProject(id: string): Promise<Project | null> {
@@ -46,7 +70,50 @@ export class ProjectService {
       throw new Error(`Error fetching project: ${error.message}`);
     }
 
+    if (!data) {
+      return null;
+    }
+
+    // Process pieces (handle both new system and legacy)
+    if (data.pieces && data.pieces.length > 0) {
+      const processedPieces = await this.processPieces(data.pieces);
+      return {
+        ...data,
+        pieces: processedPieces
+      };
+    }
+
     return data;
+  }
+
+  private async processPieces(pieces: any[]): Promise<any[]> {
+    console.log('🔄 Procesando piezas en ProjectService (sistema multi-material)...');
+    
+    const processedPieces = await Promise.all(
+      pieces.map(async (piece) => {
+        console.log(`  Procesando pieza: ${piece.name}`);
+        console.log(`    - piece_materials: ${piece.piece_materials?.length || 0}`);
+        
+        // Solo usar materiales del sistema multi-material
+        if (piece.piece_materials && piece.piece_materials.length > 0) {
+          console.log(`    ✅ Tiene materiales multi-material`);
+          console.log(`    Materiales:`, piece.piece_materials);
+          return {
+            ...piece,
+            materials: piece.piece_materials
+          };
+        }
+        
+        // Pieza sin materiales
+        console.log(`    ✅ Sin materiales aún`);
+        return {
+          ...piece,
+          materials: []
+        };
+      })
+    );
+    
+    return processedPieces;
   }
 
   async createProject(project: Omit<DatabaseProject, 'id' | 'created_at' | 'updated_at'>): Promise<Project> {

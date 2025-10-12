@@ -68,18 +68,7 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
     printHours: 0,
     quantity: 1,
     notes: '',
-    materials: [{
-      id: 'default-material-1',
-      materialName: 'Material principal',
-      materialType: 'PLA',
-      weight: 0,
-      pricePerKg: 25,
-      unit: 'g',
-      category: 'filament' as const,
-      color: '#808080',
-      brand: '',
-      notes: ''
-    }]
+    materials: [] // Empezar sin materiales para evitar materiales vacíos
   }]);
   const [isDisasterMode, setIsDisasterMode] = useState(false);
   const [disasterModeNotes, setDisasterModeNotes] = useState<Array<{
@@ -94,7 +83,9 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
   const [showClearModal, setShowClearModal] = useState(false);
 
   useEffect(() => {
+    console.log('🔍 Debug - CostCalculator useEffect triggered with loadedProject:', loadedProject);
     if (loadedProject) {
+      console.log('🔍 Debug - loadedProject.pieces:', loadedProject.pieces);
       setProjectName(loadedProject.name);
       setFilamentPrice(loadedProject.filament_price);
       setPrintHours(loadedProject.print_hours);
@@ -104,15 +95,70 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
       setMaterials(loadedProject.materials || []);
 
       if (loadedProject.pieces && loadedProject.pieces.length > 0) {
-        setPieces(loadedProject.pieces.map(piece => ({
-          id: piece.id,
-          name: piece.name,
-          filamentWeight: piece.filament_weight,
-          filamentPrice: piece.filament_price,
-          printHours: piece.print_hours,
-          quantity: piece.quantity,
-          notes: piece.notes || ''
-        })));
+        console.log('🔍 Debug - Loading pieces in CostCalculator:', loadedProject.pieces);
+        if (loadedProject.pieces[0]) {
+          console.log('🔍 Debug - First piece in CostCalculator:', loadedProject.pieces[0]);
+          console.log('🔍 Debug - First piece materials in CostCalculator:', loadedProject.pieces[0].materials);
+        }
+        const mappedPieces = loadedProject.pieces.map(piece => {
+          console.log(`  Piece: ${piece.name}, materials:`, piece.materials?.length || 0);
+          console.log(`  Piece materials array:`, piece.materials);
+          console.log(`  Piece raw data:`, {
+            id: piece.id,
+            name: piece.name,
+            filament_weight: piece.filament_weight,
+            filament_price: piece.filament_price,
+            materials: piece.materials
+          });
+          if (piece.materials && piece.materials.length > 0) {
+            console.log(`    First material:`, piece.materials[0]);
+            console.log(`    First material keys:`, Object.keys(piece.materials[0]));
+            console.log(`    First material values:`, Object.values(piece.materials[0]));
+          }
+          
+          const mappedPiece = {
+            id: piece.id,
+            name: piece.name,
+            filamentWeight: piece.filament_weight,
+            filamentPrice: piece.filament_price,
+            printHours: piece.print_hours,
+            quantity: piece.quantity,
+            notes: piece.notes || '',
+            materials: piece.materials?.filter(material => material.weight > 0).map(material => {
+              console.log(`    Mapping material:`, material);
+              console.log(`    Material keys:`, Object.keys(material));
+              return {
+                id: material.id,
+                materialName: material.material_name || 'Material sin nombre',
+                materialType: material.material_type || 'PLA',
+                weight: material.weight,
+                pricePerKg: material.price_per_kg || 25,
+                unit: material.unit || 'g',
+                category: material.category || 'filament',
+                color: material.color || '#808080',
+                brand: material.brand || '',
+                notes: material.notes || ''
+              };
+            }) || []
+          };
+          
+          console.log(`  Mapped piece result:`, {
+            id: mappedPiece.id,
+            name: mappedPiece.name,
+            materialsCount: mappedPiece.materials.length,
+            materials: mappedPiece.materials
+          });
+          
+          // Debug: verificar si los materiales tienen las propiedades correctas
+          if (mappedPiece.materials.length > 0) {
+            console.log(`    First mapped material:`, mappedPiece.materials[0]);
+            console.log(`    First mapped material keys:`, Object.keys(mappedPiece.materials[0]));
+          }
+          
+          return mappedPiece;
+        });
+        console.log('🔍 Debug - Mapped pieces:', mappedPieces);
+        setPieces(mappedPieces);
       }
     }
     setLoading(false);
@@ -167,18 +213,7 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
       printHours: 0,
       quantity: 1,
       notes: '',
-      materials: [{
-        id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-        materialName: 'Material principal',
-        materialType: 'PLA',
-        weight: 0,
-        pricePerKg: 25,
-        unit: 'g',
-        category: 'filament' as const,
-        color: '',
-        brand: '',
-        notes: ''
-      }]
+      materials: [] // Empezar sin materiales para evitar materiales vacíos
     };
     setPieces([...pieces, newPiece]);
   };
@@ -217,7 +252,7 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
       id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
       materialName: 'Nuevo material',
       materialType: 'PLA',
-      weight: 0,
+      weight: 1, // Empezar con peso 1g en lugar de 0
       pricePerKg: 25,
       unit: 'g',
       category: 'filament' as const,
@@ -278,18 +313,7 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
       printHours: 0,
       quantity: 1,
       notes: '',
-      materials: [{
-        id: 'default-material-1',
-        materialName: 'Material principal',
-        materialType: 'PLA',
-        weight: 0,
-        pricePerKg: 25,
-        unit: 'g',
-        category: 'filament' as const,
-        color: '#808080',
-        brand: '',
-        notes: ''
-      }]
+      materials: [] // Empezar sin materiales para evitar materiales vacíos
     }]);
   };
 
@@ -443,28 +467,72 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
 
       // Handle pieces
       if (projectId) {
-        // Always delete all pieces for this project and re-insert
+        // Always delete all pieces and their materials for this project
+        await supabase.from('piece_materials').delete().in('piece_id', 
+          (await supabase.from('pieces').select('id').eq('project_id', projectId)).data?.map(p => p.id) || []
+        );
         await supabase.from('pieces').delete().eq('project_id', projectId);
 
         // Guardar siempre todas las piezas, incluso si solo hay una y tiene el nombre por defecto
         const piecesToSave = pieces.map(piece => ({
           project_id: projectId,
           name: piece.name,
-          filament_weight: piece.filamentWeight,
-          filament_price: piece.filamentPrice,
+          // Si la pieza tiene materiales multi-material, guardar filament_weight y filament_price como 0
+          // para que no se active la lógica de migración legacy
+          filament_weight: (piece.materials && piece.materials.length > 0) ? 0 : piece.filamentWeight,
+          filament_price: (piece.materials && piece.materials.length > 0) ? 0 : piece.filamentPrice,
           print_hours: piece.printHours,
           quantity: piece.quantity,
           notes: piece.notes || ''
         }));
 
         if (piecesToSave.length > 0) {
-          const { error: piecesError } = await supabase
+          const { data: savedPieces, error: piecesError } = await supabase
             .from('pieces')
-            .insert(piecesToSave);
+            .insert(piecesToSave)
+            .select();
 
           if (piecesError) {
             console.error('Error saving pieces:', piecesError);
             toast.error('El proyecto se guardó, pero hubo un error al guardar las piezas.');
+          } else if (savedPieces) {
+            // Save piece materials for each piece (only materials with weight > 0)
+            const materialsToSave = [];
+            for (let i = 0; i < pieces.length; i++) {
+              const piece = pieces[i];
+              const savedPiece = savedPieces[i];
+              
+              if (piece.materials && piece.materials.length > 0) {
+                for (const material of piece.materials) {
+                  // Solo guardar materiales con peso > 0 para evitar materiales vacíos
+                  if (material.weight > 0) {
+                    materialsToSave.push({
+                      piece_id: savedPiece.id,
+                      material_name: material.materialName,
+                      material_type: material.materialType,
+                      weight: material.weight,
+                      price_per_kg: material.pricePerKg,
+                      unit: material.unit,
+                      category: material.category,
+                      color: material.color || '#808080',
+                      brand: material.brand || '',
+                      notes: material.notes || ''
+                    });
+                  }
+                }
+              }
+            }
+
+            if (materialsToSave.length > 0) {
+              const { error: materialsError } = await supabase
+                .from('piece_materials')
+                .insert(materialsToSave);
+
+              if (materialsError) {
+                console.error('Error saving piece materials:', materialsError);
+                toast.error('El proyecto se guardó, pero hubo un error al guardar los materiales de las piezas.');
+              }
+            }
           }
         }
       }
