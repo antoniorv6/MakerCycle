@@ -93,6 +93,8 @@ export class ProjectService {
       pieces.map(async (piece) => {
         console.log(`  Procesando pieza: ${piece.name}`);
         console.log(`    - piece_materials: ${piece.piece_materials?.length || 0}`);
+        console.log(`    - filament_weight: ${piece.filament_weight}`);
+        console.log(`    - filament_price: ${piece.filament_price}`);
         
         // Solo usar materiales del sistema multi-material
         if (piece.piece_materials && piece.piece_materials.length > 0) {
@@ -104,7 +106,34 @@ export class ProjectService {
           };
         }
         
-        // Pieza sin materiales
+        // Migrar datos legacy a formato multi-material
+        if (piece.filament_weight > 0 && piece.filament_price > 0) {
+          console.log(`    🔄 Migrando datos legacy a formato multi-material`);
+          const legacyMaterial = {
+            id: `legacy-${piece.id}-${Date.now()}`,
+            piece_id: piece.id,
+            material_preset_id: null,
+            material_name: 'Filamento Principal',
+            material_type: 'PLA',
+            weight: piece.filament_weight,
+            price_per_kg: piece.filament_price,
+            unit: 'g',
+            category: 'filament',
+            color: '#808080',
+            brand: 'Sistema Legacy',
+            notes: 'Migrado automáticamente desde el sistema anterior',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          };
+          
+          console.log(`    ✅ Material legacy creado:`, legacyMaterial);
+          return {
+            ...piece,
+            materials: [legacyMaterial]
+          };
+        }
+        
+        // Pieza sin materiales ni datos legacy
         console.log(`    ✅ Sin materiales aún`);
         return {
           ...piece,

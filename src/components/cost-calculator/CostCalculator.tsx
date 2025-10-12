@@ -110,21 +110,12 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
             filament_price: piece.filament_price,
             materials: piece.materials
           });
-          if (piece.materials && piece.materials.length > 0) {
-            console.log(`    First material:`, piece.materials[0]);
-            console.log(`    First material keys:`, Object.keys(piece.materials[0]));
-            console.log(`    First material values:`, Object.values(piece.materials[0]));
-          }
           
-          const mappedPiece = {
-            id: piece.id,
-            name: piece.name,
-            filamentWeight: piece.filament_weight,
-            filamentPrice: piece.filament_price,
-            printHours: piece.print_hours,
-            quantity: piece.quantity,
-            notes: piece.notes || '',
-            materials: piece.materials?.filter(material => material.weight > 0).map(material => {
+          // Si la pieza tiene materiales del sistema multi-material, usarlos
+          let materials = [];
+          if (piece.materials && piece.materials.length > 0) {
+            console.log(`    Using multi-material system`);
+            materials = piece.materials.filter(material => material.weight > 0).map(material => {
               console.log(`    Mapping material:`, material);
               console.log(`    Material keys:`, Object.keys(material));
               return {
@@ -139,7 +130,34 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
                 brand: material.brand || '',
                 notes: material.notes || ''
               };
-            }) || []
+            });
+          } 
+          // Si no tiene materiales pero tiene datos legacy, migrarlos
+          else if (piece.filament_weight > 0 && piece.filament_price > 0) {
+            console.log(`    Migrating legacy data to multi-material format`);
+            materials = [{
+              id: `legacy-${piece.id}-${Date.now()}`,
+              materialName: 'Filamento Principal',
+              materialType: 'PLA',
+              weight: piece.filament_weight,
+              pricePerKg: piece.filament_price,
+              unit: 'g',
+              category: 'filament' as const,
+              color: '#808080',
+              brand: 'Sistema Legacy',
+              notes: 'Migrado automáticamente desde el sistema anterior'
+            }];
+          }
+          
+          const mappedPiece = {
+            id: piece.id,
+            name: piece.name,
+            filamentWeight: piece.filament_weight,
+            filamentPrice: piece.filament_price,
+            printHours: piece.print_hours,
+            quantity: piece.quantity,
+            notes: piece.notes || '',
+            materials: materials
           };
           
           console.log(`  Mapped piece result:`, {
