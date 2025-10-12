@@ -179,9 +179,23 @@ const FileImportView: React.FC<FileImportViewProps> = ({ onBack, onImportComplet
       }
     }
 
-    // Convertir las placas a piezas del proyecto
+    // Convertir las placas a piezas del proyecto con la nueva estructura de materiales
     const pieces: Piece[] = importedData.plates.map((plate, index) => {
-      // Usar el precio promedio de los filamentos de la placa
+      // Crear materiales para cada filamento de la placa
+      const materials = plate.filaments.map((filament, materialIndex) => ({
+        id: `imported-${plate.plateId}-material-${materialIndex}`,
+        materialName: filament.profileName,
+        materialType: filament.filamentType,
+        weight: filament.weightG,
+        pricePerKg: filament.costPerKg,
+        unit: 'g',
+        category: 'filament' as const,
+        brand: filament.profileName.split(' ')[0] || 'Unknown',
+        color: filament.color,
+        notes: `Importado desde archivo .gcode.3mf - Placa ${plate.plateId}`,
+      }));
+
+      // Calcular precio promedio para compatibilidad con campos legacy
       const avgFilamentPrice = plate.filaments.length > 0 
         ? plate.filaments.reduce((sum, f) => sum + f.costPerKg, 0) / plate.filaments.length
         : 25;
@@ -189,13 +203,14 @@ const FileImportView: React.FC<FileImportViewProps> = ({ onBack, onImportComplet
       return {
         id: `imported-${plate.plateId}`,
         name: `Pieza ${plate.plateId}`,
-        filamentWeight: plate.totalFilamentWeightG,
-        filamentPrice: avgFilamentPrice,
+        filamentWeight: plate.totalFilamentWeightG, // Mantener para compatibilidad
+        filamentPrice: avgFilamentPrice, // Mantener para compatibilidad
         printHours: plate.printTimeHours,
         quantity: 1,
         notes: plate.filaments.length > 1 
           ? `Múltiples filamentos: ${plate.filaments.map(f => f.filamentType).join(', ')}`
           : plate.filaments[0]?.filamentType ? `Tipo: ${plate.filaments[0].filamentType}` : undefined,
+        materials: materials, // Nueva estructura de materiales
       };
     });
 

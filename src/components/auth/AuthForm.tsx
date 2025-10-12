@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { Eye, EyeOff, Mail, Lock, User } from 'lucide-react'
 import { AuthSkeleton } from '@/components/skeletons'
+import Link from 'next/link'
 
 export default function AuthForm() {
   const [isSignUp, setIsSignUp] = useState(false)
@@ -162,20 +163,33 @@ export default function AuthForm() {
         </div>
       )}
 
-      <div className="text-center">
-        <button
-          type="button"
-          onClick={() => {
-            setIsSignUp(!isSignUp)
-            setMessage('')
-          }}
-          className="text-sm text-slate-600 hover:text-slate-900 transition-colors duration-200"
-        >
-          {isSignUp 
-            ? '¿Ya tienes cuenta? Inicia sesión' 
-            : '¿No tienes cuenta? Regístrate'
-          }
-        </button>
+      <div className="text-center space-y-3">
+        {!isSignUp && (
+          <div>
+            <Link
+              href="/auth/forgot-password"
+              className="text-sm text-slate-600 hover:text-slate-900 transition-colors duration-200 underline"
+            >
+              ¿Olvidaste tu contraseña?
+            </Link>
+          </div>
+        )}
+        
+        <div>
+          <button
+            type="button"
+            onClick={() => {
+              setIsSignUp(!isSignUp)
+              setMessage('')
+            }}
+            className="text-sm text-slate-600 hover:text-slate-900 transition-colors duration-200"
+          >
+            {isSignUp 
+              ? '¿Ya tienes cuenta? Inicia sesión' 
+              : '¿No tienes cuenta? Regístrate'
+            }
+          </button>
+        </div>
       </div>
     </div>
   )

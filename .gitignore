@@ -46,3 +46,4 @@ yarn.lock
 # pnpm-lock.yaml
 migrations_backup/
 .env.local
+supabase/migrations/

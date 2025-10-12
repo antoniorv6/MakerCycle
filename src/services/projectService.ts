@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase';
-import type { DatabaseProject, Project, Material, Piece } from '@/types';
+import type { DatabaseProject, Project, Material, Piece, PieceMaterial } from '@/types';
 import { NotificationService } from './notificationService';
+import { pieceMaterialService } from './pieceMaterialService';
 
 export class ProjectService {
   private supabase = createClient();
@@ -8,7 +9,13 @@ export class ProjectService {
   async getProjects(userId: string, teamId?: string | null): Promise<Project[]> {
     let query = this.supabase
       .from('projects')
-      .select('*')
+      .select(`
+        *,
+        pieces (
+          *,
+          piece_materials (*)
+        )
+      `)
       .order('created_at', { ascending: false });
 
     if (teamId) {
@@ -25,13 +32,37 @@ export class ProjectService {
       throw new Error(`Error fetching projects: ${error.message}`);
     }
 
-    return data || [];
+    if (!data) {
+      return [];
+    }
+
+    // Migrate legacy pieces for each project
+    const projectsWithMigratedPieces = await Promise.all(
+      data.map(async (project) => {
+        if (project.pieces && project.pieces.length > 0) {
+          const processedPieces = await this.processPieces(project.pieces);
+          return {
+            ...project,
+            pieces: processedPieces
+          };
+        }
+        return project;
+      })
+    );
+
+    return projectsWithMigratedPieces;
   }
 
   async getProject(id: string): Promise<Project | null> {
     const { data, error } = await this.supabase
       .from('projects')
-      .select('*')
+      .select(`
+        *,
+        pieces (
+          *,
+          piece_materials (*)
+        )
+      `)
       .eq('id', id)
       .single();
 
@@ -39,7 +70,79 @@ export class ProjectService {
       throw new Error(`Error fetching project: ${error.message}`);
     }
 
+    if (!data) {
+      return null;
+    }
+
+    // Process pieces (handle both new system and legacy)
+    if (data.pieces && data.pieces.length > 0) {
+      const processedPieces = await this.processPieces(data.pieces);
+      return {
+        ...data,
+        pieces: processedPieces
+      };
+    }
+
     return data;
+  }
+
+  private async processPieces(pieces: any[]): Promise<any[]> {
+    console.log('🔄 Procesando piezas en ProjectService (sistema multi-material)...');
+    
+    const processedPieces = await Promise.all(
+      pieces.map(async (piece) => {
+        console.log(`  Procesando pieza: ${piece.name}`);
+        console.log(`    - piece_materials: ${piece.piece_materials?.length || 0}`);
+        console.log(`    - filament_weight: ${piece.filament_weight}`);
+        console.log(`    - filament_price: ${piece.filament_price}`);
+        
+        // Solo usar materiales del sistema multi-material
+        if (piece.piece_materials && piece.piece_materials.length > 0) {
+          console.log(`    ✅ Tiene materiales multi-material`);
+          console.log(`    Materiales:`, piece.piece_materials);
+          return {
+            ...piece,
+            materials: piece.piece_materials
+          };
+        }
+        
+        // Migrar datos legacy a formato multi-material
+        if (piece.filament_weight > 0 && piece.filament_price > 0) {
+          console.log(`    🔄 Migrando datos legacy a formato multi-material`);
+          const legacyMaterial = {
+            id: `legacy-${piece.id}-${Date.now()}`,
+            piece_id: piece.id,
+            material_preset_id: null,
+            material_name: 'Filamento Principal',
+            material_type: 'PLA',
+            weight: piece.filament_weight,
+            price_per_kg: piece.filament_price,
+            unit: 'g',
+            category: 'filament',
+            color: '#808080',
+            brand: 'Sistema Legacy',
+            notes: 'Migrado automáticamente desde el sistema anterior',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          };
+          
+          console.log(`    ✅ Material legacy creado:`, legacyMaterial);
+          return {
+            ...piece,
+            materials: [legacyMaterial]
+          };
+        }
+        
+        // Pieza sin materiales ni datos legacy
+        console.log(`    ✅ Sin materiales aún`);
+        return {
+          ...piece,
+          materials: []
+        };
+      })
+    );
+    
+    return processedPieces;
   }
 
   async createProject(project: Omit<DatabaseProject, 'id' | 'created_at' | 'updated_at'>): Promise<Project> {
@@ -104,15 +207,35 @@ export class ProjectService {
     materials: Material[];
     pieces?: Piece[];
   }) {
-    const totalFilamentWeight = project.pieces 
-      ? project.pieces.reduce((sum, piece) => sum + (piece.filamentWeight * piece.quantity), 0)
-      : project.filament_weight;
+    let totalFilamentWeight = 0;
+    let totalPrintHours = 0;
+    let filamentCost = 0;
 
-    const totalPrintHours = project.pieces
-      ? project.pieces.reduce((sum, piece) => sum + (piece.printHours * piece.quantity), 0)
-      : project.print_hours;
+    if (project.pieces) {
+      // Calcular usando la nueva estructura de materiales por pieza
+      for (const piece of project.pieces) {
+        totalPrintHours += piece.printHours * piece.quantity;
+        
+        if (piece.materials && piece.materials.length > 0) {
+          // Usar la nueva estructura de materiales
+          const pieceWeight = pieceMaterialService.calculatePieceTotalWeight(piece.materials);
+          const pieceCost = pieceMaterialService.calculatePieceMaterialsCost(piece.materials);
+          
+          totalFilamentWeight += pieceWeight * piece.quantity;
+          filamentCost += pieceCost * piece.quantity;
+        } else {
+          // Fallback a la estructura antigua para compatibilidad
+          totalFilamentWeight += piece.filamentWeight * piece.quantity;
+          filamentCost += (piece.filamentWeight * piece.quantity * piece.filamentPrice) / 1000;
+        }
+      }
+    } else {
+      // Usar valores del proyecto (estructura antigua)
+      totalFilamentWeight = project.filament_weight;
+      totalPrintHours = project.print_hours;
+      filamentCost = totalFilamentWeight * (project.filament_price / 1000);
+    }
 
-    const filamentCost = totalFilamentWeight * (project.filament_price / 1000); // Convert to per kg
     const electricityCost = totalPrintHours * project.electricity_cost;
     const materialsCost = project.materials.reduce((sum, material) => sum + material.price, 0);
 

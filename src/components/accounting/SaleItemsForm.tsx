@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useTeam } from '@/components/providers/TeamProvider';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { createClient } from '@/lib/supabase';
+import { roundCurrency, roundTime, formatCurrency, formatPercentage } from '@/utils/numberUtils';
 import type { SaleItemFormData, Project } from '@/types';
 
 interface SaleItemsFormProps {
@@ -63,7 +64,7 @@ export function SaleItemsForm({ items, onItemsChange }: SaleItemsFormProps) {
 
   const calculateDefaultSalePrice = (unitCost: number) => {
     // Default to 15% margin if no recommended price is available
-    return unitCost * 1.15;
+    return roundCurrency(unitCost * 1.15);
   };
 
   const addItem = () => {
@@ -87,9 +88,13 @@ export function SaleItemsForm({ items, onItemsChange }: SaleItemsFormProps) {
     const newItems = [...items];
     let processedValue = value;
     
-    // Ensure numeric fields are properly converted
-    if (field === 'unit_cost' || field === 'sale_price' || field === 'print_hours') {
-      processedValue = typeof value === 'string' ? parseFloat(value) || 0 : (value as number) || 0;
+    // Ensure numeric fields are properly converted and rounded
+    if (field === 'unit_cost' || field === 'sale_price') {
+      const numValue = typeof value === 'string' ? parseFloat(value) || 0 : (value as number) || 0;
+      processedValue = roundCurrency(numValue);
+    } else if (field === 'print_hours') {
+      const numValue = typeof value === 'string' ? parseFloat(value) || 0 : (value as number) || 0;
+      processedValue = roundTime(numValue);
     } else if (field === 'quantity') {
       processedValue = typeof value === 'string' ? parseInt(value) || 1 : (value as number) || 1;
     }
@@ -103,14 +108,21 @@ export function SaleItemsForm({ items, onItemsChange }: SaleItemsFormProps) {
 
   const handleProjectSelect = (index: number, project: Project) => {
     const newItems = [...items];
+    // Round unit_cost to 2 decimal places
+    const roundedUnitCost = roundCurrency(project.total_cost);
+    // Round recommended_price to 2 decimal places if it exists
+    const roundedRecommendedPrice = project.recommended_price > 0 ? roundCurrency(project.recommended_price) : 0;
+    // Round print_hours to 1 decimal place
+    const roundedPrintHours = roundTime(project.print_hours);
+    
     newItems[index] = {
       ...newItems[index],
       project_id: project.id,
       project_name: project.name,
-      unit_cost: project.total_cost,
-      print_hours: project.print_hours,
+      unit_cost: roundedUnitCost,
+      print_hours: roundedPrintHours,
       // Set a reasonable default sale price based on recommended price or cost + margin
-      sale_price: project.recommended_price > 0 ? project.recommended_price : calculateDefaultSalePrice(project.total_cost)
+      sale_price: roundedRecommendedPrice > 0 ? roundedRecommendedPrice : calculateDefaultSalePrice(roundedUnitCost)
     };
     onItemsChange(newItems);
     setShowProjectSelector(null);
@@ -129,8 +141,9 @@ export function SaleItemsForm({ items, onItemsChange }: SaleItemsFormProps) {
     return total > 0 ? (calculateItemProfit(item) / total) * 100 : 0;
   };
 
-  const formatCurrency = (value: number) => `€${value.toFixed(2)}`;
-  const formatPercentage = (value: number) => `${value.toFixed(1)}%`;
+  // Use utility functions for formatting
+  const formatCurrencyValue = (value: number) => formatCurrency(value);
+  const formatPercentageValue = (value: number) => formatPercentage(value);
 
   return (
     <div className="space-y-4">
@@ -238,10 +251,10 @@ export function SaleItemsForm({ items, onItemsChange }: SaleItemsFormProps) {
                   type="number"
                   value={item.unit_cost}
                   onChange={(e) => {
-                    const newCost = parseFloat(e.target.value) || 0;
-                    updateItem(index, 'unit_cost', newCost);
+                    updateItem(index, 'unit_cost', e.target.value);
                     // Auto-calculate sale price if it's currently 0 or if user hasn't set it manually
                     if (item.sale_price === 0) {
+                      const newCost = parseFloat(e.target.value) || 0;
                       updateItem(index, 'sale_price', calculateDefaultSalePrice(newCost));
                     }
                   }}
@@ -273,7 +286,7 @@ export function SaleItemsForm({ items, onItemsChange }: SaleItemsFormProps) {
                 <input
                   type="number"
                   value={item.sale_price}
-                  onChange={(e) => updateItem(index, 'sale_price', parseFloat(e.target.value) || 0)}
+                  onChange={(e) => updateItem(index, 'sale_price', e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   min="0"
                   step="0.01"
@@ -287,7 +300,7 @@ export function SaleItemsForm({ items, onItemsChange }: SaleItemsFormProps) {
                 <input
                   type="number"
                   value={item.print_hours}
-                  onChange={(e) => updateItem(index, 'print_hours', parseFloat(e.target.value) || 0)}
+                  onChange={(e) => updateItem(index, 'print_hours', e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   min="0"
                   step="0.1"
@@ -300,18 +313,18 @@ export function SaleItemsForm({ items, onItemsChange }: SaleItemsFormProps) {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                 <div>
                   <span className="text-gray-600">Coste Total:</span>
-                  <div className="font-medium">{formatCurrency(calculateItemTotal(item))}</div>
+                  <div className="font-medium">{formatCurrencyValue(calculateItemTotal(item))}</div>
                 </div>
                 <div>
                   <span className="text-gray-600">Beneficio:</span>
                   <div className={`font-medium ${calculateItemProfit(item) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {formatCurrency(calculateItemProfit(item))}
+                    {formatCurrencyValue(calculateItemProfit(item))}
                   </div>
                 </div>
                 <div>
                   <span className="text-gray-600">Margen:</span>
                   <div className={`font-medium ${calculateItemMargin(item) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {formatPercentage(calculateItemMargin(item))}
+                    {formatPercentageValue(calculateItemMargin(item))}
                   </div>
                 </div>
                 <div>

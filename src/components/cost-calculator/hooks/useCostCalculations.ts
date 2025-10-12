@@ -62,17 +62,33 @@ export const useCostCalculations = ({
       };
     }
 
-    const totalFilamentWeight = pieces.reduce((sum, piece) => 
-      sum + (piece.filamentWeight * piece.quantity), 0
-    );
-    
-    const totalPrintHours = pieces.reduce((sum, piece) => 
-      sum + (piece.printHours * piece.quantity), 0
-    );
-    
-    const totalFilamentCost = pieces.reduce((sum, piece) => 
-      sum + ((piece.filamentWeight * piece.quantity * piece.filamentPrice) / 1000), 0
-    );
+    let totalFilamentWeight = 0;
+    let totalPrintHours = 0;
+    let totalFilamentCost = 0;
+
+    pieces.forEach(piece => {
+      totalPrintHours += piece.printHours * piece.quantity;
+      
+      if (piece.materials && piece.materials.length > 0) {
+        // Usar la nueva estructura de materiales
+        const pieceWeight = piece.materials.reduce((sum, material) => {
+          const weightInGrams = material.unit === 'kg' ? material.weight * 1000 : material.weight;
+          return sum + weightInGrams;
+        }, 0);
+        
+        const pieceCost = piece.materials.reduce((sum, material) => {
+          const weightInKg = material.unit === 'g' ? material.weight / 1000 : material.weight;
+          return sum + (weightInKg * material.pricePerKg);
+        }, 0);
+        
+        totalFilamentWeight += pieceWeight * piece.quantity;
+        totalFilamentCost += pieceCost * piece.quantity;
+      } else {
+        // Fallback a la estructura antigua para compatibilidad
+        totalFilamentWeight += piece.filamentWeight * piece.quantity;
+        totalFilamentCost += (piece.filamentWeight * piece.quantity * piece.filamentPrice) / 1000;
+      }
+    });
 
     return {
       totalFilamentWeight,

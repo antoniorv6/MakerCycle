@@ -18,6 +18,7 @@ export interface FilamentInfo {
   weightKg: number;
   costPerKg: number;
   cost: number;
+  color?: string;
 }
 
 export interface PlateInfo {
@@ -219,6 +220,13 @@ export class PrintCostCalculator {
         .filter(c => !isNaN(c));
     }
 
+    // Colores de filamento
+    const filamentColorsMatch = gcodeContent.match(/;\s*filament_colour\s*=\s*([^\n]+)/i);
+    let filamentColors: string[] = [];
+    if (filamentColorsMatch) {
+      filamentColors = filamentColorsMatch[1].split(';').map(c => c.trim().replace(/^"|"$/g, ''));
+    }
+
     const printTimeMin = this.extractPrintTime(gcodeContent);
     if (!printTimeMin) return null;
 
@@ -227,6 +235,7 @@ export class PrintCostCalculator {
     const profileName = filamentNames[slotIndex] || `Filamento ${filamentSlot}`;
     const filamentType = filamentTypes[slotIndex] || '';
     const costPerKg = filamentCosts[slotIndex] || this.defaultFilamentCost;
+    const color = filamentColors[slotIndex] || undefined;
 
     const filament: FilamentInfo = {
       filamentId: filamentSlot,
@@ -236,6 +245,7 @@ export class PrintCostCalculator {
       weightKg: Math.round((filamentWeight / 1000) * 1000) / 1000,
       costPerKg,
       cost: Math.round((filamentWeight / 1000) * costPerKg * 100) / 100,
+      color,
     };
 
     const printHours = printTimeMin / 60;
@@ -311,6 +321,13 @@ export class PrintCostCalculator {
       filamentCosts = Array(filamentWeights.length).fill(this.defaultFilamentCost);
     }
 
+    // Colores de filamento
+    const filamentColorsMatch = gcodeContent.match(/;\s*filament_colour\s*=\s*([^\n]+)/i);
+    let filamentColors: string[] = [];
+    if (filamentColorsMatch) {
+      filamentColors = filamentColorsMatch[1].split(';').map(c => c.trim().replace(/^"|"$/g, ''));
+    }
+
     const printTimeMin = this.extractPrintTime(gcodeContent);
     if (!printTimeMin) return null;
 
@@ -323,6 +340,7 @@ export class PrintCostCalculator {
       const profileName = filamentNames[i] || `Filamento ${i + 1}`;
       const filamentType = filamentTypes[i] || '';
       const costPerKg = filamentCosts[i] || this.defaultFilamentCost;
+      const color = filamentColors[i] || undefined;
       const weightKg = weight / 1000;
       const cost = weightKg * costPerKg;
 
@@ -334,6 +352,7 @@ export class PrintCostCalculator {
         weightKg: Math.round(weightKg * 1000) / 1000,
         costPerKg,
         cost: Math.round(cost * 100) / 100,
+        color,
       });
     }
 

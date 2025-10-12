@@ -101,23 +101,31 @@ export async function getDefaultMaterialPreset(userId: string, teamId?: string |
 
 // Crear un nuevo preset
 export async function createMaterialPreset(
-  preset: Omit<DatabaseMaterialPreset, 'id' | 'created_at' | 'updated_at'>
+  preset: Omit<DatabaseMaterialPreset, 'id' | 'created_at' | 'updated_at' | 'user_id' | 'team_id'>,
+  userId: string,
+  teamId?: string | null
 ): Promise<MaterialPreset | null> {
   const supabase = createClient();
 
   try {
+    const presetData = {
+      ...preset,
+      user_id: userId,
+      team_id: teamId || null
+    };
+
     // Si el nuevo preset es el predeterminado, desmarcar los demás de la misma categoría
     if (preset.is_default) {
       await supabase
         .from('material_presets')
         .update({ is_default: false })
-        .eq('user_id', preset.user_id)
+        .eq('user_id', userId)
         .eq('category', preset.category);
     }
 
     const { data, error } = await supabase
       .from('material_presets')
-      .insert([preset])
+      .insert([presetData])
       .select()
       .single();
 

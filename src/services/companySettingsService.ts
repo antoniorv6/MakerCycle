@@ -30,10 +30,9 @@ const DEFAULT_COMPANY_DATA: CompanyData = {
 }
 
 // Convert CompanyData to database format
-function toDatabaseFormat(data: CompanyData, userId: string, teamId?: string | null): Database['public']['Tables']['company_settings']['Insert'] {
+function toDatabaseFormat(data: CompanyData, userId: string): Database['public']['Tables']['company_settings']['Insert'] {
   return {
     user_id: userId,
-    team_id: teamId || null,
     name: data.name,
     description: data.description,
     email: data.email,
@@ -115,18 +114,25 @@ export async function saveCompanySettings(userId: string, data: CompanyData, tea
   try {
     console.log('Attempting to save company settings to Supabase');
     
-    let query = supabase.from('company_settings');
+    let updateQuery;
     
     if (teamId) {
       // Update team settings
-      query = query.update(toDatabaseFormat(data, userId, teamId)).eq('team_id', teamId);
+      updateQuery = supabase
+        .from('company_settings')
+        .update(toDatabaseFormat(data, userId))
+        .eq('team_id', teamId);
     } else {
       // Update personal settings (where team_id is null)
-      query = query.update(toDatabaseFormat(data, userId, null)).eq('user_id', userId).is('team_id', null);
+      updateQuery = supabase
+        .from('company_settings')
+        .update(toDatabaseFormat(data, userId))
+        .eq('user_id', userId)
+        .is('team_id', null);
     }
     
     // First, try to update existing settings
-    const { error: updateError } = await query
+    const { error: updateError } = await updateQuery
 
     if (updateError) {
       console.log('Update error:', updateError);
@@ -135,7 +141,7 @@ export async function saveCompanySettings(userId: string, data: CompanyData, tea
         console.log('No existing settings, inserting new ones');
         const { error: insertError } = await supabase
           .from('company_settings')
-          .insert(toDatabaseFormat(data, userId, teamId))
+          .insert(toDatabaseFormat(data, userId))
 
         if (insertError) {
           console.log('Insert error:', insertError);
