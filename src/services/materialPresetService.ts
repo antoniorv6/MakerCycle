@@ -349,24 +349,41 @@ export async function getMaterialPresetStats(userId: string, teamId?: string | n
   const supabase = createClient();
 
   try {
+    // Verificar que el usuario esté autenticado
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      console.error('User not authenticated:', authError);
+      return { total: 0, byCategory: {} };
+    }
+
+    console.log('Getting material preset stats for:', { userId, teamId, authenticatedUser: user.id });
+
     let query = supabase
       .from('material_presets')
-      .select('category')
-      .eq('user_id', userId);
+      .select('category');
 
     if (teamId) {
-      query = supabase
-        .from('material_presets')
-        .select('category')
-        .or(`user_id.eq.${userId},team_id.eq.${teamId}`);
+      query = query.or(`user_id.eq.${userId},team_id.eq.${teamId}`);
+    } else {
+      query = query.eq('user_id', userId);
     }
 
     const { data, error } = await query;
 
     if (error) {
-      console.error('Error fetching material preset stats:', error);
+      console.error('Error fetching material preset stats:', {
+        error,
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code,
+        userId,
+        teamId
+      });
       throw error;
     }
+
+    console.log('Material preset stats data:', { data, count: data?.length });
 
     const stats = {
       total: data?.length || 0,
@@ -377,9 +394,16 @@ export async function getMaterialPresetStats(userId: string, teamId?: string | n
       stats.byCategory[preset.category] = (stats.byCategory[preset.category] || 0) + 1;
     });
 
+    console.log('Material preset stats result:', stats);
     return stats;
   } catch (error) {
-    console.error('Error in getMaterialPresetStats:', error);
+    console.error('Error in getMaterialPresetStats:', {
+      error,
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      userId,
+      teamId
+    });
     return { total: 0, byCategory: {} };
   }
 }

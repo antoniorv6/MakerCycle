@@ -29,6 +29,8 @@ const FileImportView: React.FC<FileImportViewProps> = ({ onBack, onImportComplet
   const [error, setError] = useState<string | null>(null);
   const [importedData, setImportedData] = useState<CostSummary | null>(null);
   const [detectedProfiles, setDetectedProfiles] = useState<DetectedFilamentProfile[]>([]);
+  const [fileSelected, setFileSelected] = useState(false);
+  const [isLoadingProfiles, setIsLoadingProfiles] = useState(false);
   const [calculator] = useState(() => new PrintCostCalculator());
   const { addPreset, addPresetsBatch, presets, refreshPresets } = useMaterialPresets();
 
@@ -47,6 +49,8 @@ const FileImportView: React.FC<FileImportViewProps> = ({ onBack, onImportComplet
     setError(null);
     setImportedData(null);
     setDetectedProfiles([]);
+    setFileSelected(true);
+    setIsLoadingProfiles(true);
 
     try {
       const result = await calculator.processFile(file);
@@ -107,11 +111,13 @@ const FileImportView: React.FC<FileImportViewProps> = ({ onBack, onImportComplet
         
         
         setDetectedProfiles(profiles);
+        setIsLoadingProfiles(false);
       });
       
     } catch (err) {
       console.error('Error processing file:', err);
       setError('Error al procesar el archivo. Asegúrate de que es un archivo .gcode.3mf válido de OrcaSlicer o BambuStudio.');
+      setIsLoadingProfiles(false);
     } finally {
       setIsProcessing(false);
     }
@@ -152,42 +158,22 @@ const FileImportView: React.FC<FileImportViewProps> = ({ onBack, onImportComplet
     );
   }, []);
 
+  const handleResetFile = useCallback(() => {
+    setFileSelected(false);
+    setImportedData(null);
+    setDetectedProfiles([]);
+    setError(null);
+    setIsProcessing(false);
+    setIsLoadingProfiles(false);
+    // Resetear el input de archivo
+    const fileInput = document.getElementById('file-input') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.value = '';
+    }
+  }, []);
+
   const handleConfirmImport = useCallback(async () => {
     if (!importedData) return;
-
-    // Guardar perfiles seleccionados si los hay (optimizado con operación en lote)
-    if (detectedProfiles.some(p => p.willSave)) {
-      setIsSavingProfiles(true);
-      try {
-        const profilesToSave = detectedProfiles.filter(p => p.willSave);
-        setSavingProgress({ current: 0, total: profilesToSave.length });
-        
-        // Preparar todos los presets para inserción en lote
-        const presetsToCreate = profilesToSave.map(profile => ({
-          name: profile.profileName,
-          price_per_unit: profile.costPerKg,
-          unit: 'kg',
-          material_type: profile.filamentType,
-          category: 'filament' as const,
-          brand: profile.profileName.split(' ')[0] || 'Unknown',
-          color: profile.color,
-          notes: `Importado desde archivo .gcode.3mf`,
-          is_default: false,
-        }));
-
-        // Guardar todos los presets en una sola operación
-        setSavingProgress({ current: profilesToSave.length, total: profilesToSave.length });
-        await addPresetsBatch(presetsToCreate);
-        
-        // NO recargar presets aquí - addPresetsBatch ya lo hace internamente
-      } catch (err) {
-        console.error('Error saving profiles:', err);
-        setError('Error al guardar algunos perfiles de material. Puedes continuar con la importación.');
-      } finally {
-        setIsSavingProfiles(false);
-        setSavingProgress(null);
-      }
-    }
 
     // Convertir las placas a piezas del proyecto con la nueva estructura de materiales
     const pieces: Piece[] = importedData.plates.map((plate, index) => {
@@ -248,106 +234,144 @@ const FileImportView: React.FC<FileImportViewProps> = ({ onBack, onImportComplet
       </div>
 
       <div className="space-y-6">
-        {/* Zona de subida de archivos */}
-        <div
-          className={`relative border-2 border-dashed rounded-xl p-12 text-center transition-all duration-200 ${
-            isDragOver
-              ? 'border-emerald-400 bg-emerald-50'
-              : 'border-slate-300 hover:border-slate-400'
-          } ${isProcessing ? 'pointer-events-none opacity-50' : 'cursor-pointer'}`}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-          onClick={() => document.getElementById('file-input')?.click()}
-        >
-          <input
-            id="file-input"
-            type="file"
-            accept=".gcode.3mf"
-            onChange={handleFileInputChange}
-            className="hidden"
-            disabled={isProcessing}
-          />
+        {/* Contenedor con transición slide */}
+        <div className="relative overflow-hidden min-h-[400px]">
+          {/* Zona de subida de archivos */}
+          <div
+            className={`absolute inset-0 transition-transform duration-500 ease-in-out ${
+              fileSelected ? '-translate-x-full' : 'translate-x-0'
+            }`}
+          >
+            <div
+              className={`border-2 border-dashed rounded-xl p-12 text-center transition-all duration-200 ${
+                isDragOver
+                  ? 'border-emerald-400 bg-emerald-50'
+                  : 'border-slate-300 hover:border-slate-400'
+              } ${isProcessing ? 'pointer-events-none opacity-50' : 'cursor-pointer'}`}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              onClick={() => document.getElementById('file-input')?.click()}
+            >
+              <input
+                id="file-input"
+                type="file"
+                accept=".gcode.3mf"
+                onChange={handleFileInputChange}
+                className="hidden"
+                disabled={isProcessing}
+              />
 
-          {isProcessing ? (
-            <div className="space-y-4">
-              <Loader2 className="w-16 h-16 text-emerald-600 mx-auto animate-spin" />
-              <div>
-                <h3 className="text-lg font-semibold text-slate-900 mb-2">Procesando archivo...</h3>
-                <p className="text-slate-600">Extrayendo información del archivo .gcode.3mf</p>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-slate-100 rounded-full">
-                <Upload className="w-8 h-8 text-slate-600" />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-slate-900 mb-2">
-                  Arrastra y suelta tu archivo aquí
-                </h3>
-                <p className="text-slate-600 mb-4">
-                  O haz clic para seleccionar un archivo .gcode.3mf
-                </p>
-                <div className="flex items-center justify-center gap-4 mb-4">
-                  <div className="flex items-center gap-2 text-sm text-slate-500">
-                    <SlicerLogoDisplay slicer="OrcaSlicer" size={20} />
-                    <span>OrcaSlicer</span>
-                  </div>
-                  <div className="text-slate-300">•</div>
-                  <div className="flex items-center gap-2 text-sm text-slate-500">
-                    <SlicerLogoDisplay slicer="BambuStudio" size={20} />
-                    <span>BambuStudio</span>
+              {isProcessing ? (
+                <div className="space-y-4">
+                  <Loader2 className="w-16 h-16 text-emerald-600 mx-auto animate-spin" />
+                  <div>
+                    <h3 className="text-lg font-semibold text-slate-900 mb-2">Procesando archivo...</h3>
+                    <p className="text-slate-600">Extrayendo información del archivo .gcode.3mf</p>
                   </div>
                 </div>
-                <div className="inline-flex items-center gap-2 px-4 py-2 bg-slate-600 text-white rounded-lg text-sm font-medium">
-                  <FileText className="w-4 h-4" />
-                  Seleccionar archivo
+              ) : (
+                <div className="space-y-4">
+                  <div className="inline-flex items-center justify-center w-16 h-16 bg-slate-100 rounded-full">
+                    <Upload className="w-8 h-8 text-slate-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-slate-900 mb-2">
+                      Arrastra y suelta tu archivo aquí
+                    </h3>
+                    <p className="text-slate-600 mb-4">
+                      O haz clic para seleccionar un archivo .gcode.3mf
+                    </p>
+                    <div className="flex items-center justify-center gap-4 mb-4">
+                      <div className="flex items-center gap-2 text-sm text-slate-500">
+                        <SlicerLogoDisplay slicer="OrcaSlicer" size={20} />
+                        <span>OrcaSlicer</span>
+                      </div>
+                      <div className="text-slate-300">•</div>
+                      <div className="flex items-center gap-2 text-sm text-slate-500">
+                        <SlicerLogoDisplay slicer="BambuStudio" size={20} />
+                        <span>BambuStudio</span>
+                      </div>
+                    </div>
+                    <div className="inline-flex items-center gap-2 px-4 py-2 bg-slate-600 text-white rounded-lg text-sm font-medium">
+                      <FileText className="w-4 h-4" />
+                      Seleccionar archivo
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Error message */}
-        {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-            <div className="flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-              <div>
-                <h4 className="font-medium text-red-900 mb-1">Error al procesar el archivo</h4>
-                <p className="text-sm text-red-700">{error}</p>
-              </div>
+              )}
             </div>
           </div>
-        )}
 
-        {/* Preview de datos importados */}
-        {importedData && (
-          <div className="bg-white rounded-xl shadow-lg border border-slate-200 p-6">
-            <div className="flex items-center gap-3 mb-6">
-              <CheckCircle className="w-6 h-6 text-emerald-600" />
-              <div className="flex-1">
-                <h3 className="text-xl font-semibold text-slate-900">Archivo procesado correctamente</h3>
-                <p className="text-slate-600">Se encontraron {importedData.plates.length} placa(s) en el archivo</p>
-              </div>
-              <div className="flex items-center gap-3 bg-slate-50 rounded-lg px-4 py-2 border border-slate-200">
-                <div className="text-sm text-slate-500">Slicer detectado:</div>
-                <div className="flex items-center gap-2">
-                  <SlicerLogoDisplay slicer={importedData.slicer} size={32} />
-                  <span className="text-sm font-semibold text-slate-700">{importedData.slicer}</span>
+          {/* Sección de información de importación */}
+          <div
+            className={`transition-transform duration-500 ease-in-out ${
+              fileSelected ? 'translate-x-0' : 'translate-x-full'
+            }`}
+          >
+            {/* Error message */}
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <h4 className="font-medium text-red-900 mb-1">Error al procesar el archivo</h4>
+                    <p className="text-sm text-red-700">{error}</p>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
-            {/* Perfiles de filamentos detectados */}
-            {detectedProfiles.length > 0 && (
+            {/* Preview de datos importados */}
+            {importedData && (
+              <div className="bg-white rounded-xl shadow-lg border border-slate-200 p-6">
+                <div className="flex items-center gap-3 mb-6">
+                  <CheckCircle className="w-6 h-6 text-emerald-600" />
+                  <div className="flex-1">
+                    <h3 className="text-xl font-semibold text-slate-900">Archivo procesado correctamente</h3>
+                    <p className="text-slate-600">Se encontraron {importedData.plates.length} placa(s) en el archivo</p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 bg-slate-50 rounded-lg px-4 py-2 border border-slate-200">
+                      <div className="text-sm text-slate-500">Slicer detectado:</div>
+                      <div className="flex items-center gap-2">
+                        <SlicerLogoDisplay slicer={importedData.slicer} size={32} />
+                        <span className="text-sm font-semibold text-slate-700">{importedData.slicer}</span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={handleResetFile}
+                      className="px-4 py-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors font-medium text-sm"
+                    >
+                      Cambiar archivo
+                    </button>
+                  </div>
+                </div>
+
+                {/* Perfiles de filamentos detectados - Solo información */}
+                {isLoadingProfiles ? (
+              <div className="space-y-4 mb-6">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-medium text-slate-900">Analizando perfiles de filamentos...</h4>
+                </div>
+                <div className="bg-slate-50 rounded-lg p-6 border border-slate-200">
+                  <div className="flex items-center justify-center space-y-4">
+                    <div className="text-center">
+                      <Loader2 className="w-8 h-8 text-emerald-600 mx-auto animate-spin mb-3" />
+                      <p className="text-slate-600 text-sm">
+                        Detectando perfiles de filamentos y verificando biblioteca de materiales...
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : detectedProfiles.length > 0 ? (
               <div className="space-y-4 mb-6">
                 <div className="flex items-center justify-between">
                   <h4 className="font-medium text-slate-900">Perfiles de filamentos detectados:</h4>
                   <div className="flex items-center gap-2 text-sm text-slate-600">
                     <Bookmark className="w-4 h-4" />
-                    <span>Selecciona cuáles guardar en tu biblioteca</span>
+                    <span>Información de los filamentos encontrados</span>
                   </div>
                 </div>
                 <div className="space-y-3">
@@ -375,7 +399,7 @@ const FileImportView: React.FC<FileImportViewProps> = ({ onBack, onImportComplet
                             </span>
                             {profile.alreadyExists && (
                               <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
-                                Ya existe
+                                Ya existe en biblioteca
                               </span>
                             )}
                           </div>
@@ -385,24 +409,24 @@ const FileImportView: React.FC<FileImportViewProps> = ({ onBack, onImportComplet
                             <div>Coste total: {(profile.weightG * profile.costPerKg / 1000).toFixed(2)}€</div>
                           </div>
                         </div>
-                        <label className={`flex items-center gap-2 ${profile.alreadyExists ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}>
-                          <input
-                            type="checkbox"
-                            checked={profile.willSave}
-                            onChange={() => !profile.alreadyExists && handleProfileToggle(index)}
-                            disabled={profile.alreadyExists}
-                            className="w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500 disabled:cursor-not-allowed"
-                          />
-                          <span className="text-sm font-medium text-slate-700">
-                            {profile.alreadyExists ? 'Ya guardado' : 'Guardar'}
-                          </span>
-                        </label>
                       </div>
                     </div>
                   ))}
                 </div>
+                <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                  <div className="flex items-start gap-3">
+                    <Bookmark className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <h5 className="font-medium text-blue-900 mb-1">¿Quieres guardar estos perfiles?</h5>
+                      <p className="text-sm text-blue-700">
+                        Puedes guardar estos perfiles de filamentos como presets desde la calculadora principal 
+                        después de importar el proyecto. Esto te permitirá reutilizarlos en futuros proyectos.
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
-            )}
+            ) : null}
 
             {/* Resumen de placas */}
             <div className="space-y-4 mb-6">
@@ -439,68 +463,71 @@ const FileImportView: React.FC<FileImportViewProps> = ({ onBack, onImportComplet
               </div>
             </div>
 
-            {/* Totales */}
-            <div className="bg-emerald-50 rounded-lg p-4 border border-emerald-200 mb-6">
-              <h4 className="font-medium text-emerald-900 mb-3">Totales del proyecto:</h4>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                <div>
-                  <div className="text-emerald-700 font-medium">Peso total</div>
-                  <div className="text-emerald-900 font-semibold">{importedData.summary.totalFilamentWeightKg.toFixed(2)}kg</div>
-                </div>
-                <div>
-                  <div className="text-emerald-700 font-medium">Tiempo total</div>
-                  <div className="text-emerald-900 font-semibold">{importedData.summary.totalPrintTimeHours.toFixed(1)}h</div>
-                </div>
-                <div>
-                  <div className="text-emerald-700 font-medium">Coste material</div>
-                  <div className="text-emerald-900 font-semibold">{importedData.summary.totalMaterialCost.toFixed(2)}€</div>
-                </div>
-                <div>
-                  <div className="text-emerald-700 font-medium">Coste máquina</div>
-                  <div className="text-emerald-900 font-semibold">{importedData.summary.totalMachineCost.toFixed(2)}€</div>
-                </div>
-              </div>
-              <div className="mt-3 pt-3 border-t border-emerald-200">
-                <div className="flex justify-between items-center">
-                  <span className="text-emerald-700 font-medium">Coste total:</span>
-                  <span className="text-emerald-900 font-bold text-lg">{importedData.summary.totalCost.toFixed(2)}€</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Botones de acción */}
-            <div className="flex items-center justify-between">
-              <button
-                onClick={onBack}
-                className="px-6 py-3 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors font-medium"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleConfirmImport}
-                disabled={isSavingProfiles}
-                className="px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isSavingProfiles ? (
-                  <div className="flex items-center gap-2">
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    {savingProgress ? (
-                      <span>
-                        Guardando perfiles... ({savingProgress.current}/{savingProgress.total})
-                      </span>
-                    ) : (
-                      'Guardando perfiles...'
-                    )}
+                {/* Totales */}
+                <div className="bg-emerald-50 rounded-lg p-4 border border-emerald-200 mb-6">
+                  <h4 className="font-medium text-emerald-900 mb-3">Totales del proyecto:</h4>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                    <div>
+                      <div className="text-emerald-700 font-medium">Peso total</div>
+                      <div className="text-emerald-900 font-semibold">{importedData.summary.totalFilamentWeightKg.toFixed(2)}kg</div>
+                    </div>
+                    <div>
+                      <div className="text-emerald-700 font-medium">Tiempo total</div>
+                      <div className="text-emerald-900 font-semibold">{importedData.summary.totalPrintTimeHours.toFixed(1)}h</div>
+                    </div>
+                    <div>
+                      <div className="text-emerald-700 font-medium">Coste material</div>
+                      <div className="text-emerald-900 font-semibold">{importedData.summary.totalMaterialCost.toFixed(2)}€</div>
+                    </div>
+                    <div>
+                      <div className="text-emerald-700 font-medium">Coste máquina</div>
+                      <div className="text-emerald-900 font-semibold">{importedData.summary.totalMachineCost.toFixed(2)}€</div>
+                    </div>
                   </div>
-                ) : (
-                  'Importar Proyecto'
-                )}
-              </button>
-            </div>
-          </div>
-        )}
+                  <div className="mt-3 pt-3 border-t border-emerald-200">
+                    <div className="flex justify-between items-center">
+                      <span className="text-emerald-700 font-medium">Coste total:</span>
+                      <span className="text-emerald-900 font-bold text-lg">{importedData.summary.totalCost.toFixed(2)}€</span>
+                    </div>
+                  </div>
+                </div>
 
-        {/* Información adicional */}
+                {/* Botones de acción */}
+                <div className="flex items-center justify-between">
+                  <button
+                    onClick={onBack}
+                    className="px-6 py-3 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors font-medium"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={handleConfirmImport}
+                    disabled={isSavingProfiles}
+                    className="px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isSavingProfiles ? (
+                      <div className="flex items-center gap-2">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        {savingProgress ? (
+                          <span>
+                            Guardando perfiles... ({savingProgress.current}/{savingProgress.total})
+                          </span>
+                        ) : (
+                          'Guardando perfiles...'
+                        )}
+                      </div>
+                    ) : (
+                      'Importar Proyecto'
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
+
+          </div>
+        </div>
+
+        {/* Información adicional - Siempre visible */}
         <div className="bg-blue-50 rounded-xl p-6 border border-blue-200">
           <div className="flex items-start gap-3">
             <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -518,13 +545,12 @@ const FileImportView: React.FC<FileImportViewProps> = ({ onBack, onImportComplet
                 El sistema detectará automáticamente el slicer utilizado y mostrará el logo correspondiente.
               </p>
               <p className="text-sm text-blue-700">
-                <strong>Nuevo:</strong> Los perfiles de filamentos detectados se pueden guardar en tu biblioteca 
-                de materiales para uso futuro. Esto incluye el nombre del perfil, tipo de filamento y precio por kg.
+                <strong>Nota:</strong> Los perfiles de filamentos detectados se mostrarán en la calculadora principal 
+                donde podrás guardarlos como presets si lo deseas. Esto te permitirá reutilizarlos en futuros proyectos.
               </p>
             </div>
           </div>
         </div>
-
       </div>
     </div>
   );

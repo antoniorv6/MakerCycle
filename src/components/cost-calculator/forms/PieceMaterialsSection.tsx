@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Plus, Trash2, Package, Edit3, Save, X, Bookmark, Settings } from 'lucide-react';
+import { Plus, Trash2, Package, Edit3, Save, X, Bookmark, Settings, Loader2, Check } from 'lucide-react';
 import type { CostCalculatorPieceMaterial } from '../types';
 import { useMaterialPresets } from '@/hooks/useMaterialPresets';
 
@@ -26,10 +26,17 @@ const MaterialCard: React.FC<{
   const [showPresetSelector, setShowPresetSelector] = useState(false);
   const [selectedPresetCategory, setSelectedPresetCategory] = useState<'filament' | 'resin'>(material.category);
   const [isPresetLoaded, setIsPresetLoaded] = useState(false);
+  const [isSavingAsPreset, setIsSavingAsPreset] = useState(false);
+  const [isSavedAsPreset, setIsSavedAsPreset] = useState(false);
 
 
   // Filtrar presets por categoría seleccionada
   const filteredPresets = presets.filter(preset => preset.category === selectedPresetCategory);
+
+  // Resetear estado de guardado cuando el material cambie
+  useEffect(() => {
+    setIsSavedAsPreset(false);
+  }, [material.materialName, material.materialType, material.pricePerKg, material.unit, material.category, material.color, material.brand, material.notes]);
 
   const handleNameSave = () => {
     onUpdate('materialName', tempName);
@@ -66,6 +73,7 @@ const MaterialCard: React.FC<{
       
       // Marcar que se ha cargado un preset
       setIsPresetLoaded(true);
+      setIsSavedAsPreset(false); // Resetear estado de guardado
       
       // Cerrar el selector
       setShowPresetSelector(false);
@@ -81,6 +89,21 @@ const MaterialCard: React.FC<{
 
   const handleResetPreset = () => {
     setIsPresetLoaded(false);
+    setIsSavedAsPreset(false); // Resetear estado de guardado
+  };
+
+  const handleSaveAsPreset = async () => {
+    if (!onSaveAsPreset || isSavingAsPreset || isSavedAsPreset) return;
+    
+    setIsSavingAsPreset(true);
+    try {
+      await onSaveAsPreset(material);
+      setIsSavedAsPreset(true);
+    } catch (error) {
+      console.error('Error saving as preset:', error);
+    } finally {
+      setIsSavingAsPreset(false);
+    }
   };
 
   const getCategoryColor = (category: string) => {
@@ -312,11 +335,30 @@ const MaterialCard: React.FC<{
           {/* Botón para guardar como preset */}
           {onSaveAsPreset && (
             <button
-              onClick={() => onSaveAsPreset(material)}
-              className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-              title="Guardar como preset"
+              onClick={handleSaveAsPreset}
+              disabled={isSavingAsPreset || isSavedAsPreset}
+              className={`p-2 rounded-lg transition-colors ${
+                isSavedAsPreset
+                  ? 'text-green-600 bg-green-50 cursor-not-allowed'
+                  : isSavingAsPreset
+                  ? 'text-blue-600 bg-blue-50 cursor-not-allowed'
+                  : 'text-green-600 hover:bg-green-50'
+              }`}
+              title={
+                isSavedAsPreset
+                  ? 'Guardado como preset'
+                  : isSavingAsPreset
+                  ? 'Guardando...'
+                  : 'Guardar como preset'
+              }
             >
-              <Save className="w-4 h-4" />
+              {isSavingAsPreset ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : isSavedAsPreset ? (
+                <Check className="w-4 h-4" />
+              ) : (
+                <Save className="w-4 h-4" />
+              )}
             </button>
           )}
 
