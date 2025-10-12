@@ -31,14 +31,12 @@ export function useCompanySettings() {
       const loadCompanySettings = async () => {
         try {
           setIsLoading(true);
-          console.log('Loading company settings for user:', user.id);
           
           // Intentar cargar desde localStorage primero como fallback
           const savedData = localStorage.getItem(`company_settings_${user.id}`);
           if (savedData) {
             try {
               const parsedData = JSON.parse(savedData);
-              console.log('Found data in localStorage:', parsedData);
               setCompanyData({ ...DEFAULT_COMPANY_DATA, ...parsedData });
             } catch (error) {
               console.error('Error parsing localStorage data:', error);
@@ -47,7 +45,6 @@ export function useCompanySettings() {
           
           // Intentar cargar desde Supabase
           const data = await getCompanySettings(user.id, currentTeam?.id);
-          console.log('Loaded company settings from Supabase:', data);
           
           // Solo actualizar si los datos de Supabase son diferentes de los por defecto
           if (data.name !== DEFAULT_COMPANY_DATA.name || data.email !== DEFAULT_COMPANY_DATA.email) {
@@ -75,24 +72,20 @@ export function useCompanySettings() {
     if (!user) throw new Error('Usuario no autenticado');
 
     try {
-      console.log('Saving company settings to Supabase:', data);
       await saveCompanySettings(user.id, data, currentTeam?.id);
       setCompanyData(data);
       
       // También guardar en localStorage como backup
       localStorage.setItem(`company_settings_${user.id}`, JSON.stringify(data));
-      console.log('Saved to localStorage as backup');
     } catch (error) {
       console.error('Error saving company settings:', error);
       
       // Si falla Supabase, guardar solo en localStorage
-      console.log('Falling back to localStorage only');
       localStorage.setItem(`company_settings_${user.id}`, JSON.stringify(data));
       setCompanyData(data);
       
       // No lanzar error si es porque la tabla no existe
       if (error instanceof Error && error.message.includes('relation "company_settings" does not exist')) {
-        console.log('Table does not exist yet, using localStorage only');
         return;
       }
       

@@ -13,7 +13,6 @@ export default function Footer() {
     // This would open the cookie settings modal when usesNonEssentialCookies is true
     // For now, just show an alert since the banner is disabled
     if (usesNonEssentialCookies) {
-      console.log('Open cookie settings modal')
     } else {
       alert('Actualmente solo utilizamos cookies técnicas necesarias para el funcionamiento del servicio.')
     }

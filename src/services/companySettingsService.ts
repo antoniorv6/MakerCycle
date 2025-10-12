@@ -68,7 +68,6 @@ export async function getCompanySettings(userId: string, teamId?: string | null)
   const supabase = createClient()
   
   try {
-    console.log('Fetching company settings for user:', userId, 'team:', teamId);
     let query = supabase
       .from('company_settings')
       .select('*');
@@ -84,23 +83,18 @@ export async function getCompanySettings(userId: string, teamId?: string | null)
     const { data, error } = await query.single()
 
     if (error) {
-      console.log('Database error:', error);
       if (error.code === 'PGRST116') {
         // No settings found, return defaults
-        console.log('No settings found, returning defaults');
         return DEFAULT_COMPANY_DATA
       }
       // Si es un error de tabla no encontrada, también retornar defaults
       if (error.message && error.message.includes('relation "company_settings" does not exist')) {
-        console.log('Table does not exist yet, returning defaults');
         return DEFAULT_COMPANY_DATA
       }
       throw error
     }
 
-    console.log('Found company settings in database:', data);
     const formattedData = fromDatabaseFormat(data);
-    console.log('Formatted company data:', formattedData);
     return formattedData
   } catch (error) {
     console.error('Error fetching company settings:', error)
@@ -112,7 +106,6 @@ export async function saveCompanySettings(userId: string, data: CompanyData, tea
   const supabase = createClient()
   
   try {
-    console.log('Attempting to save company settings to Supabase');
     
     let updateQuery;
     
@@ -135,19 +128,15 @@ export async function saveCompanySettings(userId: string, data: CompanyData, tea
     const { error: updateError } = await updateQuery
 
     if (updateError) {
-      console.log('Update error:', updateError);
       if (updateError.code === 'PGRST116') {
         // No existing settings, insert new ones
-        console.log('No existing settings, inserting new ones');
         const { error: insertError } = await supabase
           .from('company_settings')
           .insert(toDatabaseFormat(data, userId))
 
         if (insertError) {
-          console.log('Insert error:', insertError);
           // Si la tabla no existe, no lanzar error, solo log
           if (insertError.message && insertError.message.includes('relation "company_settings" does not exist')) {
-            console.log('Table does not exist yet, skipping Supabase save');
             return;
           }
           throw insertError
@@ -155,18 +144,15 @@ export async function saveCompanySettings(userId: string, data: CompanyData, tea
       } else {
         // Si es un error de tabla no encontrada, no lanzar error
         if (updateError.message && updateError.message.includes('relation "company_settings" does not exist')) {
-          console.log('Table does not exist yet, skipping Supabase save');
           return;
         }
         throw updateError
       }
     }
-    console.log('Successfully saved to Supabase');
   } catch (error) {
     console.error('Error saving company settings:', error)
     // No lanzar error si la tabla no existe
     if (error instanceof Error && error.message.includes('relation "company_settings" does not exist')) {
-      console.log('Table does not exist yet, skipping Supabase save');
       return;
     }
     throw error

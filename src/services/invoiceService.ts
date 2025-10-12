@@ -4,9 +4,6 @@ import type { CompanyData } from '@/hooks/useCompanySettings';
 export class InvoiceService {
   static async generatePDF(data: InvoiceFormData, companyData: CompanyData): Promise<void> {
     try {
-      console.log('InvoiceService received company data:', companyData);
-      console.log('InvoiceService received invoice data:', data);
-      console.log('Invoice items:', data.items);
       
       // Por ahora, vamos a crear un HTML que se pueda convertir a PDF
       const htmlContent = this.generateInvoiceHTML(data, companyData);
@@ -38,11 +35,8 @@ export class InvoiceService {
 
   private static generateInvoiceHTML(data: InvoiceFormData, companyData: CompanyData): string {
     try {
-      console.log('generateInvoiceHTML called with data:', data);
-      console.log('Items:', data.items);
       
       const formatCurrency = (value: number | undefined) => {
-        console.log('formatCurrency called with value:', value, typeof value);
         
         // Convert to number if it's a string
         let numericValue: number;
@@ -53,14 +47,12 @@ export class InvoiceService {
         }
         
         if (value === undefined || value === null || isNaN(numericValue) || typeof numericValue !== 'number') {
-          console.log('formatCurrency returning default for invalid value');
           return '€0.00';
         }
         
         try {
           return `€${numericValue.toFixed(2)}`;
         } catch (error) {
-          console.log('Error in toFixed, returning default');
           return '€0.00';
         }
       };

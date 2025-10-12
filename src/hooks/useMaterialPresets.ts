@@ -5,10 +5,12 @@ import {
   getMaterialPresets,
   getDefaultMaterialPreset,
   createMaterialPreset,
+  createMaterialPresetsBatch,
   updateMaterialPreset,
   deleteMaterialPreset,
   setDefaultMaterialPreset,
   getMaterialPresetStats,
+  testMaterialPresetsConnection,
 } from '@/services/materialPresetService';
 import type { MaterialPreset, DatabaseMaterialPreset } from '@/types';
 import { toast } from 'react-hot-toast';
@@ -24,7 +26,7 @@ export function useMaterialPresets(category?: 'filament' | 'resin') {
   // Cargar presets al montar el componente
   useEffect(() => {
     loadPresets();
-  }, [user, getEffectiveTeam(), category]);
+  }, [user?.id, category]); // Remover getEffectiveTeam() de las dependencias
 
   const loadPresets = async () => {
     if (!user) {
@@ -37,7 +39,19 @@ export function useMaterialPresets(category?: 'filament' | 'resin') {
 
     setLoading(true);
     try {
+      // Primero verificar la conexión a la base de datos
+      const connectionTest = await testMaterialPresetsConnection();
+      if (!connectionTest.success) {
+        console.error('Database connection failed:', connectionTest.error);
+        toast.error(`Error de conexión: ${connectionTest.error}`);
+        setPresets([]);
+        setDefaultPreset(null);
+        setStats({ total: 0, byCategory: {} });
+        return;
+      }
+
       const teamId = getEffectiveTeam()?.id;
+      
       const [presetsData, defaultPresetData, statsData] = await Promise.all([
         getMaterialPresets(user.id, teamId, category),
         getDefaultMaterialPreset(user.id, teamId, category),
@@ -48,7 +62,12 @@ export function useMaterialPresets(category?: 'filament' | 'resin') {
       setDefaultPreset(defaultPresetData);
       setStats(statsData);
     } catch (error) {
-      console.error('Error loading material presets:', error);
+      console.error('Error loading material presets:', {
+        error,
+        user: user?.id,
+        team: getEffectiveTeam()?.id,
+        category
+      });
       toast.error('Error al cargar los perfiles de materiales');
     } finally {
       setLoading(false);
@@ -83,6 +102,57 @@ export function useMaterialPresets(category?: 'filament' | 'resin') {
       console.error('Error creating preset:', error);
       toast.error('Error al crear el perfil de material');
       return null;
+    }
+  };
+
+  // Crear múltiples presets en lote (optimizado para importación)
+  const addPresetsBatch = async (
+    presets: Omit<DatabaseMaterialPreset, 'id' | 'user_id' | 'created_at' | 'updated_at'>[]
+  ): Promise<MaterialPreset[]> => {
+    if (!user) {
+      toast.error('Debes iniciar sesión para crear perfiles');
+      return [];
+    }
+
+    if (presets.length === 0) {
+      return [];
+    }
+
+    try {
+      setLoading(true);
+      const newPresets = await createMaterialPresetsBatch(
+        presets,
+        user.id,
+        getEffectiveTeam()?.id
+      );
+
+      if (newPresets.length > 0) {
+        // Actualización incremental en lugar de recarga completa
+        setPresets(prev => [...prev, ...newPresets]);
+        
+        // Actualizar estadísticas
+        const category = newPresets[0]?.category || 'filament';
+        setStats(prev => ({
+          ...prev,
+          total: prev.total + newPresets.length,
+          byCategory: {
+            ...prev.byCategory,
+            [category]: (prev.byCategory[category] || 0) + newPresets.length
+          }
+        }));
+        
+        toast.success(`${newPresets.length} perfiles de material creados correctamente`);
+        return newPresets;
+      }
+
+      toast.error('Error al crear los perfiles');
+      return [];
+    } catch (error) {
+      console.error('Error creating presets batch:', error);
+      toast.error('Error al crear los perfiles de material');
+      return [];
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -251,6 +321,7 @@ export function useMaterialPresets(category?: 'filament' | 'resin') {
     stats,
     loading,
     addPreset,
+    addPresetsBatch,
     updatePreset,
     removePreset,
     setAsDefault,

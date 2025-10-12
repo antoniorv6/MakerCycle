@@ -22,9 +22,6 @@ export function InvoiceForm({ sale, onClose, onGeneratePDF }: InvoiceFormProps) 
     issueDate: new Date().toISOString().split('T')[0],
     deliveryDate: new Date().toISOString().split('T')[0],
     items: sale.items?.map(item => {
-      console.log('Sale item:', item);
-      console.log('Sale item sale_price type:', typeof item.sale_price);
-      console.log('Sale item quantity type:', typeof item.quantity);
       
       return {
         description: item.project_name,
@@ -126,8 +123,6 @@ export function InvoiceForm({ sale, onClose, onGeneratePDF }: InvoiceFormProps) 
       return;
     }
 
-    console.log('InvoiceForm submitting formData:', formData);
-    console.log('FormData items:', formData.items);
     onGeneratePDF(formData);
   };
 

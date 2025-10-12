@@ -68,14 +68,12 @@ export function onSaveCustom(prefs: CookiePreferences): void {
 function loadNonEssentialScripts(): void {
   // Only called when usesNonEssentialCookies is true
   // Add your analytics, marketing, or other non-essential scripts here
-  console.log('Loading non-essential scripts...');
 }
 
 // Load only allowed categories (placeholder)
 function loadAllowedCategories(prefs: CookiePreferences): void {
   // Only called when usesNonEssentialCookies is true
   // Load scripts based on user preferences
-  console.log('Loading allowed categories:', prefs);
 }
 
 // Check if specific category is allowed

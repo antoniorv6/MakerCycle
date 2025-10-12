@@ -19,17 +19,12 @@ async function processPieces(
   pieces: (DatabasePiece & { piece_materials?: PieceMaterial[] })[], 
   supabase: any
 ): Promise<DatabasePiece[]> {
-  console.log('🔄 Procesando piezas (sistema multi-material)...');
   
   const processedPieces = await Promise.all(
     pieces.map(async (piece) => {
-      console.log(`  Procesando pieza: ${piece.name}`);
-      console.log(`    - piece_materials: ${piece.piece_materials?.length || 0}`);
       
       // Solo usar materiales del sistema multi-material
       if (piece.piece_materials && piece.piece_materials.length > 0) {
-        console.log(`    ✅ Tiene materiales multi-material`);
-        console.log(`    Materiales:`, piece.piece_materials);
         return {
           ...piece,
           materials: piece.piece_materials
@@ -37,7 +32,6 @@ async function processPieces(
       }
       
       // Pieza sin materiales
-      console.log(`    ✅ Sin materiales aún`);
       return {
         ...piece,
         materials: []
@@ -130,25 +124,8 @@ export default function ProjectManager({ onLoadProject }: ProjectManagerProps) {
         `)
         .eq('project_id', project.id);
 
-      console.log('🔍 Debug - Raw pieces from DB:', pieces);
-      console.log('🔍 Debug - Pieces count:', pieces?.length || 0);
       if (pieces && pieces.length > 0) {
-        pieces.forEach((piece, index) => {
-          console.log(`  Piece ${index}: ${piece.name}`);
-          console.log(`    - piece_materials from DB:`, piece.piece_materials);
-          console.log(`    - piece_materials length:`, piece.piece_materials?.length || 0);
-          console.log(`    - piece_materials type:`, typeof piece.piece_materials);
-          console.log(`    - piece_materials is array:`, Array.isArray(piece.piece_materials));
-          if (piece.piece_materials && piece.piece_materials.length > 0) {
-            console.log(`    - First piece_material:`, piece.piece_materials[0]);
-            console.log(`    - First piece_material keys:`, Object.keys(piece.piece_materials[0]));
-            console.log(`    - First piece_material values:`, Object.values(piece.piece_materials[0]));
-          } else {
-            console.log(`    - No materials found for piece ${piece.name}`);
-          }
-        });
       } else {
-        console.log('🔍 Debug - No pieces found for this project');
       }
 
       if (error) {
@@ -158,30 +135,10 @@ export default function ProjectManager({ onLoadProject }: ProjectManagerProps) {
       }
 
       // Process pieces (handle both new system and legacy)
-      console.log('🔍 Debug - Raw pieces before processing:', pieces);
       const piecesWithMaterials = await processPieces(pieces || [], supabase);
       
-      console.log('🔍 Debug - Pieces after migration:', piecesWithMaterials);
-      piecesWithMaterials.forEach((piece, index) => {
-        console.log(`  Piece ${index}: ${piece.name}, materials:`, piece.materials?.length || 0);
-        console.log(`  Piece ${index} full data:`, {
-          id: piece.id,
-          name: piece.name,
-          filament_weight: piece.filament_weight,
-          filament_price: piece.filament_price,
-          materials: piece.materials
-        });
-        if (piece.materials && piece.materials.length > 0) {
-          console.log(`    Material details:`, piece.materials[0]);
-        }
-      });
 
       const projectWithPieces = { ...project, pieces: piecesWithMaterials };
-      console.log('🔍 Debug - Project being passed to onLoadProject:', projectWithPieces);
-      console.log('🔍 Debug - Pieces in project:', projectWithPieces.pieces);
-      if (projectWithPieces.pieces && projectWithPieces.pieces.length > 0) {
-        console.log('🔍 Debug - First piece materials:', projectWithPieces.pieces[0].materials);
-      }
       onLoadProject(projectWithPieces);
     } catch (error) {
       console.error('Error loading project:', error);

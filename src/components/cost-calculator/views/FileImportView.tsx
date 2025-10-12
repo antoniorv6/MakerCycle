@@ -25,11 +25,12 @@ const FileImportView: React.FC<FileImportViewProps> = ({ onBack, onImportComplet
   const [isDragOver, setIsDragOver] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSavingProfiles, setIsSavingProfiles] = useState(false);
+  const [savingProgress, setSavingProgress] = useState<{ current: number; total: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [importedData, setImportedData] = useState<CostSummary | null>(null);
   const [detectedProfiles, setDetectedProfiles] = useState<DetectedFilamentProfile[]>([]);
   const [calculator] = useState(() => new PrintCostCalculator());
-  const { addPreset, presets, refreshPresets } = useMaterialPresets();
+  const { addPreset, addPresetsBatch, presets, refreshPresets } = useMaterialPresets();
 
   // Cargar perfiles al montar el componente
   useEffect(() => {
@@ -103,6 +104,8 @@ const FileImportView: React.FC<FileImportViewProps> = ({ onBack, onImportComplet
         }
         
         const profiles = Array.from(uniqueProfilesMap.values());
+        
+        
         setDetectedProfiles(profiles);
       });
       
@@ -152,30 +155,37 @@ const FileImportView: React.FC<FileImportViewProps> = ({ onBack, onImportComplet
   const handleConfirmImport = useCallback(async () => {
     if (!importedData) return;
 
-    // Guardar perfiles seleccionados si los hay
+    // Guardar perfiles seleccionados si los hay (optimizado con operación en lote)
     if (detectedProfiles.some(p => p.willSave)) {
       setIsSavingProfiles(true);
       try {
         const profilesToSave = detectedProfiles.filter(p => p.willSave);
+        setSavingProgress({ current: 0, total: profilesToSave.length });
         
-        for (const profile of profilesToSave) {
-          await addPreset({
-            name: profile.profileName,
-            price_per_unit: profile.costPerKg,
-            unit: 'kg',
-            material_type: profile.filamentType,
-            category: 'filament' as const,
-            brand: profile.profileName.split(' ')[0] || 'Unknown',
-            color: profile.color,
-            notes: `Importado desde archivo .gcode.3mf`,
-            is_default: false,
-          });
-        }
+        // Preparar todos los presets para inserción en lote
+        const presetsToCreate = profilesToSave.map(profile => ({
+          name: profile.profileName,
+          price_per_unit: profile.costPerKg,
+          unit: 'kg',
+          material_type: profile.filamentType,
+          category: 'filament' as const,
+          brand: profile.profileName.split(' ')[0] || 'Unknown',
+          color: profile.color,
+          notes: `Importado desde archivo .gcode.3mf`,
+          is_default: false,
+        }));
+
+        // Guardar todos los presets en una sola operación
+        setSavingProgress({ current: profilesToSave.length, total: profilesToSave.length });
+        await addPresetsBatch(presetsToCreate);
+        
+        // NO recargar presets aquí - addPresetsBatch ya lo hace internamente
       } catch (err) {
         console.error('Error saving profiles:', err);
         setError('Error al guardar algunos perfiles de material. Puedes continuar con la importación.');
       } finally {
         setIsSavingProfiles(false);
+        setSavingProgress(null);
       }
     }
 
@@ -474,7 +484,13 @@ const FileImportView: React.FC<FileImportViewProps> = ({ onBack, onImportComplet
                 {isSavingProfiles ? (
                   <div className="flex items-center gap-2">
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    Guardando perfiles...
+                    {savingProgress ? (
+                      <span>
+                        Guardando perfiles... ({savingProgress.current}/{savingProgress.total})
+                      </span>
+                    ) : (
+                      'Guardando perfiles...'
+                    )}
                   </div>
                 ) : (
                   'Importar Proyecto'

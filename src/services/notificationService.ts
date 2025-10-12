@@ -142,7 +142,6 @@ export class NotificationService {
       throw new Error(data.error || 'Failed to mark all notifications as read');
     }
 
-    console.log('Successfully marked notifications as read:', data);
   }
 
   /**

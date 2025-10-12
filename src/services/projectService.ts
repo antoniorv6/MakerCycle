@@ -87,19 +87,11 @@ export class ProjectService {
   }
 
   private async processPieces(pieces: any[]): Promise<any[]> {
-    console.log('🔄 Procesando piezas en ProjectService (sistema multi-material)...');
-    
     const processedPieces = await Promise.all(
       pieces.map(async (piece) => {
-        console.log(`  Procesando pieza: ${piece.name}`);
-        console.log(`    - piece_materials: ${piece.piece_materials?.length || 0}`);
-        console.log(`    - filament_weight: ${piece.filament_weight}`);
-        console.log(`    - filament_price: ${piece.filament_price}`);
         
         // Solo usar materiales del sistema multi-material
         if (piece.piece_materials && piece.piece_materials.length > 0) {
-          console.log(`    ✅ Tiene materiales multi-material`);
-          console.log(`    Materiales:`, piece.piece_materials);
           return {
             ...piece,
             materials: piece.piece_materials
@@ -108,7 +100,6 @@ export class ProjectService {
         
         // Migrar datos legacy a formato multi-material
         if (piece.filament_weight > 0 && piece.filament_price > 0) {
-          console.log(`    🔄 Migrando datos legacy a formato multi-material`);
           const legacyMaterial = {
             id: `legacy-${piece.id}-${Date.now()}`,
             piece_id: piece.id,
@@ -126,7 +117,6 @@ export class ProjectService {
             updated_at: new Date().toISOString()
           };
           
-          console.log(`    ✅ Material legacy creado:`, legacyMaterial);
           return {
             ...piece,
             materials: [legacyMaterial]
@@ -134,7 +124,6 @@ export class ProjectService {
         }
         
         // Pieza sin materiales ni datos legacy
-        console.log(`    ✅ Sin materiales aún`);
         return {
           ...piece,
           materials: []

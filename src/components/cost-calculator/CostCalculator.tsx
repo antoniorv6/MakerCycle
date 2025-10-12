@@ -107,9 +107,7 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
   const [showClearModal, setShowClearModal] = useState(false);
 
   useEffect(() => {
-    console.log('🔍 Debug - CostCalculator useEffect triggered with loadedProject:', loadedProject);
     if (loadedProject) {
-      console.log('🔍 Debug - loadedProject.pieces:', loadedProject.pieces);
       setProjectName(loadedProject.name);
       setFilamentPrice(loadedProject.filament_price);
       setPrintHours(loadedProject.print_hours);
@@ -119,29 +117,12 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
       setMaterials(loadedProject.materials || []);
 
       if (loadedProject.pieces && loadedProject.pieces.length > 0) {
-        console.log('🔍 Debug - Loading pieces in CostCalculator:', loadedProject.pieces);
-        if (loadedProject.pieces[0]) {
-          console.log('🔍 Debug - First piece in CostCalculator:', loadedProject.pieces[0]);
-          console.log('🔍 Debug - First piece materials in CostCalculator:', loadedProject.pieces[0].materials);
-        }
         const mappedPieces = loadedProject.pieces.map(piece => {
-          console.log(`  Piece: ${piece.name}, materials:`, piece.materials?.length || 0);
-          console.log(`  Piece materials array:`, piece.materials);
-          console.log(`  Piece raw data:`, {
-            id: piece.id,
-            name: piece.name,
-            filament_weight: piece.filament_weight,
-            filament_price: piece.filament_price,
-            materials: piece.materials
-          });
           
           // Si la pieza tiene materiales del sistema multi-material, usarlos
           let materials = [];
           if (piece.materials && piece.materials.length > 0) {
-            console.log(`    Using multi-material system`);
             materials = piece.materials.filter(material => material.weight > 0).map(material => {
-              console.log(`    Mapping material:`, material);
-              console.log(`    Material keys:`, Object.keys(material));
               return {
                 id: material.id,
                 materialName: material.material_name || 'Material sin nombre',
@@ -158,7 +139,6 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
           } 
           // Si no tiene materiales pero tiene datos legacy, migrarlos
           else if (piece.filament_weight > 0 && piece.filament_price > 0) {
-            console.log(`    Migrating legacy data to multi-material format`);
             materials = [{
               id: `legacy-${piece.id}-${Date.now()}`,
               materialName: 'Filamento Principal',
@@ -184,22 +164,9 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
             materials: materials
           };
           
-          console.log(`  Mapped piece result:`, {
-            id: mappedPiece.id,
-            name: mappedPiece.name,
-            materialsCount: mappedPiece.materials.length,
-            materials: mappedPiece.materials
-          });
-          
-          // Debug: verificar si los materiales tienen las propiedades correctas
-          if (mappedPiece.materials.length > 0) {
-            console.log(`    First mapped material:`, mappedPiece.materials[0]);
-            console.log(`    First mapped material keys:`, Object.keys(mappedPiece.materials[0]));
-          }
           
           return mappedPiece;
         });
-        console.log('🔍 Debug - Mapped pieces:', mappedPieces);
         setPieces(mappedPieces);
       }
     } else if (importedData) {
@@ -268,7 +235,7 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
     setMaterials(materials.filter(material => material.id !== id));
   };
 
-  const addPiece = () => {
+  const addPiece = useCallback(() => {
     const newPiece = {
       id: Date.now().toString(),
       name: `Pieza ${pieces.length + 1}`,
@@ -279,22 +246,22 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
       notes: '',
       materials: [] // Empezar sin materiales para evitar materiales vacíos
     };
-    setPieces([...pieces, newPiece]);
-  };
+    setPieces(prevPieces => [...prevPieces, newPiece]);
+  }, [pieces.length, filamentPrice]);
 
-  const updatePiece = (id: string, field: keyof typeof pieces[0], value: string | number) => {
-    setPieces(pieces.map(piece =>
+  const updatePiece = useCallback((id: string, field: keyof typeof pieces[0], value: string | number) => {
+    setPieces(prevPieces => prevPieces.map(piece =>
       piece.id === id ? { ...piece, [field]: value } : piece
     ));
-  };
+  }, []);
 
-  const removePiece = (id: string) => {
+  const removePiece = useCallback((id: string) => {
     if (pieces.length > 1) {
-      setPieces(pieces.filter(piece => piece.id !== id));
+      setPieces(prevPieces => prevPieces.filter(piece => piece.id !== id));
     }
-  };
+  }, [pieces.length]);
 
-  const duplicatePiece = (id: string) => {
+  const duplicatePiece = useCallback((id: string) => {
     const pieceToDuplicate = pieces.find(piece => piece.id === id);
     if (pieceToDuplicate) {
       const newPiece = {
@@ -306,9 +273,9 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
           id: Date.now().toString() + Math.random().toString(36).substr(2, 9)
         })) || []
       };
-      setPieces([...pieces, newPiece]);
+      setPieces(prevPieces => [...prevPieces, newPiece]);
     }
-  };
+  }, [pieces]);
 
   // Funciones para manejar materiales de piezas (memoizadas)
   const addMaterialToPiece = useCallback((pieceId: string) => {

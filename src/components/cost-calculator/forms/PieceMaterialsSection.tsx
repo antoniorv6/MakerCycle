@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Plus, Trash2, Package, Edit3, Save, X, Bookmark, Settings } from 'lucide-react';
 import type { CostCalculatorPieceMaterial } from '../types';
 import { useMaterialPresets } from '@/hooks/useMaterialPresets';
@@ -26,6 +26,7 @@ const MaterialCard: React.FC<{
   const [showPresetSelector, setShowPresetSelector] = useState(false);
   const [selectedPresetCategory, setSelectedPresetCategory] = useState<'filament' | 'resin'>(material.category);
   const [isPresetLoaded, setIsPresetLoaded] = useState(false);
+
 
   // Filtrar presets por categoría seleccionada
   const filteredPresets = presets.filter(preset => preset.category === selectedPresetCategory);
@@ -172,8 +173,18 @@ const MaterialCard: React.FC<{
             <button
               type="button"
               onClick={() => setShowPresetSelector(!showPresetSelector)}
-              className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
-              title="Seleccionar perfil de material"
+              className={`p-2 rounded-lg transition-colors ${
+                presetsLoading || presets.length === 0
+                  ? 'text-gray-400 cursor-not-allowed'
+                  : 'text-purple-600 hover:bg-purple-50'
+              }`}
+              title={
+                presetsLoading 
+                  ? 'Cargando perfiles...' 
+                  : presets.length === 0 
+                    ? 'No hay perfiles disponibles' 
+                    : 'Seleccionar perfil de material'
+              }
               disabled={presetsLoading || presets.length === 0}
             >
               <Bookmark className="w-4 h-4" />
@@ -181,7 +192,13 @@ const MaterialCard: React.FC<{
             
             {/* Material Profile Selector Dropdown */}
             {showPresetSelector && presets.length > 0 && (
-              <div className="absolute z-20 right-0 mt-2 w-80 bg-white border border-gray-200 rounded-xl shadow-xl">
+              <>
+                {/* Overlay de fondo */}
+                <div 
+                  className="fixed inset-0 z-40" 
+                  onClick={() => setShowPresetSelector(false)}
+                />
+                <div className="absolute z-50 right-0 mt-2 w-80 bg-white border border-gray-200 rounded-xl shadow-xl">
                 {/* Header */}
                 <div className="p-3 border-b border-gray-100 bg-gray-50 rounded-t-xl">
                   <h4 className="font-semibold text-gray-900 text-xs flex items-center gap-2">
@@ -277,6 +294,7 @@ const MaterialCard: React.FC<{
                   </button>
                 </div>
               </div>
+              </>
             )}
           </div>
 
@@ -456,7 +474,6 @@ const PieceMaterialsSection: React.FC<PieceMaterialsSectionProps> = ({
   onSyncPieceFields,
   onSaveAsPreset
 }) => {
-  console.log('🔍 PieceMaterialsSection - materials received:', materials);
   const totalWeight = materials.reduce((sum, material) => {
     const weightInGrams = material.unit === 'kg' ? material.weight * 1000 : material.weight;
     return sum + weightInGrams;
@@ -471,12 +488,20 @@ const PieceMaterialsSection: React.FC<PieceMaterialsSectionProps> = ({
   const displayWeight = totalWeight >= 1000 ? (totalWeight / 1000).toFixed(2) : totalWeight.toFixed(1);
   const displayUnit = totalWeight >= 1000 ? 'kg' : 'g';
 
+  // Usar refs para evitar bucles infinitos
+  const lastSyncedWeight = useRef<number>(0);
+  const lastSyncedCost = useRef<number>(0);
+
   // Sincronizar automáticamente los campos de la pieza cuando cambien los materiales
   useEffect(() => {
-    if (onSyncPieceFields) {
+    if (onSyncPieceFields && 
+        (Math.abs(totalWeight - lastSyncedWeight.current) > 0.01 || 
+         Math.abs(totalCost - lastSyncedCost.current) > 0.01)) {
+      lastSyncedWeight.current = totalWeight;
+      lastSyncedCost.current = totalCost;
       onSyncPieceFields(totalWeight, totalCost);
     }
-  }, [totalWeight, totalCost]); // Removemos onSyncPieceFields de las dependencias
+  }, [totalWeight, totalCost, onSyncPieceFields]);
 
   return (
     <div className="space-y-4">

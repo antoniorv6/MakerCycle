@@ -5,11 +5,42 @@ import type { DatabaseMaterialPreset, MaterialPreset } from '@/types';
  * Servicio para gestionar presets de materiales (filamentos, resinas, etc.)
  */
 
+// Función de diagnóstico para verificar la conexión a la base de datos
+export async function testMaterialPresetsConnection(): Promise<{ success: boolean; error?: string }> {
+  const supabase = createClient();
+  
+  try {
+    // Intentar hacer una consulta simple para verificar que la tabla existe
+    const { data, error } = await supabase
+      .from('material_presets')
+      .select('count')
+      .limit(1);
+    
+    if (error) {
+      return { success: false, error: error.message };
+    }
+    
+    return { success: true };
+  } catch (error) {
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Unknown error' 
+    };
+  }
+}
+
 // Obtener todos los presets del usuario
 export async function getMaterialPresets(userId: string, teamId?: string | null, category?: 'filament' | 'resin'): Promise<MaterialPreset[]> {
   const supabase = createClient();
 
   try {
+    // Primero verificar la conexión
+    const connectionTest = await testMaterialPresetsConnection();
+    if (!connectionTest.success) {
+      console.error('Database connection test failed:', connectionTest.error);
+      return [];
+    }
+
     let query = supabase
       .from('material_presets')
       .select('*')
@@ -31,7 +62,12 @@ export async function getMaterialPresets(userId: string, teamId?: string | null,
     const { data, error } = await query.order('is_default', { ascending: false }).order('name');
 
     if (error) {
-      console.error('Error fetching material presets:', error);
+      console.error('Error fetching material presets:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code
+      });
       throw error;
     }
 
@@ -206,6 +242,59 @@ export async function deleteMaterialPreset(presetId: string): Promise<boolean> {
   } catch (error) {
     console.error('Error in deleteMaterialPreset:', error);
     return false;
+  }
+}
+
+// Crear múltiples presets en lote
+export async function createMaterialPresetsBatch(
+  presets: Omit<DatabaseMaterialPreset, 'id' | 'created_at' | 'updated_at' | 'user_id' | 'team_id'>[],
+  userId: string,
+  teamId?: string | null
+): Promise<MaterialPreset[]> {
+  const supabase = createClient();
+
+  try {
+    if (presets.length === 0) {
+      return [];
+    }
+
+    // Preparar los datos para inserción en lote
+    const presetsData = presets.map(preset => ({
+      ...preset,
+      user_id: userId,
+      team_id: teamId || null
+    }));
+
+
+    // Si algún preset es predeterminado, primero desmarcar los demás de la misma categoría
+    const defaultPresets = presets.filter(p => p.is_default);
+    if (defaultPresets.length > 0) {
+      const categories = [...new Set(defaultPresets.map(p => p.category))];
+      for (const category of categories) {
+        await supabase
+          .from('material_presets')
+          .update({ is_default: false })
+          .eq('user_id', userId)
+          .eq('category', category);
+      }
+    }
+
+    // Insertar todos los presets en una sola operación
+    const { data, error } = await supabase
+      .from('material_presets')
+      .insert(presetsData)
+      .select();
+
+    if (error) {
+      console.error('Error creating material presets batch:', error);
+      throw error;
+    }
+
+
+    return data || [];
+  } catch (error) {
+    console.error('Error in createMaterialPresetsBatch:', error);
+    return [];
   }
 }
 
