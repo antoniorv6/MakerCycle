@@ -150,10 +150,6 @@ export default function Accounting() {
 
   const handleGeneratePDF = async (invoiceData: any) => {
     try {
-      console.log('Generating PDF with company data:', companyData);
-      console.log('Invoice data received:', invoiceData);
-      console.log('Invoice data type:', typeof invoiceData);
-      console.log('Invoice items:', invoiceData?.items);
       
       await InvoiceService.generatePDF(invoiceData, companyData);
       setShowInvoiceForm(false);

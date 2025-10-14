@@ -42,6 +42,7 @@ export default function Dashboard({ initialPage }: { initialPage?: string } = {}
       filamentPrice: db.filament_price,
       printHours: db.print_hours,
       electricityCost: db.electricity_cost,
+      printerPower: 0.35, // Valor por defecto para proyectos existentes
       materials: db.materials,
       totalCost: db.total_cost,
       vatPercentage: db.vat_percentage,
@@ -56,7 +57,8 @@ export default function Dashboard({ initialPage }: { initialPage?: string } = {}
         filamentPrice: piece.filament_price,
         printHours: piece.print_hours,
         quantity: piece.quantity,
-        notes: piece.notes || ''
+        notes: piece.notes || '',
+        materials: (piece as any).materials || [] // Incluir materiales procesados
       }))
     }
   }
@@ -88,6 +90,18 @@ export default function Dashboard({ initialPage }: { initialPage?: string } = {}
         print_hours: piece.printHours,
         quantity: piece.quantity,
         notes: piece.notes || '',
+        materials: (piece as any).materials?.map((material: any) => ({
+          id: material.id,
+          material_name: material.materialName || material.material_name,
+          material_type: material.materialType || material.material_type,
+          weight: material.weight,
+          price_per_kg: material.pricePerKg || material.price_per_kg,
+          unit: material.unit,
+          category: material.category,
+          color: material.color,
+          brand: material.brand,
+          notes: material.notes
+        })) || [], // Convertir materiales al formato de base de datos
         created_at: '', // Opcional, puedes ajustar si tienes el dato
         updated_at: '', // Opcional, puedes ajustar si tienes el dato
       }))
@@ -101,8 +115,10 @@ export default function Dashboard({ initialPage }: { initialPage?: string } = {}
     setCurrentPage('project-info')
   }
 
-  const handleProjectSaved = () => {
-    setLoadedProject(null)
+  const handleProjectSaved = (savedProject: DatabaseProject) => {
+    // Convert the saved project back to AppProject format and update loadedProject
+    const updatedProject = dbProjectToProject(savedProject);
+    setLoadedProject(updatedProject);
   }
 
   const handlePageChange = (page: string, tab?: string) => {

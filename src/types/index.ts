@@ -36,6 +36,7 @@ export interface AppProject {
   filamentPrice: number;
   printHours: number;
   electricityCost: number;
+  printerPower: number;
   materials: Material[];
   totalCost: number;
   vatPercentage: number;
@@ -49,11 +50,12 @@ export interface AppProject {
 export interface AppPiece {
   id: string;
   name: string;
-  filamentWeight: number;
-  filamentPrice: number;
+  filamentWeight: number; // DEPRECATED: usar materials array
+  filamentPrice: number; // DEPRECATED: usar materials array
   printHours: number;
   quantity: number;
   notes?: string;
+  materials?: AppPieceMaterial[]; // Nueva estructura para múltiples materiales
 }
 
 export interface DatabaseProject {
@@ -76,27 +78,63 @@ export interface DatabaseProject {
   updated_at: string;
 }
 
+// Material de una pieza específica
+export interface PieceMaterial {
+  id: string;
+  piece_id: string;
+  material_preset_id?: string;
+  material_name: string;
+  material_type: string;
+  weight: number;
+  price_per_kg: number;
+  unit: string;
+  category: 'filament' | 'resin';
+  color?: string;
+  brand?: string;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// Material de una pieza específica (formato app)
+export interface AppPieceMaterial {
+  id: string;
+  pieceId: string;
+  materialPresetId?: string;
+  materialName: string;
+  materialType: string;
+  weight: number;
+  pricePerKg: number;
+  unit: string;
+  category: 'filament' | 'resin';
+  color?: string;
+  brand?: string;
+  notes?: string;
+}
+
 export interface Piece {
   id: string;
   name: string;
-  filamentWeight: number;
-  filamentPrice: number;
+  filamentWeight: number; // DEPRECATED: usar materials array
+  filamentPrice: number; // DEPRECATED: usar materials array
   printHours: number;
   quantity: number;
   notes?: string;
+  materials?: PieceMaterial[]; // Nueva estructura para múltiples materiales
 }
 
 export interface DatabasePiece {
   id: string;
   project_id: string;
   name: string;
-  filament_weight: number;
-  filament_price: number;
+  filament_weight: number; // DEPRECATED: usar materials array
+  filament_price: number; // DEPRECATED: usar materials array
   print_hours: number;
   quantity: number;
   notes?: string;
   created_at: string;
   updated_at: string;
+  materials?: PieceMaterial[]; // Nueva estructura para múltiples materiales
 }
 
 export interface Material {
@@ -213,7 +251,7 @@ export interface AccountingStats {
 }
 
 // Cost calculator types
-export type ViewMode = 'manual-entry';
+export type ViewMode = 'manual-entry' | 'file-import';
 
 export interface CostCalculatorProps {
   loadedProject?: DatabaseProject;
@@ -303,7 +341,27 @@ export interface PaginatedResponse<T> {
 
 // Cost calculator component props
 export interface ProjectSummaryProps {
-  pieces: Piece[];
+  pieces: Array<{
+    id: string;
+    name: string;
+    filamentWeight: number;
+    filamentPrice: number;
+    printHours: number;
+    quantity: number;
+    notes?: string;
+    materials?: Array<{
+      id: string;
+      materialName: string;
+      materialType: string;
+      weight: number;
+      pricePerKg: number;
+      unit: string;
+      category: 'filament' | 'resin';
+      color?: string;
+      brand?: string;
+      notes?: string;
+    }>;
+  }>;
   totalFilamentWeight: number;
   totalPrintHours: number;
   totalFilamentCost: number;

@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
-import { Plus, Copy, Trash2, Package, Edit3, Save, Heart, Bookmark, Settings } from 'lucide-react';
-import type { PiecesSectionProps, PieceCardProps } from '../types';
+import React, { useState, useCallback } from 'react';
+import { Plus, Copy, Trash2, Package, Edit3, Save, Heart, Bookmark, Settings, Layers } from 'lucide-react';
+import type { PiecesSectionProps, PieceCardProps, CostCalculatorPieceMaterial } from '../types';
 import { useMaterialPresets } from '@/hooks/useMaterialPresets';
+import PieceMaterialsSection from './PieceMaterialsSection';
 
 const PieceCard: React.FC<PieceCardProps & { onNavigateToSettings?: () => void }> = ({ 
   piece, 
@@ -9,11 +10,14 @@ const PieceCard: React.FC<PieceCardProps & { onNavigateToSettings?: () => void }
   onRemove, 
   onDuplicate, 
   isFirst,
-  onNavigateToSettings
+  onNavigateToSettings,
+  onAddMaterial,
+  onUpdateMaterial,
+  onRemoveMaterial
 }) => {
   const [isEditingName, setIsEditingName] = useState(false);
   const [tempName, setTempName] = useState(piece.name);
-  const { presets, loading: presetsLoading, convertPrice } = useMaterialPresets();
+  const { presets, loading: presetsLoading, convertPrice, createPresetFromMaterial } = useMaterialPresets();
   const [showPresetSelector, setShowPresetSelector] = useState(false);
   const [selectedPresetCategory, setSelectedPresetCategory] = useState<'filament' | 'resin'>('filament');
 
@@ -50,6 +54,17 @@ const PieceCard: React.FC<PieceCardProps & { onNavigateToSettings?: () => void }
     }
   };
 
+
+  // Calcular totales de materiales
+  const totalWeight = piece.materials?.reduce((sum, material) => {
+    const weightInGrams = material.unit === 'kg' ? material.weight * 1000 : material.weight;
+    return sum + weightInGrams;
+  }, 0) || 0;
+
+  const totalCost = piece.materials?.reduce((sum, material) => {
+    const weightInKg = material.unit === 'g' ? material.weight / 1000 : material.weight;
+    return sum + (weightInKg * material.pricePerKg);
+  }, 0) || 0;
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-all duration-200">
@@ -123,167 +138,160 @@ const PieceCard: React.FC<PieceCardProps & { onNavigateToSettings?: () => void }
         </div>
       </div>
 
-      {/* Formulario */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Peso filamento (g)
-          </label>
-          <input
-            type="number"
-            step="0.1"
-            value={piece.filamentWeight}
-            onChange={(e) => onUpdate('filamentWeight', parseFloat(e.target.value) || 0)}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-            placeholder="0.0"
-          />
+      {/* Sección de materiales - PRINCIPAL */}
+      <div className="mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <h5 className="text-md font-semibold text-gray-900 flex items-center gap-2">
+            <Layers className="w-4 h-4 text-blue-600" />
+            Materiales de la pieza
+          </h5>
+          <button
+            onClick={onAddMaterial}
+            className="inline-flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors font-medium text-sm"
+          >
+            <Plus className="w-4 h-4" />
+            Añadir material
+          </button>
         </div>
+        
+        <PieceMaterialsSection
+          materials={piece.materials || []}
+          onAddMaterial={onAddMaterial}
+          onUpdateMaterial={onUpdateMaterial}
+          onRemoveMaterial={onRemoveMaterial}
+          onNavigateToSettings={onNavigateToSettings}
+          onSyncPieceFields={useCallback((totalWeight: number, totalCost: number) => {
+            // Sincronizar automáticamente los campos de la pieza
+            onUpdate('filamentWeight', totalWeight);
+            onUpdate('filamentPrice', totalCost > 0 ? (totalCost / (totalWeight / 1000)) : 25);
+          }, [onUpdate])}
+          onSaveAsPreset={useCallback(async (material: CostCalculatorPieceMaterial) => {
+            await createPresetFromMaterial(material);
+          }, [createPresetFromMaterial])}
+        />
+      </div>
 
-        <div className="relative">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Precio filamento (€/kg)
-          </label>
-          <div className="relative">
-            <input
-              type="number"
-              step="0.01"
-              value={piece.filamentPrice}
-              onChange={(e) => onUpdate('filamentPrice', parseFloat(e.target.value) || 0)}
-              className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-              placeholder="0.00"
-            />
-            <button
-              type="button"
-              onClick={() => setShowPresetSelector(!showPresetSelector)}
-              className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors group"
-              title="Seleccionar perfil de material"
-              disabled={presetsLoading || presets.length === 0}
-            >
-              <Bookmark className="w-5 h-5 group-hover:scale-110 transition-transform" />
-            </button>
-          </div>
-          
-          {/* Material Profile Selector Dropdown */}
-          {showPresetSelector && presets.length > 0 && (
-            <div className="absolute z-20 mt-2 w-full max-w-lg bg-white border border-gray-200 rounded-xl shadow-xl">
-              {/* Header */}
-              <div className="p-4 border-b border-gray-100 bg-gray-50 rounded-t-xl">
-                <h4 className="font-semibold text-gray-900 text-sm flex items-center gap-2">
-                  <Bookmark className="w-4 h-4 text-purple-600" />
-                  Perfiles de Materiales
-                </h4>
-                <p className="text-xs text-gray-600 mt-1">Selecciona un perfil para aplicar su precio</p>
+      {/* Preset Selector Modal */}
+      {showPresetSelector && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4 max-h-[90vh] overflow-hidden">
+            {/* Header */}
+            <div className="p-4 border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900">Seleccionar material</h3>
+              <p className="text-sm text-gray-600">Elige un perfil de material para esta pieza</p>
+            </div>
+
+            {/* Category Tabs */}
+            <div className="p-3 border-b border-gray-100">
+              <div className="flex bg-gray-100 rounded-lg p-1">
+                <button
+                  onClick={() => setSelectedPresetCategory('filament')}
+                  className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                    selectedPresetCategory === 'filament'
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  Filamentos
+                </button>
+                <button
+                  onClick={() => setSelectedPresetCategory('resin')}
+                  className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                    selectedPresetCategory === 'resin'
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  Resinas
+                </button>
               </div>
+            </div>
 
-              {/* Category Tabs */}
-              <div className="p-3 border-b border-gray-100">
-                <div className="flex bg-gray-100 rounded-lg p-1">
+            {/* Presets List */}
+            <div className="max-h-80 overflow-y-auto">
+              {filteredPresets.length > 0 ? (
+                filteredPresets.map((preset) => (
                   <button
-                    onClick={() => setSelectedPresetCategory('filament')}
-                    className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                      selectedPresetCategory === 'filament'
-                        ? 'bg-white text-gray-900 shadow-sm'
-                        : 'text-gray-600 hover:text-gray-900'
-                    }`}
+                    key={preset.id}
+                    onClick={() => handlePresetSelect(preset.id)}
+                    className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-b-0 group"
                   >
-                    Filamentos
-                  </button>
-                  <button
-                    onClick={() => setSelectedPresetCategory('resin')}
-                    className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                      selectedPresetCategory === 'resin'
-                        ? 'bg-white text-gray-900 shadow-sm'
-                        : 'text-gray-600 hover:text-gray-900'
-                    }`}
-                  >
-                    Resinas
-                  </button>
-                </div>
-              </div>
-
-              {/* Presets List */}
-              <div className="max-h-80 overflow-y-auto">
-                {filteredPresets.length > 0 ? (
-                  filteredPresets.map((preset) => (
-                    <button
-                      key={preset.id}
-                      onClick={() => handlePresetSelect(preset.id)}
-                      className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-b-0 group"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h5 className="font-semibold text-gray-900 truncate group-hover:text-purple-700 transition-colors">
-                              {preset.name}
-                            </h5>
-                            {preset.is_default && (
-                              <span className="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium">
-                                <Heart className="w-3 h-3 fill-current" />
-                                Favorito
-                              </span>
-                            )}
-                          </div>
-                          <div className="text-sm text-gray-600">
-                            {preset.material_type}
-                            {preset.brand && ` • ${preset.brand}`}
-                            {preset.color && (
-                              <span className="ml-2 inline-block w-3 h-3 rounded-full border border-gray-300" 
-                                    style={{ backgroundColor: preset.color }}
-                                    title={`Color: ${preset.color}`} />
-                            )}
-                          </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h5 className="font-semibold text-gray-900 truncate group-hover:text-purple-700 transition-colors">
+                            {preset.name}
+                          </h5>
+                          {preset.is_default && (
+                            <span className="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium">
+                              <Heart className="w-3 h-3 fill-current" />
+                              Favorito
+                            </span>
+                          )}
                         </div>
-                        <div className="text-right ml-4">
-                          <div className="text-lg font-bold text-purple-600 group-hover:text-purple-700 transition-colors">
-                            {preset.price_per_unit.toFixed(2)}€
-                          </div>
-                          <div className="text-xs text-gray-500">por {preset.unit}</div>
+                        <div className="text-sm text-gray-600">
+                          {preset.material_type}
+                          {preset.brand && ` • ${preset.brand}`}
+                          {preset.color && (
+                            <span className="ml-2 inline-block w-3 h-3 rounded-full border border-gray-300" 
+                                  style={{ backgroundColor: preset.color }}
+                                  title={`Color: ${preset.color}`} />
+                          )}
                         </div>
                       </div>
-                    </button>
-                  ))
-                ) : (
-                  <div className="p-6 text-center text-gray-500">
-                    <Package className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-                    <p className="text-sm">No hay perfiles de {selectedPresetCategory === 'filament' ? 'filamentos' : 'resinas'}</p>
-                  </div>
-                )}
-              </div>
-
-              {/* Footer */}
-              <div className="p-3 bg-gray-50 border-t border-gray-100 rounded-b-xl space-y-2">
-                <button
-                  onClick={handleManageProfiles}
-                  className="w-full px-4 py-3 text-sm text-purple-700 hover:text-purple-800 hover:bg-purple-50 rounded-lg transition-colors font-medium flex items-center justify-center gap-2 border border-purple-200 hover:border-purple-300"
-                >
-                  <Settings className="w-4 h-4" />
-                  Gestionar materiales
-                </button>
-                <button
-                  onClick={() => setShowPresetSelector(false)}
-                  className="w-full px-4 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors font-medium"
-                >
-                  Cancelar
-                </button>
-              </div>
+                      <div className="text-right ml-4">
+                        <div className="text-lg font-bold text-purple-600 group-hover:text-purple-700 transition-colors">
+                          {preset.price_per_unit.toFixed(2)}€
+                        </div>
+                        <div className="text-xs text-gray-500">por {preset.unit}</div>
+                      </div>
+                    </div>
+                  </button>
+                ))
+              ) : (
+                <div className="p-6 text-center text-gray-500">
+                  <Package className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+                  <p className="text-sm">No hay perfiles de {selectedPresetCategory === 'filament' ? 'filamentos' : 'resinas'}</p>
+                </div>
+              )}
             </div>
-          )}
-          
-          {presets.length === 0 && !presetsLoading && (
-            <div className="mt-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
-              <p className="text-xs text-blue-700 mb-2">
-                No tienes perfiles de materiales creados
-              </p>
+
+            {/* Footer */}
+            <div className="p-3 bg-gray-50 border-t border-gray-100 rounded-b-xl space-y-2">
               <button
                 onClick={handleManageProfiles}
-                className="text-xs text-blue-600 hover:text-blue-800 font-medium underline"
+                className="w-full px-4 py-3 text-sm text-purple-700 hover:text-purple-800 hover:bg-purple-50 rounded-lg transition-colors font-medium flex items-center justify-center gap-2 border border-purple-200 hover:border-purple-300"
               >
-                Crear perfiles de filamentos y resinas →
+                <Settings className="w-4 h-4" />
+                Gestionar materiales
+              </button>
+              <button
+                onClick={() => setShowPresetSelector(false)}
+                className="w-full px-4 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors font-medium"
+              >
+                Cancelar
               </button>
             </div>
-          )}
+          </div>
         </div>
+      )}
+      
+      {presets.length === 0 && !presetsLoading && (
+        <div className="mt-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
+          <p className="text-xs text-blue-700 mb-2">
+            No tienes perfiles de materiales creados
+          </p>
+          <button
+            onClick={handleManageProfiles}
+            className="text-xs text-blue-600 hover:text-blue-800 font-medium underline"
+          >
+            Crear perfiles de filamentos y resinas →
+          </button>
+        </div>
+      )}
 
+      {/* Form Fields */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Tiempo impresión (h)
@@ -312,7 +320,7 @@ const PieceCard: React.FC<PieceCardProps & { onNavigateToSettings?: () => void }
           />
         </div>
 
-        <div className="md:col-span-2 lg:col-span-2">
+        <div className="md:col-span-2 lg:col-span-1">
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Notas (opcional)
           </label>
@@ -321,30 +329,31 @@ const PieceCard: React.FC<PieceCardProps & { onNavigateToSettings?: () => void }
             value={piece.notes || ''}
             onChange={(e) => onUpdate('notes', e.target.value)}
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-            placeholder="Descripción, especificaciones, observaciones..."
+            placeholder="Descripción, especificaciones..."
           />
         </div>
       </div>
 
       {/* Resumen de la pieza */}
-      <div className="mt-6 pt-6 border-t border-gray-100">
+      <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+        <h5 className="font-semibold text-gray-900 mb-3">Resumen de la pieza</h5>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
+          <div className="bg-blue-50 rounded-lg p-3 border border-blue-100">
             <div className="text-sm font-medium text-blue-700 mb-1">Peso total</div>
             <div className="text-lg font-bold text-blue-900">
-              {(piece.filamentWeight * piece.quantity).toFixed(1)}g
+              {(totalWeight * piece.quantity).toFixed(1)}g
             </div>
           </div>
-          <div className="bg-green-50 rounded-lg p-4 border border-green-100">
+          <div className="bg-green-50 rounded-lg p-3 border border-green-100">
             <div className="text-sm font-medium text-green-700 mb-1">Tiempo total</div>
             <div className="text-lg font-bold text-green-900">
               {(piece.printHours * piece.quantity).toFixed(1)}h
             </div>
           </div>
-          <div className="bg-purple-50 rounded-lg p-4 border border-purple-100">
-            <div className="text-sm font-medium text-purple-700 mb-1">Coste filamento</div>
+          <div className="bg-purple-50 rounded-lg p-3 border border-purple-100">
+            <div className="text-sm font-medium text-purple-700 mb-1">Coste materiales</div>
             <div className="text-lg font-bold text-purple-900">
-              {((piece.filamentWeight * piece.quantity * piece.filamentPrice) / 1000).toFixed(2)}€
+              {(totalCost * piece.quantity).toFixed(2)}€
             </div>
           </div>
         </div>
@@ -359,7 +368,10 @@ const PiecesSection: React.FC<PiecesSectionProps & { onNavigateToSettings?: () =
   onUpdatePiece,
   onRemovePiece,
   onDuplicatePiece,
-  onNavigateToSettings
+  onNavigateToSettings,
+  onAddMaterialToPiece,
+  onUpdatePieceMaterial,
+  onRemovePieceMaterial
 }) => {
   return (
     <div className="space-y-8">
@@ -407,6 +419,9 @@ const PiecesSection: React.FC<PiecesSectionProps & { onNavigateToSettings?: () =
               onDuplicate={() => onDuplicatePiece(piece.id)}
               isFirst={index === 0}
               onNavigateToSettings={onNavigateToSettings}
+              onAddMaterial={() => onAddMaterialToPiece(piece.id)}
+              onUpdateMaterial={(materialId, field, value) => onUpdatePieceMaterial(piece.id, materialId, field, value)}
+              onRemoveMaterial={(materialId) => onRemovePieceMaterial(piece.id, materialId)}
             />
           ))}
         </div>

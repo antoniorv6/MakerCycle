@@ -4,6 +4,8 @@ import { Inter } from 'next/font/google'
 import { AuthProvider } from '@/components/providers/AuthProvider'
 import { TeamProvider } from '@/components/providers/TeamProvider'
 import { Toaster } from 'react-hot-toast'
+import Footer from '@/components/Footer'
+import CookieBanner from '@/components/CookieBanner'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -81,11 +83,17 @@ export default function RootLayout({
         <link rel="canonical" href="https://makercycle.com" />
       </head>
       <body className={inter.className}>
-        <AuthProvider>
-          <TeamProvider>
-            {children}
-          </TeamProvider>
-        </AuthProvider>
+        <div className="min-h-screen flex flex-col">
+          <AuthProvider>
+            <TeamProvider>
+              <main className="flex-1">
+                {children}
+              </main>
+            </TeamProvider>
+          </AuthProvider>
+          <Footer />
+        </div>
+        <CookieBanner />
         <Toaster
           position="bottom-right"
           toastOptions={{

@@ -1,5 +1,6 @@
 // Exportación principal
-export { default } from './CostCalculator';
+export { default } from './CostCalculatorWrapper';
+export { default as CostCalculator } from './CostCalculator';
 
 // Exportar tipos para uso externo
 export type {
@@ -17,6 +18,7 @@ export { useCostCalculations } from './hooks/useCostCalculations';
 
 // Exportar componentes individuales si necesitas usarlos por separado
 export { default as ModeSelection } from './views/ModeSelection';
+export { default as FileImportView } from './views/FileImportView';
 
 export { default as ProjectInfo } from './forms/ProjectInfo';
 export { default as FilamentSection } from './forms/FilamentSection';

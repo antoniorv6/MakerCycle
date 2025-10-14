@@ -5,11 +5,42 @@ import type { DatabaseMaterialPreset, MaterialPreset } from '@/types';
  * Servicio para gestionar presets de materiales (filamentos, resinas, etc.)
  */
 
+// Función de diagnóstico para verificar la conexión a la base de datos
+export async function testMaterialPresetsConnection(): Promise<{ success: boolean; error?: string }> {
+  const supabase = createClient();
+  
+  try {
+    // Intentar hacer una consulta simple para verificar que la tabla existe
+    const { data, error } = await supabase
+      .from('material_presets')
+      .select('count')
+      .limit(1);
+    
+    if (error) {
+      return { success: false, error: error.message };
+    }
+    
+    return { success: true };
+  } catch (error) {
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Unknown error' 
+    };
+  }
+}
+
 // Obtener todos los presets del usuario
 export async function getMaterialPresets(userId: string, teamId?: string | null, category?: 'filament' | 'resin'): Promise<MaterialPreset[]> {
   const supabase = createClient();
 
   try {
+    // Primero verificar la conexión
+    const connectionTest = await testMaterialPresetsConnection();
+    if (!connectionTest.success) {
+      console.error('Database connection test failed:', connectionTest.error);
+      return [];
+    }
+
     let query = supabase
       .from('material_presets')
       .select('*')
@@ -31,7 +62,12 @@ export async function getMaterialPresets(userId: string, teamId?: string | null,
     const { data, error } = await query.order('is_default', { ascending: false }).order('name');
 
     if (error) {
-      console.error('Error fetching material presets:', error);
+      console.error('Error fetching material presets:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code
+      });
       throw error;
     }
 
@@ -80,18 +116,19 @@ export async function getDefaultMaterialPreset(userId: string, teamId?: string |
       query = query.eq('category', category);
     }
 
-    const { data, error } = await query.single();
+    const { data, error } = await query.limit(1);
 
     if (error) {
-      // Si no hay preset por defecto, no es un error crítico
-      if (error.code === 'PGRST116') {
-        return null;
-      }
       console.error('Error fetching default material preset:', error);
       return null;
     }
 
-    return data;
+    // Si no hay datos o el array está vacío, devolver null
+    if (!data || data.length === 0) {
+      return null;
+    }
+
+    return data[0];
   } catch (error) {
     console.error('Error in getDefaultMaterialPreset:', error);
     return null;
@@ -100,23 +137,31 @@ export async function getDefaultMaterialPreset(userId: string, teamId?: string |
 
 // Crear un nuevo preset
 export async function createMaterialPreset(
-  preset: Omit<DatabaseMaterialPreset, 'id' | 'created_at' | 'updated_at'>
+  preset: Omit<DatabaseMaterialPreset, 'id' | 'created_at' | 'updated_at' | 'user_id' | 'team_id'>,
+  userId: string,
+  teamId?: string | null
 ): Promise<MaterialPreset | null> {
   const supabase = createClient();
 
   try {
+    const presetData = {
+      ...preset,
+      user_id: userId,
+      team_id: teamId || null
+    };
+
     // Si el nuevo preset es el predeterminado, desmarcar los demás de la misma categoría
     if (preset.is_default) {
       await supabase
         .from('material_presets')
         .update({ is_default: false })
-        .eq('user_id', preset.user_id)
+        .eq('user_id', userId)
         .eq('category', preset.category);
     }
 
     const { data, error } = await supabase
       .from('material_presets')
-      .insert([preset])
+      .insert([presetData])
       .select()
       .single();
 
@@ -200,6 +245,59 @@ export async function deleteMaterialPreset(presetId: string): Promise<boolean> {
   }
 }
 
+// Crear múltiples presets en lote
+export async function createMaterialPresetsBatch(
+  presets: Omit<DatabaseMaterialPreset, 'id' | 'created_at' | 'updated_at' | 'user_id' | 'team_id'>[],
+  userId: string,
+  teamId?: string | null
+): Promise<MaterialPreset[]> {
+  const supabase = createClient();
+
+  try {
+    if (presets.length === 0) {
+      return [];
+    }
+
+    // Preparar los datos para inserción en lote
+    const presetsData = presets.map(preset => ({
+      ...preset,
+      user_id: userId,
+      team_id: teamId || null
+    }));
+
+
+    // Si algún preset es predeterminado, primero desmarcar los demás de la misma categoría
+    const defaultPresets = presets.filter(p => p.is_default);
+    if (defaultPresets.length > 0) {
+      const categories = Array.from(new Set(defaultPresets.map(p => p.category)));
+      for (const category of categories) {
+        await supabase
+          .from('material_presets')
+          .update({ is_default: false })
+          .eq('user_id', userId)
+          .eq('category', category);
+      }
+    }
+
+    // Insertar todos los presets en una sola operación
+    const { data, error } = await supabase
+      .from('material_presets')
+      .insert(presetsData)
+      .select();
+
+    if (error) {
+      console.error('Error creating material presets batch:', error);
+      throw error;
+    }
+
+
+    return data || [];
+  } catch (error) {
+    console.error('Error in createMaterialPresetsBatch:', error);
+    return [];
+  }
+}
+
 // Establecer un preset como predeterminado
 export async function setDefaultMaterialPreset(presetId: string, userId: string): Promise<boolean> {
   const supabase = createClient();
@@ -251,24 +349,41 @@ export async function getMaterialPresetStats(userId: string, teamId?: string | n
   const supabase = createClient();
 
   try {
+    // Verificar que el usuario esté autenticado
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      console.error('User not authenticated:', authError);
+      return { total: 0, byCategory: {} };
+    }
+
+    console.log('Getting material preset stats for:', { userId, teamId, authenticatedUser: user.id });
+
     let query = supabase
       .from('material_presets')
-      .select('category')
-      .eq('user_id', userId);
+      .select('category');
 
     if (teamId) {
-      query = supabase
-        .from('material_presets')
-        .select('category')
-        .or(`user_id.eq.${userId},team_id.eq.${teamId}`);
+      query = query.or(`user_id.eq.${userId},team_id.eq.${teamId}`);
+    } else {
+      query = query.eq('user_id', userId);
     }
 
     const { data, error } = await query;
 
     if (error) {
-      console.error('Error fetching material preset stats:', error);
+      console.error('Error fetching material preset stats:', {
+        error,
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code,
+        userId,
+        teamId
+      });
       throw error;
     }
+
+    console.log('Material preset stats data:', { data, count: data?.length });
 
     const stats = {
       total: data?.length || 0,
@@ -279,9 +394,16 @@ export async function getMaterialPresetStats(userId: string, teamId?: string | n
       stats.byCategory[preset.category] = (stats.byCategory[preset.category] || 0) + 1;
     });
 
+    console.log('Material preset stats result:', stats);
     return stats;
   } catch (error) {
-    console.error('Error in getMaterialPresetStats:', error);
+    console.error('Error in getMaterialPresetStats:', {
+      error,
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      userId,
+      teamId
+    });
     return { total: 0, byCategory: {} };
   }
 }
