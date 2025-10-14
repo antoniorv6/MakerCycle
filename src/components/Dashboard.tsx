@@ -115,8 +115,10 @@ export default function Dashboard({ initialPage }: { initialPage?: string } = {}
     setCurrentPage('project-info')
   }
 
-  const handleProjectSaved = () => {
-    setLoadedProject(null)
+  const handleProjectSaved = (savedProject: DatabaseProject) => {
+    // Convert the saved project back to AppProject format and update loadedProject
+    const updatedProject = dbProjectToProject(savedProject);
+    setLoadedProject(updatedProject);
   }
 
   const handlePageChange = (page: string, tab?: string) => {

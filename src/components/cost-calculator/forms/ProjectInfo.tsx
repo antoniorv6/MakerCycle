@@ -6,7 +6,8 @@ const ProjectInfo: React.FC<ProjectInfoProps> = ({
   projectName, 
   onProjectNameChange, 
   onReset, 
-  onSave 
+  onSave,
+  isSaving = false
 }) => {
   return (
     <div className="bg-white rounded-xl shadow-lg p-6 border border-slate-100 hover:shadow-xl transition-shadow duration-300">
@@ -15,17 +16,19 @@ const ProjectInfo: React.FC<ProjectInfoProps> = ({
         <div className="flex space-x-2">
           <button
             onClick={onReset}
-            className="flex items-center space-x-2 px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors duration-200 text-sm font-medium"
+            disabled={isSaving}
+            className="flex items-center space-x-2 px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 text-sm font-medium"
           >
             <RotateCcw className="w-4 h-4" />
             <span>Limpiar</span>
           </button>
           <button
             onClick={onSave}
-            className="flex items-center space-x-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors duration-200 text-sm font-medium"
+            disabled={isSaving}
+            className="flex items-center space-x-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 text-sm font-medium"
           >
             <Save className="w-4 h-4" />
-            <span>Guardar</span>
+            <span>{isSaving ? 'Guardando...' : 'Guardar'}</span>
           </button>
         </div>
       </div>

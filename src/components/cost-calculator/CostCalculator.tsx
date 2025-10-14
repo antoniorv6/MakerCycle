@@ -20,7 +20,43 @@ import DisasterModeButton from './DisasterModeButton';
 import StickyNote from './StickyNote';
 import ConfirmModal from './ConfirmModal';
 import { useCostCalculations } from './hooks/useCostCalculations';
-import type { DatabaseProject, DatabasePiece } from '@/types';
+import ProjectSavedSummary from './ProjectSavedSummary';
+import type { DatabaseProject, DatabasePiece, PieceMaterial } from '@/types';
+
+// Function to process pieces (solo sistema multi-material)
+async function processPieces(
+  pieces: (DatabasePiece & { piece_materials?: PieceMaterial[] })[], 
+  supabase: any
+): Promise<DatabasePiece[]> {
+  console.log('🔄 Procesando piezas (sistema multi-material)...');
+  
+  const processedPieces = await Promise.all(
+    pieces.map(async (piece) => {
+      console.log(`  Procesando pieza: ${piece.name}`);
+      console.log(`    - piece_materials: ${piece.piece_materials?.length || 0}`);
+      
+      // Solo usar materiales del sistema multi-material
+      if (piece.piece_materials && piece.piece_materials.length > 0) {
+        console.log(`    ✅ Tiene materiales multi-material`);
+        console.log(`    Materiales:`, piece.piece_materials);
+        return {
+          ...piece,
+          materials: piece.piece_materials
+        };
+      }
+      
+      // Si no tiene materiales, devolver la pieza sin materiales
+      console.log(`    ⚠️ No tiene materiales multi-material`);
+      return {
+        ...piece,
+        materials: []
+      };
+    })
+  );
+  
+  console.log('✅ Piezas procesadas:', processedPieces.length);
+  return processedPieces;
+}
 
 interface CostCalculatorProps {
   loadedProject?: DatabaseProject & { pieces?: DatabasePiece[] };
@@ -31,6 +67,8 @@ interface CostCalculatorProps {
 const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjectSaved, onNavigateToSettings }: CostCalculatorProps) => {
   const { user } = useAuth();
   const { getEffectiveTeam } = useTeam();
+  const [isSaving, setIsSaving] = useState(false);
+  const [savedProject, setSavedProject] = useState<DatabaseProject & { pieces?: DatabasePiece[] } | null>(null);
   const supabase = createClient();
   const [loading, setLoading] = useState(true);
   const [projectName, setProjectName] = useState('');
@@ -322,6 +360,9 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
   }, []);
 
   const resetForm = () => {
+    if (isSaving) {
+      return; // Prevent reset while saving
+    }
     setProjectName('');
     setFilamentPrice(25);
     setPrintHours(0);
@@ -339,6 +380,49 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
       notes: '',
       materials: [] // Empezar sin materiales para evitar materiales vacíos
     }]);
+  };
+
+  const handleEditProject = async () => {
+    if (savedProject) {
+      try {
+        // Fetch pieces for the project with their materials from the database
+        const { data: pieces, error } = await supabase
+          .from('pieces')
+          .select(`
+            *,
+            piece_materials (*)
+          `)
+          .eq('project_id', savedProject.id);
+
+        if (error) {
+          console.error('Error fetching pieces:', error);
+          toast.error('No se pudieron cargar las piezas del proyecto. Intenta de nuevo.');
+          return;
+        }
+
+        // Process pieces to include materials
+        const processedPieces = await processPieces(pieces || [], supabase);
+        
+        // Create the project with processed pieces
+        const projectWithPieces = { 
+          ...savedProject, 
+          pieces: processedPieces 
+        };
+
+        // Update the loadedProject by calling onProjectSaved with the complete project
+        onProjectSaved?.(projectWithPieces);
+      } catch (error) {
+        console.error('Error loading project for editing:', error);
+        toast.error('No se pudo cargar el proyecto para editar. Intenta de nuevo.');
+      }
+    }
+    
+    setSavedProject(null);
+  };
+
+  const handleNewProject = () => {
+    setSavedProject(null);
+    resetForm();
   };
 
   const colors = ['yellow', 'pink', 'blue', 'green', 'purple', 'orange'];
@@ -404,6 +488,10 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
   };
 
   const saveProject = async () => {
+    if (isSaving) {
+      return; // Prevent multiple simultaneous saves
+    }
+
     if (!user) {
       toast.error('Debes iniciar sesión para guardar proyectos.');
       return;
@@ -413,6 +501,8 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
       toast.error('El proyecto debe tener un nombre.');
       return;
     }
+
+    setIsSaving(true);
 
     try {
       // Ensure user profile exists
@@ -436,6 +526,7 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
         if (profileError) {
           console.error('Error creating profile:', profileError);
           toast.error('No se pudo crear el perfil de usuario. Intenta de nuevo.');
+          setIsSaving(false);
           return;
         }
       }
@@ -446,7 +537,7 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
         name: projectName,
         filament_weight: totalFilamentWeight,
         filament_price: filamentPrice,
-        print_hours: totalPrintHours,
+        print_hours: totalPrintHours, // This is the total from all pieces
         electricity_cost: electricityCost,
         materials,
         total_cost: costs.total,
@@ -486,6 +577,7 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
 
       if (projectError) {
         toast.error('No se pudo guardar el proyecto. Intenta de nuevo.');
+        setIsSaving(false);
         return;
       }
 
@@ -562,20 +654,79 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
       }
 
       if (projectData) {
-        
-        onProjectSaved?.(projectData);
+        // After saving, fetch the complete project data from database including materials
+        try {
+          const { data: pieces, error: piecesError } = await supabase
+            .from('pieces')
+            .select(`
+              *,
+              piece_materials (*)
+            `)
+            .eq('project_id', projectId);
+
+          if (piecesError) {
+            console.error('Error fetching pieces after save:', piecesError);
+            toast.error('Proyecto guardado, pero no se pudieron cargar los materiales para el resumen.');
+          }
+
+          // Process pieces to include materials
+          const processedPieces = pieces ? await processPieces(pieces, supabase) : [];
+          
+          // Create complete project with materials from database
+          const projectWithPieces = {
+            ...projectData,
+            pieces: processedPieces
+          };
+          
+          // Show project summary with complete data
+          setSavedProject(projectWithPieces);
+          onProjectSaved?.(projectWithPieces);
+        } catch (error) {
+          console.error('Error loading project data for summary:', error);
+          // Fallback to basic project data without materials
+          const basicProject = {
+            ...projectData,
+            pieces: pieces.map(piece => ({
+              id: piece.id,
+              name: piece.name,
+              filament_weight: (piece.materials && piece.materials.length > 0) ? 0 : piece.filamentWeight,
+              filament_price: (piece.materials && piece.materials.length > 0) ? 0 : piece.filamentPrice,
+              print_hours: piece.printHours,
+              quantity: piece.quantity,
+              notes: piece.notes || '',
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+              project_id: projectId || '',
+              materials: piece.materials || []
+            }))
+          };
+          setSavedProject(basicProject);
+          onProjectSaved?.(basicProject);
+        }
       }
-      toast.success('Proyecto guardado correctamente.');
     } catch (error: any) {
       toast.error(
         error.message || 'Ha ocurrido un error al guardar el proyecto.'
       );
+    } finally {
+      setIsSaving(false);
     }
   };
 
 
   if (loading) {
     return <CalculatorSkeleton />;
+  }
+
+  // Show project summary if a project was just saved
+  if (savedProject) {
+    return (
+      <ProjectSavedSummary
+        project={savedProject}
+        onEdit={handleEditProject}
+        onNewProject={handleNewProject}
+      />
+    );
   }
 
   // Render del formulario manual (viewMode === 'manual-entry')
@@ -602,6 +753,7 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
             onProjectNameChange={setProjectName}
             onReset={resetForm}
             onSave={saveProject}
+            isSaving={isSaving}
           />
           {!loadedProject && (
             <div className="mt-2">

@@ -30,6 +30,7 @@ export interface ProjectInfoProps {
   onProjectNameChange: (name: string) => void;
   onReset: () => void;
   onSave: () => void;
+  isSaving?: boolean;
 }
 
 export interface PricingConfigProps {
