@@ -42,6 +42,7 @@ export default function Dashboard({ initialPage }: { initialPage?: string } = {}
       filamentPrice: db.filament_price,
       printHours: db.print_hours,
       electricityCost: db.electricity_cost,
+      printerPower: 0.35, // Valor por defecto para proyectos existentes
       materials: db.materials,
       totalCost: db.total_cost,
       vatPercentage: db.vat_percentage,
@@ -114,8 +115,10 @@ export default function Dashboard({ initialPage }: { initialPage?: string } = {}
     setCurrentPage('project-info')
   }
 
-  const handleProjectSaved = () => {
-    setLoadedProject(null)
+  const handleProjectSaved = (savedProject: DatabaseProject) => {
+    // Convert the saved project back to AppProject format and update loadedProject
+    const updatedProject = dbProjectToProject(savedProject);
+    setLoadedProject(updatedProject);
   }
 
   const handlePageChange = (page: string, tab?: string) => {

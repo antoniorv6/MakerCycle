@@ -2,7 +2,9 @@
 export interface ElectricitySectionProps {
   printHours: number;
   electricityCost: number;
+  printerPower: number;
   onElectricityCostChange: (cost: number) => void;
+  onPrinterPowerChange: (power: number) => void;
 }
 
 export interface FilamentSectionProps {
@@ -28,6 +30,7 @@ export interface ProjectInfoProps {
   onProjectNameChange: (name: string) => void;
   onReset: () => void;
   onSave: () => void;
+  isSaving?: boolean;
 }
 
 export interface PricingConfigProps {

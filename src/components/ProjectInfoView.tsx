@@ -52,7 +52,7 @@ const ProjectInfoView: React.FC<ProjectInfoViewProps> = ({ project, onEdit, onBa
     }
   });
 
-  const totalElectricityCost = totalPrintHours * project.electricityCost;
+  const totalElectricityCost = totalPrintHours * (project.printerPower || 0.35) * project.electricityCost;
 
   return (
     <div className="min-h-screen bg-gray-50">
