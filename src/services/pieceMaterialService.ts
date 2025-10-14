@@ -213,8 +213,8 @@ export class PieceMaterialService {
     const totalWeight = this.calculatePieceTotalWeight(materials);
     const totalCost = this.calculatePieceMaterialsCost(materials);
     const materialCount = materials.length;
-    const categories = [...new Set(materials.map(m => m.category))];
-    const types = [...new Set(materials.map(m => m.material_type))];
+    const categories = Array.from(new Set(materials.map(m => m.category)));
+    const types = Array.from(new Set(materials.map(m => m.material_type)));
 
     return {
       totalWeight,

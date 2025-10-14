@@ -21,7 +21,7 @@ const ProjectSummaryPanel: React.FC<ProjectSummaryProps> = ({
   const uniqueMaterials = new Set();
   pieces.forEach(piece => {
     piece.materials?.forEach(material => {
-      uniqueMaterials.add(material.materialName || material.material_name || 'Material sin nombre');
+      uniqueMaterials.add(material.materialName || 'Material sin nombre');
     });
   });
 
@@ -133,10 +133,10 @@ const ProjectSummaryPanel: React.FC<ProjectSummaryProps> = ({
                           />
                           <div>
                             <div className="font-medium text-gray-900 text-sm">
-                              {material.materialName || material.material_name || 'Material sin nombre'}
+                              {material.materialName || 'Material sin nombre'}
                             </div>
                             <div className="text-xs text-gray-500">
-                              {material.materialType || material.material_type || 'PLA'} • {material.brand || 'Sin marca'}
+                              {material.materialType || 'PLA'} • {material.brand || 'Sin marca'}
                             </div>
                           </div>
                         </div>
@@ -145,7 +145,7 @@ const ProjectSummaryPanel: React.FC<ProjectSummaryProps> = ({
                             {material.weight || 0}{material.unit || 'g'}
                           </div>
                           <div className="text-xs text-gray-500">
-                            €{((material.weight || 0) * (material.pricePerKg || material.price_per_kg || 0) / (material.unit === 'kg' ? 1 : 1000)).toFixed(2)}
+                            €{((material.weight || 0) * (material.pricePerKg || 0) / (material.unit === 'kg' ? 1 : 1000)).toFixed(2)}
                           </div>
                         </div>
                       </div>

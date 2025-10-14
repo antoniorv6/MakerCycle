@@ -341,7 +341,27 @@ export interface PaginatedResponse<T> {
 
 // Cost calculator component props
 export interface ProjectSummaryProps {
-  pieces: Piece[];
+  pieces: Array<{
+    id: string;
+    name: string;
+    filamentWeight: number;
+    filamentPrice: number;
+    printHours: number;
+    quantity: number;
+    notes?: string;
+    materials?: Array<{
+      id: string;
+      materialName: string;
+      materialType: string;
+      weight: number;
+      pricePerKg: number;
+      unit: string;
+      category: 'filament' | 'resin';
+      color?: string;
+      brand?: string;
+      notes?: string;
+    }>;
+  }>;
   totalFilamentWeight: number;
   totalPrintHours: number;
   totalFilamentCost: number;

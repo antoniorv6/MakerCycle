@@ -93,7 +93,7 @@ const FileImportView: React.FC<FileImportViewProps> = ({ onBack, onImportComplet
             uniqueProfilesMap.set(key, {
               profileName: filament.profileName,
               filamentType: filament.type,
-              color: filament.color,
+              color: '#808080', // Default color since filament.color doesn't exist
               costPerKg: filament.costPerKg,
               weightG: 0, // Se sumará el peso total
               willSave: !existingPreset, // Solo seleccionar para guardar si no existe
@@ -180,15 +180,19 @@ const FileImportView: React.FC<FileImportViewProps> = ({ onBack, onImportComplet
       // Crear materiales para cada filamento de la placa
       const materials = plate.filaments.map((filament, materialIndex) => ({
         id: `imported-${plate.plateId}-material-${materialIndex}`,
-        materialName: filament.profileName,
-        materialType: filament.filamentType,
+        piece_id: `imported-${plate.plateId}`,
+        material_preset_id: undefined,
+        material_name: filament.profileName,
+        material_type: filament.filamentType,
         weight: filament.weightG,
-        pricePerKg: filament.costPerKg,
+        price_per_kg: filament.costPerKg,
         unit: 'g',
         category: 'filament' as const,
         brand: filament.profileName.split(' ')[0] || 'Unknown',
         color: filament.color,
         notes: `Importado desde archivo .gcode.3mf - Placa ${plate.plateId}`,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       }));
 
       // Calcular precio promedio para compatibilidad con campos legacy

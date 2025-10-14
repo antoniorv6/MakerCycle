@@ -163,7 +163,18 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
         const mappedPieces = loadedProject.pieces.map(piece => {
           
           // Si la pieza tiene materiales del sistema multi-material, usarlos
-          let materials = [];
+          let materials: Array<{
+            id: string;
+            materialName: string;
+            materialType: string;
+            weight: number;
+            pricePerKg: number;
+            unit: string;
+            category: 'filament' | 'resin';
+            color?: string;
+            brand?: string;
+            notes?: string;
+          }> = [];
           if (piece.materials && piece.materials.length > 0) {
             materials = piece.materials.filter(material => material.weight > 0).map(material => {
               return {

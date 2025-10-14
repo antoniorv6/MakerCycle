@@ -58,85 +58,89 @@ export default function Sidebar({ currentPage, onPageChange, isOpen, onToggle }:
           x: isOpen ? 0 : -280,
           transition: { type: "spring", stiffness: 300, damping: 30 }
         }}
-        className="fixed left-0 top-0 h-full w-70 bg-white border-r border-slate-200 shadow-lg z-50 lg:relative lg:translate-x-0 lg:z-auto lg:w-64"
+        className="fixed left-0 top-0 h-full w-70 bg-white border-r border-slate-200 shadow-lg z-50 lg:relative lg:translate-x-0 lg:z-auto lg:w-64 flex flex-col"
       >
-        <div className="p-6 relative">
-          {/* Logo arriba a la derecha */}
-          <div className="flex items-center gap-3 mb-8">
-            <img src="/logo.webp" alt="Logo MakerCycle" className="w-10 h-10 object-contain" />
-            <h1 className="text-xl font-bold text-slate-900">MakerCycle</h1>
-          </div>
-          <div>
-            <p className="text-sm text-slate-500">Gestión Profesional 3D</p>
-          </div>
-
-          {/* User info */}
-          <div className="mb-6 p-3 bg-slate-50 rounded-lg">
-            <div className="flex items-center space-x-3 mb-3">
-              <div className="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center">
-                <span className="text-slate-600 font-medium text-sm">
-                  {user?.email?.charAt(0).toUpperCase()}
-                </span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-slate-900 truncate">
-                  {user?.user_metadata?.full_name || user?.email}
-                </p>
-                <p className="text-xs text-slate-500 truncate">{user?.email}</p>
-              </div>
-              <Notifications />
+        {/* Scrollable content area */}
+        <div className="flex-1 overflow-y-auto">
+          <div className="p-6">
+            {/* Logo arriba a la derecha */}
+            <div className="flex items-center gap-3 mb-8">
+              <img src="/logo.webp" alt="Logo MakerCycle" className="w-10 h-10 object-contain" />
+              <h1 className="text-xl font-bold text-slate-900">MakerCycle</h1>
             </div>
-            
-            {/* Team Context Indicator */}
-            <div className="border-t border-slate-200 pt-3">
-              <TeamContextIndicator />
+            <div>
+              <p className="text-sm text-slate-500">Gestión Profesional 3D</p>
             </div>
-          </div>
 
-          <nav className="space-y-2">
-            {menuItems.map((item) => {
-              const Icon = item.icon
-              const isActive = currentPage === item.id
+            {/* User info */}
+            <div className="mb-6 p-3 bg-slate-50 rounded-lg">
+              <div className="flex items-center space-x-3 mb-3">
+                <div className="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center">
+                  <span className="text-slate-600 font-medium text-sm">
+                    {user?.email?.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-slate-900 truncate">
+                    {user?.user_metadata?.full_name || user?.email}
+                  </p>
+                  <p className="text-xs text-slate-500 truncate">{user?.email}</p>
+                </div>
+                <Notifications />
+              </div>
               
-              if (item.href) {
+              {/* Team Context Indicator */}
+              <div className="border-t border-slate-200 pt-3">
+                <TeamContextIndicator />
+              </div>
+            </div>
+
+            <nav className="space-y-2">
+              {menuItems.map((item) => {
+                const Icon = item.icon
+                const isActive = currentPage === item.id
+                
+                if (item.href) {
+                  return (
+                    <a
+                      key={item.id}
+                      href={item.href}
+                      className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 ${
+                        isActive
+                          ? 'bg-slate-100 text-slate-700 border border-slate-200'
+                          : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                      }`}
+                      onClick={() => { if (window.innerWidth < 1024) onToggle() }}
+                    >
+                      <Icon className={`w-5 h-5 ${isActive ? 'text-slate-600' : 'text-slate-400'}`} />
+                      <span className="font-medium">{item.label}</span>
+                    </a>
+                  )
+                }
                 return (
-                  <a
+                  <button
                     key={item.id}
-                    href={item.href}
+                    onClick={() => {
+                      onPageChange(item.id)
+                      if (window.innerWidth < 1024) onToggle()
+                    }}
                     className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 ${
                       isActive
                         ? 'bg-slate-100 text-slate-700 border border-slate-200'
                         : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                     }`}
-                    onClick={() => { if (window.innerWidth < 1024) onToggle() }}
                   >
                     <Icon className={`w-5 h-5 ${isActive ? 'text-slate-600' : 'text-slate-400'}`} />
                     <span className="font-medium">{item.label}</span>
-                  </a>
+                  </button>
                 )
-              }
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => {
-                    onPageChange(item.id)
-                    if (window.innerWidth < 1024) onToggle()
-                  }}
-                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 ${
-                    isActive
-                      ? 'bg-slate-100 text-slate-700 border border-slate-200'
-                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                  }`}
-                >
-                  <Icon className={`w-5 h-5 ${isActive ? 'text-slate-600' : 'text-slate-400'}`} />
-                  <span className="font-medium">{item.label}</span>
-                </button>
-              )
-            })}
-          </nav>
+              })}
+            </nav>
+          </div>
         </div>
 
-        <div className="absolute bottom-0 left-0 right-0 p-6 border-t border-slate-200">
+        {/* Fixed bottom section */}
+        <div className="flex-shrink-0 p-6 border-t border-slate-200 bg-white">
           <button
             onClick={async () => {
               try {

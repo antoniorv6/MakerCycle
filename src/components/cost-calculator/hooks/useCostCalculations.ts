@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import type { Material, Piece } from '@/types';
+import type { Material } from '@/types';
+import type { CostCalculatorPieceMaterial } from '../types';
 
 interface CostBreakdown {
   filament: number;
@@ -26,7 +27,16 @@ interface UseCostCalculationsProps {
   vatPercentage: number;
   profitMargin: number;
   // Nuevos campos para piezas
-  pieces?: Piece[];
+  pieces?: Array<{
+    id: string;
+    name: string;
+    filamentWeight: number;
+    filamentPrice: number;
+    printHours: number;
+    quantity: number;
+    notes?: string;
+    materials?: CostCalculatorPieceMaterial[];
+  }>;
 }
 
 export const useCostCalculations = ({

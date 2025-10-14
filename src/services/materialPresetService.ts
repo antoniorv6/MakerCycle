@@ -269,7 +269,7 @@ export async function createMaterialPresetsBatch(
     // Si algún preset es predeterminado, primero desmarcar los demás de la misma categoría
     const defaultPresets = presets.filter(p => p.is_default);
     if (defaultPresets.length > 0) {
-      const categories = [...new Set(defaultPresets.map(p => p.category))];
+      const categories = Array.from(new Set(defaultPresets.map(p => p.category)));
       for (const category of categories) {
         await supabase
           .from('material_presets')
