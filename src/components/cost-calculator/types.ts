@@ -2,7 +2,9 @@
 export interface ElectricitySectionProps {
   printHours: number;
   electricityCost: number;
+  printerPower: number;
   onElectricityCostChange: (cost: number) => void;
+  onPrinterPowerChange: (power: number) => void;
 }
 
 export interface FilamentSectionProps {

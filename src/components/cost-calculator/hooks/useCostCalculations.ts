@@ -21,6 +21,7 @@ interface UseCostCalculationsProps {
   filamentPrice: number;
   printHours: number;
   electricityCost: number;
+  printerPower: number;
   materials: Material[];
   vatPercentage: number;
   profitMargin: number;
@@ -33,6 +34,7 @@ export const useCostCalculations = ({
   filamentPrice,
   printHours,
   electricityCost,
+  printerPower,
   materials,
   vatPercentage,
   profitMargin,
@@ -101,7 +103,7 @@ export const useCostCalculations = ({
     const { totalFilamentWeight, totalPrintHours, totalFilamentCost } = calculateTotalsFromPieces();
 
     // Calcular costes
-    const electricityCostTotal = totalPrintHours * 0.2 * electricityCost;
+    const electricityCostTotal = totalPrintHours * printerPower * electricityCost;
     const materialsCost = materials.reduce((sum, material) => sum + (material.price || 0), 0);
     const totalCost = totalFilamentCost + electricityCostTotal + materialsCost;
 
@@ -124,7 +126,7 @@ export const useCostCalculations = ({
       priceWithTax,
       recommendedPrice
     });
-  }, [filamentWeight, filamentPrice, printHours, electricityCost, materials, vatPercentage, profitMargin, pieces]);
+  }, [filamentWeight, filamentPrice, printHours, electricityCost, printerPower, materials, vatPercentage, profitMargin, pieces]);
 
   const { totalFilamentWeight, totalPrintHours, totalFilamentCost } = calculateTotalsFromPieces();
 
@@ -135,6 +137,6 @@ export const useCostCalculations = ({
     totalFilamentWeight,
     totalPrintHours,
     totalFilamentCost,
-    totalElectricityCost: totalPrintHours * 0.2 * electricityCost
+    totalElectricityCost: totalPrintHours * printerPower * electricityCost
   };
 };

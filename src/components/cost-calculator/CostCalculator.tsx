@@ -37,6 +37,7 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
   const [filamentPrice, setFilamentPrice] = useState(25);
   const [printHours, setPrintHours] = useState(0);
   const [electricityCost, setElectricityCost] = useState(0.12);
+  const [printerPower, setPrinterPower] = useState(0.35);
   const [vatPercentage, setVatPercentage] = useState(21);
   const [profitMargin, setProfitMargin] = useState(15);
   const [materials, setMaterials] = useState<Array<{ id: string; name: string; price: number }>>([]);
@@ -93,6 +94,10 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
       setVatPercentage(loadedProject.vat_percentage);
       setProfitMargin(loadedProject.profit_margin);
       setMaterials(loadedProject.materials || []);
+      
+      // Para proyectos existentes, usar valor por defecto de potencia
+      // La potencia no se guarda en la base de datos, por lo que usamos el valor por defecto
+      setPrinterPower(0.35);
 
       if (loadedProject.pieces && loadedProject.pieces.length > 0) {
         console.log('🔍 Debug - Loading pieces in CostCalculator:', loadedProject.pieces);
@@ -199,6 +204,7 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
     filamentPrice,
     printHours,
     electricityCost,
+    printerPower,
     materials,
     vatPercentage,
     profitMargin
@@ -620,7 +626,9 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
           <ElectricitySection
             printHours={totalPrintHours}
             electricityCost={electricityCost}
+            printerPower={printerPower}
             onElectricityCostChange={setElectricityCost}
+            onPrinterPowerChange={setPrinterPower}
           />
 
           <PricingConfig
