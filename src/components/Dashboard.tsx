@@ -42,6 +42,7 @@ export default function Dashboard({ initialPage }: { initialPage?: string } = {}
       filamentPrice: db.filament_price,
       printHours: db.print_hours,
       electricityCost: db.electricity_cost,
+      printerPower: 0.35, // Valor por defecto para proyectos existentes
       materials: db.materials,
       totalCost: db.total_cost,
       vatPercentage: db.vat_percentage,

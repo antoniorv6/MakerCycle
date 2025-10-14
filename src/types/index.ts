@@ -36,6 +36,7 @@ export interface AppProject {
   filamentPrice: number;
   printHours: number;
   electricityCost: number;
+  printerPower: number;
   materials: Material[];
   totalCost: number;
   vatPercentage: number;
