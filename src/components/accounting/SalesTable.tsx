@@ -94,10 +94,10 @@ export function SalesTable({
             className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden"
           >
             {/* Header */}
-            <div className="p-4 border-b border-gray-100 min-w-0">
-              <div className="flex items-start justify-between min-w-0">
+            <div className="p-4 border-b border-gray-100">
+              <div className="flex items-start justify-between mb-3">
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center space-x-2 mb-2 flex-wrap min-w-0">
+                  <div className="flex items-center space-x-2 mb-2 flex-wrap">
                     <Package className="w-4 h-4 text-blue-600" />
                     <span className="text-sm font-semibold text-gray-900">
                       {sale.items_count} proyecto{sale.items_count !== 1 ? 's' : ''}
@@ -112,9 +112,9 @@ export function SalesTable({
                     <div className="space-y-1">
                       {sale.items.slice(0, 2).map((item, itemIndex) => (
                         <div key={itemIndex} className="flex items-center space-x-2 text-sm text-gray-600">
-                          <span className="w-1.5 h-1.5 bg-blue-400 rounded-full"></span>
-                          <span className="truncate flex-1 max-w-[120px] sm:max-w-[180px] md:max-w-[220px]">{item.project_name}</span>
-                          <span className="text-xs text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
+                          <span className="w-1.5 h-1.5 bg-blue-400 rounded-full flex-shrink-0"></span>
+                          <span className="truncate flex-1">{item.project_name}</span>
+                          <span className="text-xs text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded flex-shrink-0">
                             x{item.quantity}
                           </span>
                         </div>
@@ -127,30 +127,29 @@ export function SalesTable({
                     </div>
                   )}
                 </div>
+              </div>
+              
+              {/* Actions Row */}
+              <div className="flex items-center justify-between pt-2 border-t border-gray-50">
+                <div className="flex items-center space-x-2">
+                  <UserCheck className="w-4 h-4 text-gray-600" />
+                  <span className="text-sm text-gray-700 truncate">
+                    {getClientName(sale.client_id || null)}
+                  </span>
+                </div>
                 
-                {/* Actions */}
-                <div className="flex space-x-1 ml-2 sales-actions-scroll overflow-x-auto scrollbar-thin scrollbar-thumb-gray-200 max-w-full">
-                  <button
-                    onClick={() => onEditSale(sale)}
-                    className="flex items-center justify-center w-7 h-7 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition-all duration-200 hover:scale-105"
-                    title="Editar venta"
-                  >
-                    <Edit className="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    onClick={() => onGenerateInvoice(sale)}
-                    className="flex items-center justify-center w-7 h-7 bg-green-100 text-green-600 rounded-lg hover:bg-green-200 transition-all duration-200 hover:scale-105"
-                    title="Generar albarán"
-                  >
-                    <FileText className="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    onClick={() => onDeleteSale(sale.id)}
-                    className="flex items-center justify-center w-7 h-7 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-all duration-200 hover:scale-105"
-                    title="Eliminar venta"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
+                <div className="flex items-center space-x-2">
+                  {sale.team_id ? (
+                    <>
+                      <Users className="w-3.5 h-3.5 text-blue-600" />
+                      <span className="text-xs text-blue-600 font-medium">Equipo</span>
+                    </>
+                  ) : (
+                    <>
+                      <User className="w-3.5 h-3.5 text-gray-600" />
+                      <span className="text-xs text-gray-600">Personal</span>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
@@ -202,29 +201,44 @@ export function SalesTable({
               </div>
             </div>
 
-            {/* Footer */}
-            <div className="px-4 py-3 bg-gray-50 border-t border-gray-100 min-w-0">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <UserCheck className="w-4 h-4 text-gray-600" />
-                  <span className="text-sm text-gray-700 truncate max-w-[120px] sm:max-w-[180px] md:max-w-[220px]">
-                    {getClientName(sale.client_id || null)}
-                  </span>
+            {/* Actions Footer */}
+            <div className="px-4 py-3 bg-gray-50 border-t border-gray-100 space-y-3">
+              {/* Date Row */}
+              <div className="flex items-center justify-center">
+                <div className="flex items-center space-x-2 text-sm text-gray-600">
+                  <Calendar className="w-4 h-4" />
+                  <span className="font-medium">{formatDate(sale.date)}</span>
                 </div>
+              </div>
+              
+              {/* Action Buttons Row */}
+              <div className="flex items-center justify-center space-x-2">
+                <button
+                  onClick={() => onEditSale(sale)}
+                  className="flex items-center space-x-1.5 px-3 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-all duration-200 text-sm font-medium shadow-sm hover:shadow-md"
+                  title="Editar venta"
+                >
+                  <Edit className="w-4 h-4" />
+                  <span>Editar</span>
+                </button>
                 
-                <div className="flex items-center space-x-1">
-                  {sale.team_id ? (
-                    <>
-                      <Users className="w-3.5 h-3.5 text-blue-600" />
-                      <span className="text-xs text-blue-600 font-medium">Equipo</span>
-                    </>
-                  ) : (
-                    <>
-                      <User className="w-3.5 h-3.5 text-gray-600" />
-                      <span className="text-xs text-gray-600">Personal</span>
-                    </>
-                  )}
-                </div>
+                <button
+                  onClick={() => onGenerateInvoice(sale)}
+                  className="flex items-center space-x-1.5 px-3 py-2 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition-all duration-200 text-sm font-medium shadow-sm hover:shadow-md"
+                  title="Generar albarán"
+                >
+                  <FileText className="w-4 h-4" />
+                  <span>Albarán</span>
+                </button>
+                
+                <button
+                  onClick={() => onDeleteSale(sale.id)}
+                  className="flex items-center space-x-1.5 px-3 py-2 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition-all duration-200 text-sm font-medium shadow-sm hover:shadow-md"
+                  title="Eliminar venta"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  <span>Eliminar</span>
+                </button>
               </div>
             </div>
           </motion.div>
@@ -238,22 +252,6 @@ export function SalesTable({
           <p className="text-gray-400 text-sm mt-2">Intenta ajustar los filtros de búsqueda</p>
         </div>
       )}
-      <style jsx>{`
-        @media (max-width: 640px) {
-          .sales-actions-scroll {
-            gap: 0.25rem;
-            padding-left: 0.25rem;
-            padding-right: 0.25rem;
-            min-width: 0;
-          }
-          .sales-actions-scroll button {
-            min-width: 32px;
-            width: 32px;
-            height: 32px;
-            padding: 0;
-          }
-        }
-      `}</style>
     </div>
   );
 } 
