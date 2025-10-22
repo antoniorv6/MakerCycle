@@ -195,18 +195,18 @@ export default function KanbanBoard() {
         </div>
       )}
       <DragDropContext onDragEnd={onDragEnd}>
-        <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-4 px-2 md:px-8">
+        <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-4 px-2 md:px-8 overflow-visible">
           {columnOrder.map((status) => (
             <Droppable droppableId={status} key={status}>
               {(provided, snapshot) => (
                 <div
                   ref={provided.innerRef}
                   {...provided.droppableProps}
-                  className={`bg-white border border-slate-200 rounded-2xl shadow-md p-10 min-h-[420px] flex flex-col transition-all duration-300 ${snapshot.isDraggingOver ? 'ring-2 ring-blue-300' : ''}`}
+                  className={`bg-white border border-slate-200 rounded-2xl shadow-md p-10 min-h-[420px] flex flex-col transition-all duration-300 overflow-visible ${snapshot.isDraggingOver ? 'ring-2 ring-blue-300' : ''}`}
                 >
                   <ColumnHeader status={status} count={columns[status].length} />
                   {columns[status].length === 0 && (
-                    <div className="flex flex-col items-center justify-center py-12 animate-fade-in">
+                    <div className="flex flex-col items-center justify-center py-12 animate-in fade-in-0 duration-300">
                       <div className="w-16 h-16 flex items-center justify-center rounded-full bg-slate-50 border border-slate-200 mb-4">
                         <FolderOpen className="w-8 h-8 text-slate-300" />
                       </div>

@@ -28,17 +28,10 @@ async function processPieces(
   pieces: (DatabasePiece & { piece_materials?: PieceMaterial[] })[], 
   supabase: any
 ): Promise<DatabasePiece[]> {
-  console.log('🔄 Procesando piezas (sistema multi-material)...');
-  
   const processedPieces = await Promise.all(
     pieces.map(async (piece) => {
-      console.log(`  Procesando pieza: ${piece.name}`);
-      console.log(`    - piece_materials: ${piece.piece_materials?.length || 0}`);
-      
       // Solo usar materiales del sistema multi-material
       if (piece.piece_materials && piece.piece_materials.length > 0) {
-        console.log(`    ✅ Tiene materiales multi-material`);
-        console.log(`    Materiales:`, piece.piece_materials);
         return {
           ...piece,
           materials: piece.piece_materials
@@ -46,7 +39,6 @@ async function processPieces(
       }
       
       // Si no tiene materiales, devolver la pieza sin materiales
-      console.log(`    ⚠️ No tiene materiales multi-material`);
       return {
         ...piece,
         materials: []
@@ -54,7 +46,6 @@ async function processPieces(
     })
   );
   
-  console.log('✅ Piezas procesadas:', processedPieces.length);
   return processedPieces;
 }
 

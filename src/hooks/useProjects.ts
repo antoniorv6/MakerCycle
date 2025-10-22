@@ -39,7 +39,6 @@ export function useProjects() {
       setProjects(data);
     } catch (err) {
       console.error('Error fetching projects:', err);
-      console.error('Error details:', JSON.stringify(err, null, 2));
       setError(err instanceof Error ? err.message : 'Error fetching projects');
       toast.error('Error loading projects');
     } finally {

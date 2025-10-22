@@ -1,1 +1,16 @@
+# Handle static assets first
+/*.webp    /:splat.webp   200
+/*.png     /:splat.png    200
+/*.jpg     /:splat.jpg    200
+/*.jpeg    /:splat.jpeg   200
+/*.svg     /:splat.svg    200
+/*.ico     /:splat.ico    200
+
+# Handle Next.js static files
+/_next/static/*    /_next/static/:splat    200
+
+# Handle API routes
+/api/*    /api/:splat    200
+
+# Fallback for SPA
 /*    /index.html   200 

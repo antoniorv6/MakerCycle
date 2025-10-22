@@ -56,63 +56,89 @@ const FileImportView: React.FC<FileImportViewProps> = ({ onBack, onImportComplet
       const result = await calculator.processFile(file);
       setImportedData(result);
       
-      // Cargar perfiles de forma asíncrona sin bloquear la UI
-      refreshPresets().then(() => {
-        const currentPresets = presets;
-        
-        // Consolidar perfiles únicos (mismo nombre + mismo precio = mismo perfil)
-        const uniqueProfilesMap = new Map<string, DetectedFilamentProfile>();
-        const profilePlateCount = new Map<string, Set<number>>(); // Para contar placas únicas
-        
-        // Primero, procesar cada placa para contar cuántas placas usan cada perfil
-        for (const plate of result.plates) {
-          for (const filament of plate.filaments) {
-            const key = `${filament.profileName}__${filament.costPerKg}`;
-            
-            if (!profilePlateCount.has(key)) {
-              profilePlateCount.set(key, new Set());
-            }
-            profilePlateCount.get(key)!.add(plate.plateId);
-          }
-        }
-        
-        // Luego, consolidar los perfiles con el peso total y conteo de placas
-        for (const filament of result.summary.filamentsUsed) {
+      // Procesar perfiles detectados inmediatamente sin esperar a que se carguen los presets
+      const uniqueProfilesMap = new Map<string, DetectedFilamentProfile>();
+      const profilePlateCount = new Map<string, Set<number>>(); // Para contar placas únicas
+      
+      // Primero, procesar cada placa para contar cuántas placas usan cada perfil
+      for (const plate of result.plates) {
+        for (const filament of plate.filaments) {
           const key = `${filament.profileName}__${filament.costPerKg}`;
           
-          if (!uniqueProfilesMap.has(key)) {
-            // Verificar si ya existe un perfil con el mismo nombre y precio
-            const existingPreset = currentPresets.find(p => {
-              const nameMatch = p.name.trim().toLowerCase() === filament.profileName.trim().toLowerCase();
-              const priceMatch = Math.abs(p.price_per_unit - filament.costPerKg) < 0.01; // Tolerancia para decimales
-              const categoryMatch = p.category === 'filament';
-              
-              return nameMatch && priceMatch && categoryMatch;
-            });
-            
-            uniqueProfilesMap.set(key, {
-              profileName: filament.profileName,
-              filamentType: filament.type,
-              color: '#808080', // Default color since filament.color doesn't exist
-              costPerKg: filament.costPerKg,
-              weightG: 0, // Se sumará el peso total
-              willSave: !existingPreset, // Solo seleccionar para guardar si no existe
-              platesCount: profilePlateCount.get(key)?.size || 0,
-              alreadyExists: !!existingPreset, // Marcar si ya existe
-            });
+          if (!profilePlateCount.has(key)) {
+            profilePlateCount.set(key, new Set());
           }
-          
-          // Sumar el peso total de este filamento
-          const existingProfile = uniqueProfilesMap.get(key)!;
-          existingProfile.weightG += filament.weightG;
+          profilePlateCount.get(key)!.add(plate.plateId);
+        }
+      }
+      
+      // Luego, consolidar los perfiles con el peso total y conteo de placas
+      for (const filament of result.summary.filamentsUsed) {
+        const key = `${filament.profileName}__${filament.costPerKg}`;
+        
+        if (!uniqueProfilesMap.has(key)) {
+          uniqueProfilesMap.set(key, {
+            profileName: filament.profileName,
+            filamentType: filament.type,
+            color: '#808080', // Default color since filament.color doesn't exist
+            costPerKg: filament.costPerKg,
+            weightG: 0, // Se sumará el peso total
+            willSave: true, // Por defecto seleccionar para guardar, se actualizará después
+            platesCount: profilePlateCount.get(key)?.size || 0,
+            alreadyExists: false, // Se actualizará después de cargar los presets
+          });
         }
         
-        const profiles = Array.from(uniqueProfilesMap.values());
-        
-        
-        setDetectedProfiles(profiles);
-        setIsLoadingProfiles(false);
-      });
+        // Sumar el peso total de este filamento
+        const existingProfile = uniqueProfilesMap.get(key)!;
+        existingProfile.weightG += filament.weightG;
+      }
+      
+      const profiles = Array.from(uniqueProfilesMap.values());
+      setDetectedProfiles(profiles);
+      setIsLoadingProfiles(false);
+      
+      // Actualizar el estado de alreadyExists basado en los presets actuales
+      setDetectedProfiles(prevProfiles => 
+        prevProfiles.map(profile => {
+          const existingPreset = presets.find(p => {
+            const nameMatch = p.name.trim().toLowerCase() === profile.profileName.trim().toLowerCase();
+            const priceMatch = Math.abs(p.price_per_unit - profile.costPerKg) < 0.01;
+            const categoryMatch = p.category === 'filament';
+            
+            return nameMatch && priceMatch && categoryMatch;
+          });
+          
+          return {
+            ...profile,
+            willSave: !existingPreset,
+            alreadyExists: !!existingPreset,
+          };
+        })
+      );
+      
+      // Cargar presets en segundo plano solo si no están cargados
+      if (presets.length === 0) {
+        refreshPresets().then(() => {
+          setDetectedProfiles(prevProfiles => 
+            prevProfiles.map(profile => {
+              const existingPreset = presets.find(p => {
+                const nameMatch = p.name.trim().toLowerCase() === profile.profileName.trim().toLowerCase();
+                const priceMatch = Math.abs(p.price_per_unit - profile.costPerKg) < 0.01;
+                const categoryMatch = p.category === 'filament';
+                
+                return nameMatch && priceMatch && categoryMatch;
+              });
+              
+              return {
+                ...profile,
+                willSave: !existingPreset,
+                alreadyExists: !!existingPreset,
+              };
+            })
+          );
+        });
+      }
       
     } catch (err) {
       console.error('Error processing file:', err);

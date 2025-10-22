@@ -356,7 +356,6 @@ export async function getMaterialPresetStats(userId: string, teamId?: string | n
       return { total: 0, byCategory: {} };
     }
 
-    console.log('Getting material preset stats for:', { userId, teamId, authenticatedUser: user.id });
 
     let query = supabase
       .from('material_presets')
@@ -383,7 +382,6 @@ export async function getMaterialPresetStats(userId: string, teamId?: string | n
       throw error;
     }
 
-    console.log('Material preset stats data:', { data, count: data?.length });
 
     const stats = {
       total: data?.length || 0,
@@ -394,7 +392,6 @@ export async function getMaterialPresetStats(userId: string, teamId?: string | n
       stats.byCategory[preset.category] = (stats.byCategory[preset.category] || 0) + 1;
     });
 
-    console.log('Material preset stats result:', stats);
     return stats;
   } catch (error) {
     console.error('Error in getMaterialPresetStats:', {
