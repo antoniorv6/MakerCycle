@@ -23,12 +23,8 @@ export function useMaterialPresets(category?: 'filament' | 'resin') {
   const [stats, setStats] = useState<{ total: number; byCategory: { [key: string]: number } }>({ total: 0, byCategory: {} });
   const [loading, setLoading] = useState(true);
 
-  // Cargar presets al montar el componente
-  useEffect(() => {
-    loadPresets();
-  }, [user?.id, category, getEffectiveTeam()?.id]); // Incluir teamId para recargar cuando cambie el equipo
 
-  const loadPresets = async (forceReload = false) => {
+  const loadPresets = async () => {
     if (!user) {
       setPresets([]);
       setDefaultPreset(null);
@@ -37,17 +33,11 @@ export function useMaterialPresets(category?: 'filament' | 'resin') {
       return;
     }
 
-    // Si ya estamos cargando y no es una recarga forzada, no hacer nada
-    if (loading && !forceReload) {
-      return;
-    }
-
     setLoading(true);
     try {
       // Primero verificar la conexión a la base de datos
       const connectionTest = await testMaterialPresetsConnection();
       if (!connectionTest.success) {
-        console.error('Database connection failed:', connectionTest.error);
         toast.error(`Error de conexión: ${connectionTest.error}`);
         setPresets([]);
         setDefaultPreset(null);
@@ -73,6 +63,12 @@ export function useMaterialPresets(category?: 'filament' | 'resin') {
       setLoading(false);
     }
   };
+
+  // Cargar presets al montar el componente
+  useEffect(() => {
+    const teamId = getEffectiveTeam()?.id;
+    loadPresets();
+  }, [user?.id, category]); // Remover getEffectiveTeam() de las dependencias para evitar re-renders constantes
 
   // Crear un nuevo preset
   const addPreset = async (
@@ -330,6 +326,6 @@ export function useMaterialPresets(category?: 'filament' | 'resin') {
     getPricePerUnit,
     convertPrice,
     createPresetFromMaterial,
-    refreshPresets: () => loadPresets(true),
+    refreshPresets: loadPresets,
   };
 }
