@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Image from 'next/image';
 
 interface SlicerLogoProps {
@@ -10,6 +10,18 @@ export const OrcaSlicerLogo: React.FC<SlicerLogoProps> = ({
   className = "w-6 h-6", 
   size = 24 
 }) => {
+  const [imageError, setImageError] = useState(false);
+
+  if (imageError) {
+    return (
+      <div className={`${className} flex items-center justify-center bg-blue-100 rounded`}>
+        <div className="w-full h-full flex items-center justify-center text-blue-600 font-bold text-xs">
+          OS
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={`${className} flex items-center justify-center bg-blue-100 rounded`}>
       <Image
@@ -18,9 +30,11 @@ export const OrcaSlicerLogo: React.FC<SlicerLogoProps> = ({
         width={size}
         height={size}
         className="object-contain"
-        onError={(e) => {
-          console.error('Error loading OrcaSlicer logo:', e);
+        onError={() => {
+          console.error('Error loading OrcaSlicer logo');
+          setImageError(true);
         }}
+        priority={false}
       />
     </div>
   );
@@ -30,6 +44,18 @@ export const BambuStudioLogo: React.FC<SlicerLogoProps> = ({
   className = "w-6 h-6", 
   size = 24 
 }) => {
+  const [imageError, setImageError] = useState(false);
+
+  if (imageError) {
+    return (
+      <div className={`${className} flex items-center justify-center bg-gray-100 rounded`}>
+        <div className="w-full h-full flex items-center justify-center text-gray-600 font-bold text-xs">
+          BS
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={`${className} flex items-center justify-center bg-gray-100 rounded`}>
       <Image
@@ -38,9 +64,11 @@ export const BambuStudioLogo: React.FC<SlicerLogoProps> = ({
         width={size}
         height={size}
         className="object-contain"
-        onError={(e) => {
-          console.error('Error loading BambuStudio logo:', e);
+        onError={() => {
+          console.error('Error loading BambuStudio logo');
+          setImageError(true);
         }}
+        priority={false}
       />
     </div>
   );
