@@ -26,14 +26,19 @@ export function useMaterialPresets(category?: 'filament' | 'resin') {
   // Cargar presets al montar el componente
   useEffect(() => {
     loadPresets();
-  }, [user?.id, category]); // Remover getEffectiveTeam() de las dependencias
+  }, [user?.id, category, getEffectiveTeam()?.id]); // Incluir teamId para recargar cuando cambie el equipo
 
-  const loadPresets = async () => {
+  const loadPresets = async (forceReload = false) => {
     if (!user) {
       setPresets([]);
       setDefaultPreset(null);
       setStats({ total: 0, byCategory: {} });
       setLoading(false);
+      return;
+    }
+
+    // Si ya estamos cargando y no es una recarga forzada, no hacer nada
+    if (loading && !forceReload) {
       return;
     }
 
@@ -62,12 +67,7 @@ export function useMaterialPresets(category?: 'filament' | 'resin') {
       setDefaultPreset(defaultPresetData);
       setStats(statsData);
     } catch (error) {
-      console.error('Error loading material presets:', {
-        error,
-        user: user?.id,
-        team: getEffectiveTeam()?.id,
-        category
-      });
+      console.error('Error loading material presets:', error);
       toast.error('Error al cargar los perfiles de materiales');
     } finally {
       setLoading(false);
@@ -330,6 +330,6 @@ export function useMaterialPresets(category?: 'filament' | 'resin') {
     getPricePerUnit,
     convertPrice,
     createPresetFromMaterial,
-    refreshPresets: loadPresets,
+    refreshPresets: () => loadPresets(true),
   };
 }

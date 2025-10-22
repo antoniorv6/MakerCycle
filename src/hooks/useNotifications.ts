@@ -18,7 +18,6 @@ export function useNotifications() {
       setNotifications(data);
     } catch (err) {
       console.error('Error fetching notifications:', err);
-      console.error('Error details:', JSON.stringify(err, null, 2));
       setError(err instanceof Error ? err.message : 'Failed to fetch notifications');
     } finally {
       setLoading(false);

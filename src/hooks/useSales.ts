@@ -29,7 +29,6 @@ export function useSales() {
       setSales(data);
     } catch (err) {
       console.error('Error fetching sales:', err);
-      console.error('Error details:', JSON.stringify(err, null, 2));
       setError(err instanceof Error ? err.message : 'Error fetching sales');
       toast.error('Error loading sales');
     } finally {
