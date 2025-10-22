@@ -20,6 +20,7 @@ export default function MaterialPresetsManager() {
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
+
   const [formData, setFormData] = useState<Omit<DatabaseMaterialPreset, 'id' | 'user_id' | 'created_at' | 'updated_at'>>({
     name: '',
     price_per_unit: 25,
