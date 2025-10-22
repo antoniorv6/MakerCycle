@@ -99,7 +99,14 @@ export function Notifications({ className = '' }: NotificationsProps) {
 
       {/* Notifications Dropdown */}
       {isOpen && (
-        <div className="absolute left-0 mt-3 w-96 bg-white rounded-xl shadow-2xl border border-gray-200 z-[9999] max-h-[80vh] overflow-hidden">
+        <>
+          {/* Overlay */}
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-25 z-[9998]"
+            onClick={() => setIsOpen(false)}
+          />
+          {/* Panel */}
+          <div className="fixed left-4 top-20 w-96 max-w-[calc(100vw-2rem)] bg-white rounded-xl shadow-2xl border border-gray-200 z-[9999] max-h-[80vh] overflow-hidden">
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
             <div className="flex items-center gap-3">
@@ -275,7 +282,8 @@ export function Notifications({ className = '' }: NotificationsProps) {
               </div>
             </div>
           )}
-        </div>
+          </div>
+        </>
       )}
     </div>
   );
