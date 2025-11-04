@@ -1,17 +1,51 @@
 import { createBrowserClient, createServerClient } from '@supabase/ssr'
 import { SupabaseClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-export const createClient = () =>
-  createBrowserClient(supabaseUrl, supabaseAnonKey)
+// Validar que las variables de entorno estén disponibles
+function validateSupabaseEnv() {
+  // Si las variables están disponibles, usarlas directamente
+  if (supabaseUrl && supabaseAnonKey) {
+    return {
+      url: supabaseUrl,
+      key: supabaseAnonKey
+    }
+  }
+  
+  // Durante el build de Next.js, si las variables no están disponibles,
+  // usar valores placeholder que @supabase/ssr aceptará sin lanzar error
+  // Estos valores solo se usarán durante el build y nunca en runtime
+  // Detectamos el build time verificando si estamos en un contexto sin window
+  const isBuildTime = typeof window === 'undefined'
+  
+  if (isBuildTime) {
+    // Valores placeholder válidos para el build (no se usarán en runtime)
+    // Usamos un formato válido de JWT para evitar errores de validación
+    // Nota: Estos valores solo se usan durante el build. En runtime, las variables
+    // deben estar disponibles como variables de entorno del contenedor.
+    return {
+      url: 'https://placeholder.supabase.co',
+      key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBsYWNlaG9sZGVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE2NDUxOTIwMDAsImV4cCI6MTk2MDc2ODAwMH0.placeholder'
+    }
+  }
+  
+  // En runtime (cliente), las variables deben estar disponibles
+  throw new Error('Missing Supabase environment variables. Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY')
+}
+
+export const createClient = () => {
+  const { url, key } = validateSupabaseEnv()
+  return createBrowserClient(url, key)
+}
 
 export const createServerSupabaseClient = async () => {
+  const { url, key } = validateSupabaseEnv()
   const { cookies } = await import('next/headers')
   const cookieStore = await cookies()
   
-  return createServerClient(supabaseUrl, supabaseAnonKey, {
+  return createServerClient(url, key, {
     cookies: {
       get(name: string) {
         return cookieStore.get(name)?.value

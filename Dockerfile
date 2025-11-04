@@ -17,9 +17,17 @@ FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+# Aceptar build arguments para variables de entorno
+# IMPORTANTE: En Dokploy, configura estas variables como "Build Arguments" en la configuración de la aplicación
+# Si no están disponibles durante el build, el código usará valores placeholder para completar el build
+ARG NEXT_PUBLIC_SUPABASE_URL
+ARG NEXT_PUBLIC_SUPABASE_ANON_KEY
+
 # Establecer variables de entorno para producción
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
+ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
 
 RUN pnpm build
 
