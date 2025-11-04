@@ -18,7 +18,6 @@ interface DetectedFilamentProfile {
   weightG: number;
   willSave: boolean;
   platesCount: number; // Número de placas que usan este perfil
-  alreadyExists: boolean; // Si ya existe en la biblioteca
 }
 
 const FileImportView: React.FC<FileImportViewProps> = ({ onBack, onImportComplete }) => {
@@ -32,12 +31,7 @@ const FileImportView: React.FC<FileImportViewProps> = ({ onBack, onImportComplet
   const [fileSelected, setFileSelected] = useState(false);
   const [isLoadingProfiles, setIsLoadingProfiles] = useState(false);
   const [calculator] = useState(() => new PrintCostCalculator());
-  const { addPreset, addPresetsBatch, presets, refreshPresets } = useMaterialPresets();
-
-  // Cargar perfiles al montar el componente
-  useEffect(() => {
-    refreshPresets();
-  }, [refreshPresets]);
+  const { addPreset, addPresetsBatch } = useMaterialPresets(); // Solo necesitamos las funciones de creación
 
   const handleFileSelect = useCallback(async (file: File) => {
     if (!file.name.toLowerCase().endsWith('.gcode.3mf')) {
@@ -56,63 +50,46 @@ const FileImportView: React.FC<FileImportViewProps> = ({ onBack, onImportComplet
       const result = await calculator.processFile(file);
       setImportedData(result);
       
-      // Cargar perfiles de forma asíncrona sin bloquear la UI
-      refreshPresets().then(() => {
-        const currentPresets = presets;
-        
-        // Consolidar perfiles únicos (mismo nombre + mismo precio = mismo perfil)
-        const uniqueProfilesMap = new Map<string, DetectedFilamentProfile>();
-        const profilePlateCount = new Map<string, Set<number>>(); // Para contar placas únicas
-        
-        // Primero, procesar cada placa para contar cuántas placas usan cada perfil
-        for (const plate of result.plates) {
-          for (const filament of plate.filaments) {
-            const key = `${filament.profileName}__${filament.costPerKg}`;
-            
-            if (!profilePlateCount.has(key)) {
-              profilePlateCount.set(key, new Set());
-            }
-            profilePlateCount.get(key)!.add(plate.plateId);
-          }
-        }
-        
-        // Luego, consolidar los perfiles con el peso total y conteo de placas
-        for (const filament of result.summary.filamentsUsed) {
+      // Procesar perfiles detectados inmediatamente sin esperar a que se carguen los presets
+      const uniqueProfilesMap = new Map<string, DetectedFilamentProfile>();
+      const profilePlateCount = new Map<string, Set<number>>(); // Para contar placas únicas
+      
+      // Primero, procesar cada placa para contar cuántas placas usan cada perfil
+      for (const plate of result.plates) {
+        for (const filament of plate.filaments) {
           const key = `${filament.profileName}__${filament.costPerKg}`;
           
-          if (!uniqueProfilesMap.has(key)) {
-            // Verificar si ya existe un perfil con el mismo nombre y precio
-            const existingPreset = currentPresets.find(p => {
-              const nameMatch = p.name.trim().toLowerCase() === filament.profileName.trim().toLowerCase();
-              const priceMatch = Math.abs(p.price_per_unit - filament.costPerKg) < 0.01; // Tolerancia para decimales
-              const categoryMatch = p.category === 'filament';
-              
-              return nameMatch && priceMatch && categoryMatch;
-            });
-            
-            uniqueProfilesMap.set(key, {
-              profileName: filament.profileName,
-              filamentType: filament.type,
-              color: '#808080', // Default color since filament.color doesn't exist
-              costPerKg: filament.costPerKg,
-              weightG: 0, // Se sumará el peso total
-              willSave: !existingPreset, // Solo seleccionar para guardar si no existe
-              platesCount: profilePlateCount.get(key)?.size || 0,
-              alreadyExists: !!existingPreset, // Marcar si ya existe
-            });
+          if (!profilePlateCount.has(key)) {
+            profilePlateCount.set(key, new Set());
           }
-          
-          // Sumar el peso total de este filamento
-          const existingProfile = uniqueProfilesMap.get(key)!;
-          existingProfile.weightG += filament.weightG;
+          profilePlateCount.get(key)!.add(plate.plateId);
+        }
+      }
+      
+      // Luego, consolidar los perfiles con el peso total y conteo de placas
+      for (const filament of result.summary.filamentsUsed) {
+        const key = `${filament.profileName}__${filament.costPerKg}`;
+        
+        if (!uniqueProfilesMap.has(key)) {
+          uniqueProfilesMap.set(key, {
+            profileName: filament.profileName,
+            filamentType: filament.type,
+            color: '#808080', // Default color since filament.color doesn't exist
+            costPerKg: filament.costPerKg,
+            weightG: 0, // Se sumará el peso total
+            willSave: true, // Por defecto seleccionar para guardar, se actualizará después
+            platesCount: profilePlateCount.get(key)?.size || 0,
+          });
         }
         
-        const profiles = Array.from(uniqueProfilesMap.values());
-        
-        
-        setDetectedProfiles(profiles);
-        setIsLoadingProfiles(false);
-      });
+        // Sumar el peso total de este filamento
+        const existingProfile = uniqueProfilesMap.get(key)!;
+        existingProfile.weightG += filament.weightG;
+      }
+      
+      const profiles = Array.from(uniqueProfilesMap.values());
+      setDetectedProfiles(profiles);
+      setIsLoadingProfiles(false);
       
     } catch (err) {
       console.error('Error processing file:', err);
@@ -121,7 +98,7 @@ const FileImportView: React.FC<FileImportViewProps> = ({ onBack, onImportComplet
     } finally {
       setIsProcessing(false);
     }
-  }, [calculator, presets, refreshPresets]);
+  }, [calculator]);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -401,11 +378,6 @@ const FileImportView: React.FC<FileImportViewProps> = ({ onBack, onImportComplet
                             <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded">
                               {profile.platesCount} placa{profile.platesCount > 1 ? 's' : ''}
                             </span>
-                            {profile.alreadyExists && (
-                              <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
-                                Ya existe en biblioteca
-                              </span>
-                            )}
                           </div>
                           <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm text-slate-600">
                             <div>Peso total: {profile.weightG.toFixed(1)}g</div>

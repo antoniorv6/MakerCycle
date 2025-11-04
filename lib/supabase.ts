@@ -130,7 +130,7 @@ export type Database = {
           price_per_unit: number
           unit: string
           material_type: string
-          category: 'filament' | 'resin' | 'other'
+          category: 'filament' | 'resin'
           color: string | null
           brand: string | null
           notes: string | null
@@ -146,7 +146,7 @@ export type Database = {
           price_per_unit: number
           unit?: string
           material_type?: string
-          category?: 'filament' | 'resin' | 'other'
+          category?: 'filament' | 'resin'
           color?: string | null
           brand?: string | null
           notes?: string | null
@@ -162,7 +162,7 @@ export type Database = {
           price_per_unit?: number
           unit?: string
           material_type?: string
-          category?: 'filament' | 'resin' | 'other'
+          category?: 'filament' | 'resin'
           color?: string | null
           brand?: string | null
           notes?: string | null

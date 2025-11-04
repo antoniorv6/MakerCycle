@@ -23,10 +23,6 @@ export function useMaterialPresets(category?: 'filament' | 'resin') {
   const [stats, setStats] = useState<{ total: number; byCategory: { [key: string]: number } }>({ total: 0, byCategory: {} });
   const [loading, setLoading] = useState(true);
 
-  // Cargar presets al montar el componente
-  useEffect(() => {
-    loadPresets();
-  }, [user?.id, category]); // Remover getEffectiveTeam() de las dependencias
 
   const loadPresets = async () => {
     if (!user) {
@@ -42,7 +38,6 @@ export function useMaterialPresets(category?: 'filament' | 'resin') {
       // Primero verificar la conexión a la base de datos
       const connectionTest = await testMaterialPresetsConnection();
       if (!connectionTest.success) {
-        console.error('Database connection failed:', connectionTest.error);
         toast.error(`Error de conexión: ${connectionTest.error}`);
         setPresets([]);
         setDefaultPreset(null);
@@ -62,17 +57,18 @@ export function useMaterialPresets(category?: 'filament' | 'resin') {
       setDefaultPreset(defaultPresetData);
       setStats(statsData);
     } catch (error) {
-      console.error('Error loading material presets:', {
-        error,
-        user: user?.id,
-        team: getEffectiveTeam()?.id,
-        category
-      });
+      console.error('Error loading material presets:', error);
       toast.error('Error al cargar los perfiles de materiales');
     } finally {
       setLoading(false);
     }
   };
+
+  // Cargar presets al montar el componente
+  useEffect(() => {
+    const teamId = getEffectiveTeam()?.id;
+    loadPresets();
+  }, [user?.id, category]); // Remover getEffectiveTeam() de las dependencias para evitar re-renders constantes
 
   // Crear un nuevo preset
   const addPreset = async (

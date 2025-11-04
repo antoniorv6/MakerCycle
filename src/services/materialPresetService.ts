@@ -10,6 +10,17 @@ export async function testMaterialPresetsConnection(): Promise<{ success: boolea
   const supabase = createClient();
   
   try {
+    // Verificar autenticación primero
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    
+    if (authError) {
+      return { success: false, error: `Authentication error: ${authError.message}` };
+    }
+    
+    if (!user) {
+      return { success: false, error: 'No authenticated user' };
+    }
+    
     // Intentar hacer una consulta simple para verificar que la tabla existe
     const { data, error } = await supabase
       .from('material_presets')
@@ -17,9 +28,8 @@ export async function testMaterialPresetsConnection(): Promise<{ success: boolea
       .limit(1);
     
     if (error) {
-      return { success: false, error: error.message };
+      return { success: false, error: `Table access error: ${error.message} (Code: ${error.code})` };
     }
-    
     return { success: true };
   } catch (error) {
     return { 
@@ -37,21 +47,18 @@ export async function getMaterialPresets(userId: string, teamId?: string | null,
     // Primero verificar la conexión
     const connectionTest = await testMaterialPresetsConnection();
     if (!connectionTest.success) {
-      console.error('Database connection test failed:', connectionTest.error);
       return [];
     }
 
     let query = supabase
       .from('material_presets')
-      .select('*')
-      .eq('user_id', userId);
+      .select('*');
 
     // Si hay teamId, también traer los presets del equipo
     if (teamId) {
-      query = supabase
-        .from('material_presets')
-        .select('*')
-        .or(`user_id.eq.${userId},team_id.eq.${teamId}`);
+      query = query.or(`user_id.eq.${userId},team_id.eq.${teamId}`);
+    } else {
+      query = query.eq('user_id', userId);
     }
 
     // Filtrar por categoría si se especifica
@@ -62,12 +69,7 @@ export async function getMaterialPresets(userId: string, teamId?: string | null,
     const { data, error } = await query.order('is_default', { ascending: false }).order('name');
 
     if (error) {
-      console.error('Error fetching material presets:', {
-        message: error.message,
-        details: error.details,
-        hint: error.hint,
-        code: error.code
-      });
+      console.error('Error fetching material presets:', error);
       throw error;
     }
 
@@ -356,7 +358,6 @@ export async function getMaterialPresetStats(userId: string, teamId?: string | n
       return { total: 0, byCategory: {} };
     }
 
-    console.log('Getting material preset stats for:', { userId, teamId, authenticatedUser: user.id });
 
     let query = supabase
       .from('material_presets')
@@ -383,7 +384,6 @@ export async function getMaterialPresetStats(userId: string, teamId?: string | n
       throw error;
     }
 
-    console.log('Material preset stats data:', { data, count: data?.length });
 
     const stats = {
       total: data?.length || 0,
@@ -394,7 +394,6 @@ export async function getMaterialPresetStats(userId: string, teamId?: string | n
       stats.byCategory[preset.category] = (stats.byCategory[preset.category] || 0) + 1;
     });
 
-    console.log('Material preset stats result:', stats);
     return stats;
   } catch (error) {
     console.error('Error in getMaterialPresetStats:', {

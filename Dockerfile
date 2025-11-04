@@ -34,18 +34,21 @@ RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
 # Copiar archivos necesarios del build standalone
-# El modo standalone incluye todo lo necesario, solo necesitamos copiar public y static
+# El modo standalone de Next.js genera una estructura autocontenida en .next/standalone
+# Copiamos el contenido de standalone a la raíz del contenedor
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
 USER nextjs
 
-# Exponer el puerto 3000
+# Exponer el puerto 3000 (requerido por Dokploy)
 EXPOSE 3000
 
+# Variables de entorno para Next.js
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
+# Comando para iniciar el servidor Next.js
 CMD ["node", "server.js"]
 

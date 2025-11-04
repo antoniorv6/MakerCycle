@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Trash2, Flag, Calendar, PauseCircle, PlayCircle, CheckCircle2 } from 'lucide-react';
 import type { KanbanCard, KanbanStatus } from '@/types';
 
@@ -36,19 +37,49 @@ function getPriorityInfo(margin?: number) {
 
 export const ProjectCard: React.FC<ProjectCardProps> = ({ card, onDelete, onChangePriority, isDragging }) => {
   const [priorityOpen, setPriorityOpen] = useState(false);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
   const ref = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
   const { project } = card;
   const priority = getPriorityInfo(project?.profit_margin);
   const status = statusInfo[card.status];
 
+  // Calcular posición del dropdown
+  const updateDropdownPosition = () => {
+    if (buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setDropdownPosition({
+        top: rect.bottom + window.scrollY + 8,
+        left: rect.left + window.scrollX
+      });
+    }
+  };
+
   // Cerrar dropdown al hacer click fuera
   useEffect(() => {
     if (!priorityOpen) return;
+    
+    updateDropdownPosition();
+    
     function handle(e: MouseEvent) {
       if (ref.current && !ref.current.contains(e.target as Node)) setPriorityOpen(false);
     }
     document.addEventListener('mousedown', handle);
     return () => document.removeEventListener('mousedown', handle);
+  }, [priorityOpen]);
+
+  // Actualizar posición en scroll o resize
+  useEffect(() => {
+    if (!priorityOpen) return;
+    
+    const handleUpdate = () => updateDropdownPosition();
+    window.addEventListener('scroll', handleUpdate);
+    window.addEventListener('resize', handleUpdate);
+    
+    return () => {
+      window.removeEventListener('scroll', handleUpdate);
+      window.removeEventListener('resize', handleUpdate);
+    };
   }, [priorityOpen]);
 
   return (
@@ -87,6 +118,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ card, onDelete, onChan
         {/* Prioridad (dropdown) */}
         <div className="relative" ref={ref}>
           <button
+            ref={buttonRef}
             type="button"
             className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold border ${priority.color} cursor-pointer select-none`}
             title={priority.label + ' prioridad'}
@@ -98,13 +130,6 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ card, onDelete, onChan
             {priority.label}
             <svg className="ml-1 w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
           </button>
-          {priorityOpen && (
-            <div className="absolute z-10 mt-2 w-28 bg-white border border-slate-200 rounded-lg shadow-lg py-1 text-xs animate-fade-in" role="listbox">
-              <button className="w-full text-left px-3 py-2 hover:bg-red-100 text-red-700 font-semibold flex items-center gap-2" onClick={() => { setPriorityOpen(false); onChangePriority(card.id, 30); }} role="option"> <Flag className="w-4 h-4" /> Alta</button>
-              <button className="w-full text-left px-3 py-2 hover:bg-orange-100 text-orange-700 font-semibold flex items-center gap-2" onClick={() => { setPriorityOpen(false); onChangePriority(card.id, 15); }} role="option"> <Flag className="w-4 h-4" /> Media</button>
-              <button className="w-full text-left px-3 py-2 hover:bg-slate-100 text-slate-500 font-semibold flex items-center gap-2" onClick={() => { setPriorityOpen(false); onChangePriority(card.id, 5); }} role="option"> <Flag className="w-4 h-4" /> Baja</button>
-            </div>
-          )}
         </div>
         {/* Fecha de creación */}
         {project?.created_at && (
@@ -114,6 +139,41 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ card, onDelete, onChan
           </span>
         )}
       </div>
+      
+      {/* Portal del dropdown */}
+      {priorityOpen && createPortal(
+        <div 
+          className="fixed z-[9999] w-28 bg-white border border-slate-200 rounded-lg shadow-lg py-1 text-xs animate-in fade-in-0 slide-in-from-top-2 duration-200" 
+          style={{
+            top: dropdownPosition.top,
+            left: dropdownPosition.left
+          }}
+          role="listbox"
+        >
+          <button 
+            className="w-full text-left px-3 py-2 hover:bg-red-100 text-red-700 font-semibold flex items-center gap-2" 
+            onClick={() => { setPriorityOpen(false); onChangePriority(card.id, 30); }} 
+            role="option"
+          > 
+            <Flag className="w-4 h-4" /> Alta
+          </button>
+          <button 
+            className="w-full text-left px-3 py-2 hover:bg-orange-100 text-orange-700 font-semibold flex items-center gap-2" 
+            onClick={() => { setPriorityOpen(false); onChangePriority(card.id, 15); }} 
+            role="option"
+          > 
+            <Flag className="w-4 h-4" /> Media
+          </button>
+          <button 
+            className="w-full text-left px-3 py-2 hover:bg-slate-100 text-slate-500 font-semibold flex items-center gap-2" 
+            onClick={() => { setPriorityOpen(false); onChangePriority(card.id, 5); }} 
+            role="option"
+          > 
+            <Flag className="w-4 h-4" /> Baja
+          </button>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }; 
