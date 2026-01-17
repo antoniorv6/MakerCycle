@@ -4,6 +4,7 @@ import { useAuth } from '@/components/providers/AuthProvider';
 import { useSales } from '@/hooks/useSales';
 import { useExpenses } from '@/hooks/useExpenses';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
+import { useFormatCurrency } from '@/hooks/useFormatCurrency';
 import { AccountingHeader } from './AccountingHeader';
 import { SalesTable } from './SalesTable';
 import { ExpensesTable } from './ExpensesTable';
@@ -51,6 +52,7 @@ export default function Accounting() {
   } = useExpenses();
 
   const { companyData } = useCompanySettings();
+  const { currencySymbol } = useFormatCurrency();
 
   const loading = salesLoading || expensesLoading;
 
@@ -151,7 +153,7 @@ export default function Accounting() {
   const handleGeneratePDF = async (invoiceData: any) => {
     try {
       
-      await InvoiceService.generatePDF(invoiceData, companyData);
+      await InvoiceService.generatePDF(invoiceData, companyData, currencySymbol);
       setShowInvoiceForm(false);
       setSelectedSaleForInvoice(null);
     } catch (error) {

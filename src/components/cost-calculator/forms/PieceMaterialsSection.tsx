@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Plus, Trash2, Package, Edit3, Save, X, Bookmark, Settings, Loader2, Check } from 'lucide-react';
+import { useFormatCurrency } from '@/hooks/useFormatCurrency';
 import type { CostCalculatorPieceMaterial } from '../types';
 import { useMaterialPresets } from '@/hooks/useMaterialPresets';
 
@@ -18,8 +19,10 @@ const MaterialCard: React.FC<{
   onUpdate: (field: keyof CostCalculatorPieceMaterial, value: string | number) => void;
   onRemove: () => void;
   onNavigateToSettings?: () => void;
+  currencySymbol?: string;
   onSaveAsPreset?: (material: CostCalculatorPieceMaterial) => void;
 }> = ({ material, onUpdate, onRemove, onNavigateToSettings, onSaveAsPreset }) => {
+  const { formatCurrency, currencySymbol } = useFormatCurrency();
   const [isEditingName, setIsEditingName] = useState(false);
   const [tempName, setTempName] = useState(material.materialName);
   const { presets, loading: presetsLoading, convertPrice } = useMaterialPresets();
@@ -285,7 +288,7 @@ const MaterialCard: React.FC<{
                           </div>
                           <div className="text-right ml-2">
                             <div className="text-sm font-bold text-purple-600 group-hover:text-purple-700 transition-colors">
-                              {preset.price_per_unit.toFixed(2)}€
+                              {preset.price_per_unit.toFixed(2)}{currencySymbol}
                             </div>
                             <div className="text-xs text-gray-500">por {preset.unit}</div>
                           </div>
@@ -395,7 +398,7 @@ const MaterialCard: React.FC<{
 
         <div>
           <label className="block text-xs font-medium text-gray-700 mb-1">
-            Precio (€/kg)
+            Precio ({currencySymbol}/kg)
           </label>
           <input
             type="number"
@@ -498,7 +501,7 @@ const MaterialCard: React.FC<{
           <div className="bg-green-50 rounded-lg p-3 border border-green-100">
             <div className="text-xs font-medium text-green-700 mb-1">Coste</div>
             <div className="text-sm font-bold text-green-900">
-              {((material.weight / (material.unit === 'kg' ? 1 : 1000)) * material.pricePerKg).toFixed(2)}€
+              {formatCurrency((material.weight / (material.unit === 'kg' ? 1 : 1000)) * material.pricePerKg)}
             </div>
           </div>
         </div>
@@ -516,6 +519,7 @@ const PieceMaterialsSection: React.FC<PieceMaterialsSectionProps> = ({
   onSyncPieceFields,
   onSaveAsPreset
 }) => {
+  const { formatCurrency } = useFormatCurrency();
   const totalWeight = materials.reduce((sum, material) => {
     const weightInGrams = material.unit === 'kg' ? material.weight * 1000 : material.weight;
     return sum + weightInGrams;
@@ -593,7 +597,7 @@ const PieceMaterialsSection: React.FC<PieceMaterialsSectionProps> = ({
             <div className="bg-green-50 rounded-lg p-3 border border-green-100">
               <div className="text-sm font-medium text-green-700 mb-1">Coste total</div>
               <div className="text-lg font-bold text-green-900">
-                {totalCost.toFixed(2)}€
+                {formatCurrency(totalCost)}
               </div>
             </div>
             <div className="bg-purple-50 rounded-lg p-3 border border-purple-100">

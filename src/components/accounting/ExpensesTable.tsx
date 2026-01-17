@@ -1,6 +1,7 @@
 import React from 'react';
 import { Search, Trash2, Edit, Users, User, Plus } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useFormatCurrency } from '@/hooks/useFormatCurrency';
 import type { Expense } from '@/types';
 
 interface ExpensesTableProps {
@@ -20,7 +21,7 @@ export function ExpensesTable({
   onEditExpense,
   onAddExpense
 }: ExpensesTableProps) {
-  const formatCurrency = (value: number) => `€${value.toFixed(2)}`;
+  const { formatCurrency } = useFormatCurrency();
   const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString('es-ES');
 
   const getStatusColor = (status: string) => {

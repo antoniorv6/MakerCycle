@@ -2,6 +2,7 @@ import React from 'react';
 import { Search, Trash2, Edit, Eye, Users, User, Plus, FileText, Package, Calendar, Euro, TrendingUp, UserCheck } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useClients } from '@/hooks/useClients';
+import { useFormatCurrency } from '@/hooks/useFormatCurrency';
 import type { Sale } from '@/types';
 
 interface SalesTableProps {
@@ -24,7 +25,7 @@ export function SalesTable({
   onGenerateInvoice
 }: SalesTableProps) {
   const { clients } = useClients();
-  const formatCurrency = (value: number) => `€${value.toFixed(2)}`;
+  const { formatCurrency } = useFormatCurrency();
   const formatPercentage = (value: number) => `${value.toFixed(1)}%`;
   const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString('es-ES');
 

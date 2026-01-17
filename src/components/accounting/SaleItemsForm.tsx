@@ -4,7 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useTeam } from '@/components/providers/TeamProvider';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { createClient } from '@/lib/supabase';
-import { roundCurrency, roundTime, formatCurrency, formatPercentage } from '@/utils/numberUtils';
+import { roundCurrency, roundTime, formatPercentage } from '@/utils/numberUtils';
+import { useFormatCurrency } from '@/hooks/useFormatCurrency';
 import type { SaleItemFormData, Project } from '@/types';
 
 interface SaleItemsFormProps {
@@ -15,6 +16,7 @@ interface SaleItemsFormProps {
 export function SaleItemsForm({ items, onItemsChange }: SaleItemsFormProps) {
   const { currentTeam, userTeams, getEffectiveTeam } = useTeam();
   const { user } = useAuth();
+  const { formatCurrency } = useFormatCurrency();
   const supabase = createClient();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loadingProjects, setLoadingProjects] = useState(false);

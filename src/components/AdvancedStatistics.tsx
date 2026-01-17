@@ -15,6 +15,7 @@ import { motion } from 'framer-motion';
 import { createClient } from '@/lib/supabase';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useTeam } from '@/components/providers/TeamProvider';
+import { useFormatCurrency } from '@/hooks/useFormatCurrency';
 import { AdvancedStatisticsSkeleton } from '@/components/skeletons';
 import type { Sale, Expense, Client } from '@/types';
 
@@ -390,7 +391,7 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
       insights.push({
         type: 'warning',
         title: 'Baja rentabilidad por hora',
-        description: 'Tu €/hora está por debajo de 5€. Optimiza tus procesos.',
+        description: `Tu ${currencySymbol}/hora está por debajo de ${currencySymbol}5. Optimiza tus procesos.`,
         icon: TrendingDown,
         color: 'text-red-600',
         bgColor: 'bg-red-50'
@@ -427,7 +428,7 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
 
   const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
 
-  const formatCurrency = (value: number) => `€${value.toFixed(2)}`;
+  const { formatCurrency, currencySymbol } = useFormatCurrency();
   const formatPercentage = (value: number) => `${value.toFixed(1)}%`;
 
   // Utilidad para mensajes vacíos
@@ -636,7 +637,7 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
             </div>
           </div>
           <div>
-            <p className="text-purple-600 text-sm font-medium mb-1">€/Hora Promedio</p>
+            <p className="text-purple-600 text-sm font-medium mb-1">{currencySymbol}/Hora Promedio</p>
             <p className="text-2xl font-bold text-purple-900">{formatCurrency(stats.eurosPerHour)}</p>
             <p className="text-purple-700 text-xs mt-2">
               {stats.totalHours.toFixed(1)}h totales
@@ -696,7 +697,7 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
                       <Tooltip 
                         formatter={(value: any, name: string) => {
                           if (name === 'margin') return [formatPercentage(value), 'Margen'];
-                          if (name === 'eurosPerHour') return [formatCurrency(value), '€/Hora'];
+                          if (name === 'eurosPerHour') return [formatCurrency(value), `${currencySymbol}/Hora`];
                           if (name === 'netProfit') return [formatCurrency(value), 'Beneficio Neto'];
                           if (name === 'expenses') return [formatCurrency(value), 'Gastos'];
                           return [formatCurrency(value), name === 'revenue' ? 'Ingresos' : name === 'profit' ? 'Beneficio Bruto' : 'Coste'];
@@ -901,7 +902,7 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
                 </span>
               </div>
               <div className="flex justify-between items-center py-3 border-b border-gray-100">
-                <span className="text-gray-600">Eficiencia (€/h)</span>
+                <span className="text-gray-600">Eficiencia ({currencySymbol}/h)</span>
                 <span className="font-semibold text-gray-900">{formatCurrency(stats.eurosPerHour)}</span>
               </div>
               <div className="flex justify-between items-center py-3 border-b border-gray-100">

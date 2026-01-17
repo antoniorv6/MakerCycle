@@ -1,6 +1,7 @@
 import React from 'react';
 import { TrendingUp, Plus, Search, Calendar, Euro, BarChart3, PieChart, Clock, FileText, Activity, Receipt } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useFormatCurrency } from '@/hooks/useFormatCurrency';
 import type { AccountingStats } from '@/types';
 
 interface AccountingHeaderProps {
@@ -12,7 +13,7 @@ export function AccountingHeader({
   stats, 
   onShowAdvancedStats
 }: AccountingHeaderProps) {
-  const formatCurrency = (value: number) => `€${value.toFixed(2)}`;
+  const { formatCurrency } = useFormatCurrency();
   const formatPercentage = (value: number) => `${value.toFixed(1)}%`;
 
   return (

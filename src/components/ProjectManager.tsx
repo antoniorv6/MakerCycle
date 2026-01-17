@@ -4,6 +4,7 @@ import { Plus, Search, Filter, Calendar, Euro, FileText, Clock, Package, Layers,
 import { createClient } from '@/lib/supabase';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useTeam } from '@/components/providers/TeamProvider';
+import { useFormatCurrency } from '@/hooks/useFormatCurrency';
 import type { DatabaseProject, DatabasePiece, PieceMaterial } from '@/types';
 import { toast } from 'react-hot-toast';
 import ProjectInfo from './cost-calculator/forms/ProjectInfo';
@@ -45,6 +46,7 @@ async function processPieces(
 export default function ProjectManager({ onLoadProject }: ProjectManagerProps) {
   const { user } = useAuth();
   const { currentTeam } = useTeam();
+  const { formatCurrency, currencySymbol } = useFormatCurrency();
   const supabase = createClient();
   const [projects, setProjects] = useState<(DatabaseProject & { pieces?: DatabasePiece[] })[]>([]);
   const [loading, setLoading] = useState(true);
@@ -349,7 +351,7 @@ export default function ProjectManager({ onLoadProject }: ProjectManagerProps) {
                     </div>
                     <div className="flex items-center space-x-1">
                       <Euro className="w-4 h-4" />
-                      <span className="font-medium">€{project.total_cost.toFixed(2)}</span>
+                      <span className="font-medium">{formatCurrency(project.total_cost)}</span>
                     </div>
                   </div>
                 </div>
@@ -425,7 +427,7 @@ export default function ProjectManager({ onLoadProject }: ProjectManagerProps) {
                     <Euro className="w-4 h-4" />
                     Coste Total
                   </div>
-                  <div className="text-orange-900 font-bold text-lg">€{project.total_cost.toFixed(2)}</div>
+                  <div className="text-orange-900 font-bold text-lg">{formatCurrency(project.total_cost)}</div>
                 </div>
               </div>
 
@@ -481,7 +483,7 @@ export default function ProjectManager({ onLoadProject }: ProjectManagerProps) {
                                 <Euro className="w-3 h-3" />
                                 Coste
                               </div>
-                              <div className="font-medium text-gray-900">€{(pieceCost * piece.quantity).toFixed(2)}</div>
+                              <div className="font-medium text-gray-900">{formatCurrency(pieceCost * piece.quantity)}</div>
                             </div>
                             <div>
                               <div className="flex items-center gap-1 text-gray-600 mb-1">
@@ -514,7 +516,7 @@ export default function ProjectManager({ onLoadProject }: ProjectManagerProps) {
                                       </span>
                                     </div>
                                     <div className="text-gray-600">
-                                      {material.weight || 0}{material.unit || 'g'} • €{((material.weight || 0) * (material.price_per_kg || 0) / (material.unit === 'kg' ? 1 : 1000)).toFixed(2)}
+                                      {material.weight || 0}{material.unit || 'g'} • {formatCurrency((material.weight || 0) * (material.price_per_kg || 0) / (material.unit === 'kg' ? 1 : 1000))}
                                     </div>
                                   </div>
                                 ))}

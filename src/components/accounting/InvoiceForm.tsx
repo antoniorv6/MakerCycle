@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Download, FileText, Plus, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useClients } from '@/hooks/useClients';
+import { useFormatCurrency } from '@/hooks/useFormatCurrency';
 import type { Sale, InvoiceFormData } from '@/types';
 import { toast } from 'react-hot-toast';
 
@@ -126,7 +127,7 @@ export function InvoiceForm({ sale, onClose, onGeneratePDF }: InvoiceFormProps) 
     onGeneratePDF(formData);
   };
 
-  const formatCurrency = (value: number) => `€${value.toFixed(2)}`;
+  const { formatCurrency } = useFormatCurrency();
 
   return (
     <AnimatePresence>

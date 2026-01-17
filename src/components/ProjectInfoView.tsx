@@ -1,5 +1,6 @@
 import React from 'react';
 import { Package, Clock, Euro, Weight, Zap, Layers, Settings, Palette, Info, ArrowLeft, Edit3 } from 'lucide-react';
+import { useFormatCurrency } from '@/hooks/useFormatCurrency';
 import type { AppProject } from '@/types';
 
 interface ProjectInfoViewProps {
@@ -9,6 +10,7 @@ interface ProjectInfoViewProps {
 }
 
 const ProjectInfoView: React.FC<ProjectInfoViewProps> = ({ project, onEdit, onBack }) => {
+  const { formatCurrency, currencySymbol } = useFormatCurrency();
   // Calcular totales del proyecto
   const totalFilamentCost = project.pieces?.reduce((sum, piece) => {
     if ((piece as any).materials && (piece as any).materials.length > 0) {
@@ -191,7 +193,7 @@ const ProjectInfoView: React.FC<ProjectInfoViewProps> = ({ project, onEdit, onBa
                           </div>
                         </div>
                         <div className="text-right">
-                          <div className="text-2xl font-bold text-gray-900">€{(pieceCost * piece.quantity).toFixed(2)}</div>
+                          <div className="text-2xl font-bold text-gray-900">{formatCurrency(pieceCost * piece.quantity)}</div>
                           <div className="text-sm text-gray-500">
                             {pieceWeight >= 1000 ? `${(pieceWeight / 1000).toFixed(1)}kg` : `${pieceWeight.toFixed(1)}g`} totales
                           </div>
@@ -229,10 +231,10 @@ const ProjectInfoView: React.FC<ProjectInfoViewProps> = ({ project, onEdit, onBa
                                   </div>
                                   <div className="text-right">
                                     <div className="text-lg font-bold text-gray-900">
-                                      €{((material.weight || 0) * (material.pricePerKg || material.price_per_kg || 0) / (material.unit === 'kg' ? 1 : 1000)).toFixed(2)}
+                                      {formatCurrency((material.weight || 0) * (material.pricePerKg || material.price_per_kg || 0) / (material.unit === 'kg' ? 1 : 1000))}
                                     </div>
                                     <div className="text-sm text-gray-500">
-                                      {material.weight || 0}{material.unit || 'g'} • €{material.pricePerKg || material.price_per_kg || 0}/kg
+                                      {material.weight || 0}{material.unit || 'g'} • {currencySymbol}{material.pricePerKg || material.price_per_kg || 0}/kg
                                     </div>
                                   </div>
                                 </div>
@@ -248,7 +250,7 @@ const ProjectInfoView: React.FC<ProjectInfoViewProps> = ({ project, onEdit, onBa
                                   <div className="bg-gray-50 rounded p-2">
                                     <div className="text-xs text-gray-500 mb-1">Precio/kg</div>
                                     <div className="font-medium text-gray-900 text-sm">
-                                      €{material.pricePerKg || material.price_per_kg || 0}
+                                      {currencySymbol}{material.pricePerKg || material.price_per_kg || 0}
                                     </div>
                                   </div>
                                   <div className="bg-gray-50 rounded p-2">
@@ -305,10 +307,10 @@ const ProjectInfoView: React.FC<ProjectInfoViewProps> = ({ project, onEdit, onBa
                               </div>
                               <div className="text-right">
                                 <div className="text-lg font-bold text-gray-900">
-                                  €{((piece.filamentWeight * piece.filamentPrice) / 1000).toFixed(2)}
+                                  {formatCurrency((piece.filamentWeight * piece.filamentPrice) / 1000)}
                                 </div>
                                 <div className="text-sm text-gray-500">
-                                  {piece.filamentWeight}g • €{piece.filamentPrice}/kg
+                                  {piece.filamentWeight}g • {currencySymbol}{piece.filamentPrice}/kg
                                 </div>
                               </div>
                             </div>
@@ -323,7 +325,7 @@ const ProjectInfoView: React.FC<ProjectInfoViewProps> = ({ project, onEdit, onBa
                               <div className="bg-white rounded p-2">
                                 <div className="text-xs text-gray-500 mb-1">Precio/kg</div>
                                 <div className="font-medium text-gray-900 text-sm">
-                                  €{piece.filamentPrice}
+                                  {currencySymbol}{piece.filamentPrice}
                                 </div>
                               </div>
                               <div className="bg-white rounded p-2">
@@ -359,7 +361,7 @@ const ProjectInfoView: React.FC<ProjectInfoViewProps> = ({ project, onEdit, onBa
                           </div>
                           <div className="text-right">
                             <div className="text-lg font-bold text-gray-900">
-                              €{(pieceCost * piece.quantity).toFixed(2)}
+                              {formatCurrency(pieceCost * piece.quantity)}
                             </div>
                             <div className="text-sm text-gray-500">
                               {pieceWeight >= 1000 ? `${(pieceWeight / 1000).toFixed(1)}kg` : `${pieceWeight.toFixed(1)}g`} • {(piece.printHours * piece.quantity).toFixed(1)}h
@@ -389,19 +391,19 @@ const ProjectInfoView: React.FC<ProjectInfoViewProps> = ({ project, onEdit, onBa
             <div className="space-y-4">
               <div className="flex justify-between items-center py-3 border-b border-gray-100">
                 <span className="text-gray-700">Coste de materiales:</span>
-                <span className="text-lg font-bold text-gray-900">€{totalFilamentCost.toFixed(2)}</span>
+                <span className="text-lg font-bold text-gray-900">{formatCurrency(totalFilamentCost)}</span>
               </div>
               
               <div className="flex justify-between items-center py-3 border-b border-gray-100">
                 <span className="text-gray-700">Coste de electricidad:</span>
-                <span className="text-lg font-bold text-gray-900">€{totalElectricityCost.toFixed(2)}</span>
+                <span className="text-lg font-bold text-gray-900">{formatCurrency(totalElectricityCost)}</span>
               </div>
               
               {project.materials && project.materials.length > 0 && (
                 <div className="flex justify-between items-center py-3 border-b border-gray-100">
                   <span className="text-gray-700">Materiales adicionales:</span>
                   <span className="text-lg font-bold text-gray-900">
-                    €{project.materials.reduce((sum, material) => sum + material.price, 0).toFixed(2)}
+                    {formatCurrency(project.materials.reduce((sum, material) => sum + material.price, 0))}
                   </span>
                 </div>
               )}
@@ -409,7 +411,7 @@ const ProjectInfoView: React.FC<ProjectInfoViewProps> = ({ project, onEdit, onBa
               <div className="flex justify-between items-center py-4 bg-gray-50 rounded-lg px-4">
                 <span className="text-lg font-bold text-gray-900">Coste total:</span>
                 <span className="text-2xl font-bold text-gray-900">
-                  €{(totalFilamentCost + totalElectricityCost + (project.materials?.reduce((sum, material) => sum + material.price, 0) || 0)).toFixed(2)}
+                  {formatCurrency(totalFilamentCost + totalElectricityCost + (project.materials?.reduce((sum, material) => sum + material.price, 0) || 0))}
                 </span>
               </div>
             </div>
@@ -432,7 +434,7 @@ const ProjectInfoView: React.FC<ProjectInfoViewProps> = ({ project, onEdit, onBa
                 {project.materials.map((material, index) => (
                   <div key={index} className="flex justify-between items-center py-3 border-b border-gray-100 last:border-b-0">
                     <span className="text-gray-700">{material.name}</span>
-                    <span className="text-lg font-bold text-gray-900">€{material.price.toFixed(2)}</span>
+                    <span className="text-lg font-bold text-gray-900">{formatCurrency(material.price)}</span>
                   </div>
                 ))}
               </div>

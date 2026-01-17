@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Plus, Trash2, Star, Edit2, X, Check, Package, Filter } from 'lucide-react';
 import { useMaterialPresets } from '@/hooks/useMaterialPresets';
+import { useFormatCurrency } from '@/hooks/useFormatCurrency';
 import type { DatabaseMaterialPreset } from '@/types';
 
 const MATERIAL_TYPES = {
@@ -276,7 +277,7 @@ export default function MaterialPresetsManager() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Precio por {formData.unit} (€) *
+                Precio por {formData.unit} ({currencySymbol}) *
               </label>
               <input
                 type="number"
@@ -453,7 +454,7 @@ export default function MaterialPresetsManager() {
                     <div>
                       <span className="text-gray-500">Precio:</span>
                       <span className="ml-2 font-medium text-purple-600">
-                        {preset.price_per_unit.toFixed(2)}€/{preset.unit}
+                        {preset.price_per_unit.toFixed(2)}{currencySymbol}/{preset.unit}
                       </span>
                     </div>
                     <div>

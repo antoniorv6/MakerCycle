@@ -3,6 +3,7 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import { AuthProvider } from '@/components/providers/AuthProvider'
 import { TeamProvider } from '@/components/providers/TeamProvider'
+import { CurrencyProvider } from '@/components/providers/CurrencyProvider'
 import { Toaster } from 'react-hot-toast'
 import Footer from '@/components/Footer'
 import CookieBanner from '@/components/CookieBanner'
@@ -85,11 +86,13 @@ export default function RootLayout({
       <body className={inter.className}>
         <div className="min-h-screen flex flex-col">
           <AuthProvider>
-            <TeamProvider>
-              <main className="flex-1">
-                {children}
-              </main>
-            </TeamProvider>
+            <CurrencyProvider>
+              <TeamProvider>
+                <main className="flex-1">
+                  {children}
+                </main>
+              </TeamProvider>
+            </CurrencyProvider>
           </AuthProvider>
           <Footer />
         </div>

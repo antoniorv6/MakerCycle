@@ -7,6 +7,7 @@ import {
   DollarSign, PieChart, LineChart, Award, Star, TrendingDown
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useFormatCurrency } from '@/hooks/useFormatCurrency';
 import type { DashboardStats } from '@/types';
 import TeamContextBanner from './TeamContextBanner';
 
@@ -16,7 +17,7 @@ interface DashboardHomeProps {
 }
 
 export default function DashboardHome({ stats, onNavigate }: DashboardHomeProps) {
-  const formatCurrency = (value: number) => `€${value.toFixed(2)}`;
+  const { formatCurrency } = useFormatCurrency();
   const formatPercentage = (value: number) => `${value.toFixed(1)}%`;
 
   // Calcular métricas adicionales

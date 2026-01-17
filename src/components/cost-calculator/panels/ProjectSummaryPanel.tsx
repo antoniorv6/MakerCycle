@@ -1,5 +1,6 @@
 import React from 'react';
 import { Package, Clock, Weight, Euro, TrendingUp, Info, Layers, Zap } from 'lucide-react';
+import { useFormatCurrency } from '@/hooks/useFormatCurrency';
 import type { ProjectSummaryProps } from '@/types';
 
 const ProjectSummaryPanel: React.FC<ProjectSummaryProps> = ({
@@ -9,6 +10,7 @@ const ProjectSummaryPanel: React.FC<ProjectSummaryProps> = ({
   totalFilamentCost,
   totalElectricityCost
 }) => {
+  const { formatCurrency, currencySymbol } = useFormatCurrency();
   const totalPieces = pieces.reduce((sum, piece) => sum + piece.quantity, 0);
   const uniquePieces = pieces.length;
   const totalCost = totalFilamentCost + totalElectricityCost;
@@ -112,7 +114,7 @@ const ProjectSummaryPanel: React.FC<ProjectSummaryProps> = ({
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-lg font-bold text-gray-900">€{(pieceCost * piece.quantity).toFixed(2)}</div>
+                  <div className="text-lg font-bold text-gray-900">{formatCurrency(pieceCost * piece.quantity)}</div>
                   <div className="text-sm text-gray-600">
                     {pieceWeight >= 1000 ? `${(pieceWeight / 1000).toFixed(1)}kg` : `${pieceWeight.toFixed(1)}g`} • {(piece.printHours * piece.quantity).toFixed(1)}h
                   </div>
@@ -145,7 +147,7 @@ const ProjectSummaryPanel: React.FC<ProjectSummaryProps> = ({
                             {material.weight || 0}{material.unit || 'g'}
                           </div>
                           <div className="text-xs text-gray-500">
-                            €{((material.weight || 0) * (material.pricePerKg || 0) / (material.unit === 'kg' ? 1 : 1000)).toFixed(2)}
+                            {formatCurrency((material.weight || 0) * (material.pricePerKg || 0) / (material.unit === 'kg' ? 1 : 1000))}
                           </div>
                         </div>
                       </div>
@@ -155,7 +157,7 @@ const ProjectSummaryPanel: React.FC<ProjectSummaryProps> = ({
               ) : (
                 <div className="mt-3 pt-3 border-t border-gray-200">
                   <div className="text-sm text-gray-500 italic">
-                    Sistema legacy - usando filamento único: {piece.filamentWeight}g a €{piece.filamentPrice}/kg
+                    Sistema legacy - usando filamento único: {piece.filamentWeight}g a {currencySymbol}{piece.filamentPrice}/kg
                   </div>
                 </div>
               )}
@@ -171,11 +173,11 @@ const ProjectSummaryPanel: React.FC<ProjectSummaryProps> = ({
             <div>
               <div className="text-lg font-semibold text-gray-900">Coste total del proyecto</div>
               <div className="text-sm text-gray-600">
-                Materiales: {totalFilamentCost.toFixed(2)}€ • Electricidad: {totalElectricityCost.toFixed(2)}€
+                Materiales: {formatCurrency(totalFilamentCost)} • Electricidad: {formatCurrency(totalElectricityCost)}
               </div>
             </div>
             <div className="text-right">
-              <div className="text-3xl font-bold text-gray-900">€{totalCost.toFixed(2)}</div>
+              <div className="text-3xl font-bold text-gray-900">{formatCurrency(totalCost)}</div>
             </div>
           </div>
         </div>

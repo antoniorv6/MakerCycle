@@ -5,7 +5,8 @@ import { useTeam } from '@/components/providers/TeamProvider';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { ClientSelector } from './ClientSelector';
 import { SaleItemsForm } from './SaleItemsForm';
-import { roundCurrency, roundTime, formatCurrency } from '@/utils/numberUtils';
+import { roundCurrency, roundTime } from '@/utils/numberUtils';
+import { useFormatCurrency } from '@/hooks/useFormatCurrency';
 import type { Sale, SaleFormData, SaleItemFormData } from '@/types';
 import { toast } from 'react-hot-toast';
 
@@ -18,6 +19,7 @@ interface AddSaleFormProps {
 export function AddSaleForm({ sale, onSave, onCancel }: AddSaleFormProps) {
   const { currentTeam, userTeams, getEffectiveTeam } = useTeam();
   const { user } = useAuth();
+  const { formatCurrency } = useFormatCurrency();
   
   const [formData, setFormData] = useState<SaleFormData>({
     date: new Date().toISOString().split('T')[0],

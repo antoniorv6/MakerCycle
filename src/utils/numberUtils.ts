@@ -32,12 +32,13 @@ export function roundTime(value: number): number {
 }
 
 /**
- * Formats a number as currency with Euro symbol
+ * Formats a number as currency with a currency symbol
  * @param value - The value to format
+ * @param currencySymbol - Optional currency symbol (defaults to €)
  * @returns Formatted currency string
  */
-export function formatCurrency(value: number): string {
-  return `€${roundCurrency(value).toFixed(2)}`;
+export function formatCurrency(value: number, currencySymbol: string = '€'): string {
+  return `${currencySymbol}${roundCurrency(value).toFixed(2)}`;
 }
 
 /**
