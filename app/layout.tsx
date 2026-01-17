@@ -1,61 +1,42 @@
 import './globals.css'
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import { AuthProvider } from '@/components/providers/AuthProvider'
 import { TeamProvider } from '@/components/providers/TeamProvider'
 import { CurrencyProvider } from '@/components/providers/CurrencyProvider'
+import { CapacitorProvider } from '@/components/providers/CapacitorProvider'
 import { Toaster } from 'react-hot-toast'
-import Footer from '@/components/Footer'
 import CookieBanner from '@/components/CookieBanner'
 
 const inter = Inter({ subsets: ['latin'] })
 
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: 'cover',
+  themeColor: '#1e293b',
+}
+
 export const metadata: Metadata = {
-  title: 'MakerCycle - Calculadora de Costes y Gestor de Proyectos de Impresión 3D',
-  description: 'MakerCycle es la plataforma profesional definitiva para calcular costes, gestionar proyectos y optimizar la rentabilidad de tu negocio de impresión 3D. Open source, colaborativa y segura.',
+  title: 'MakerCycle - Calculadora de Costes y Gestor de Proyectos 3D',
+  description: 'MakerCycle es la plataforma profesional definitiva para calcular costes, gestionar proyectos y optimizar la rentabilidad de tu negocio de impresión 3D.',
   keywords: [
     'calculadora de costes impresión 3D',
     'gestor de proyectos impresión 3D',
     'software impresión 3D',
     'MakerCycle',
-    'cost calculator 3D printing',
-    'gestión impresión 3D',
-    'presupuestos impresión 3D',
-    'open source impresión 3D',
-    'colaboración impresión 3D',
-    'negocio impresión 3D'
   ],
-  openGraph: {
-    title: 'MakerCycle - Calculadora de Costes y Gestor de Proyectos de Impresión 3D',
-    description: 'MakerCycle es la plataforma profesional definitiva para calcular costes, gestionar proyectos y optimizar la rentabilidad de tu negocio de impresión 3D.',
-    url: 'https://makercycle.com',
-    siteName: 'MakerCycle',
-    images: [
-      {
-        url: '/logo.webp',
-        width: 512,
-        height: 512,
-        alt: 'Logo MakerCycle',
-      },
-    ],
-    locale: 'es_ES',
-    type: 'website',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'MakerCycle',
   },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'MakerCycle - Calculadora de Costes y Gestor de Proyectos de Impresión 3D',
-    description: 'MakerCycle es la plataforma profesional definitiva para calcular costes, gestionar proyectos y optimizar la rentabilidad de tu negocio de impresión 3D.',
-    images: ['/logo.webp'],
-    site: '@makercycle',
+  formatDetection: {
+    telephone: false,
   },
-  robots: {
-    index: true,
-    follow: true,
-    nocache: false,
-  },
-  alternates: {
-    canonical: 'https://makercycle.com',
-  },
+  manifest: '/manifest.json',
 }
 
 export default function RootLayout({
@@ -64,46 +45,43 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="es">
+    <html lang="es" className="h-full">
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         <link rel="icon" href="/logo.webp" type="image/webp" />
-        <meta name="theme-color" content="#1e293b" />
-        <meta name="author" content="MakerCycle" />
-        <meta name="copyright" content="2024 MakerCycle" />
-        <meta property="og:image" content="/logo.webp" />
-        <meta property="og:type" content="website" />
-        <meta property="og:locale" content="es_ES" />
-        <meta property="og:site_name" content="MakerCycle" />
-        <meta name="twitter:image" content="/logo.webp" />
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="MakerCycle - Calculadora de Costes y Gestor de Proyectos de Impresión 3D" />
-        <meta name="twitter:description" content="MakerCycle es la plataforma profesional definitiva para calcular costes, gestionar proyectos y optimizar la rentabilidad de tu negocio de impresión 3D." />
-        <meta name="twitter:site" content="@makercycle" />
-        <link rel="canonical" href="https://makercycle.com" />
+        <link rel="apple-touch-icon" href="/logo.webp" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="mobile-web-app-capable" content="yes" />
       </head>
-      <body className={inter.className}>
-        <div className="min-h-screen flex flex-col">
+      <body className={`${inter.className} h-full antialiased`}>
+        <CapacitorProvider>
           <AuthProvider>
             <CurrencyProvider>
               <TeamProvider>
-                <main className="flex-1">
-                  {children}
-                </main>
+                <div className="min-h-screen-safe flex flex-col">
+                  <main className="flex-1">
+                    {children}
+                  </main>
+                </div>
               </TeamProvider>
             </CurrencyProvider>
           </AuthProvider>
-          <Footer />
-        </div>
+        </CapacitorProvider>
         <CookieBanner />
         <Toaster
-          position="bottom-right"
+          position="top-center"
+          containerStyle={{
+            top: 'calc(env(safe-area-inset-top, 0px) + 60px)',
+          }}
           toastOptions={{
             duration: 4000,
             style: {
               background: '#363636',
               color: '#fff',
+              borderRadius: '12px',
+              padding: '12px 16px',
             },
             success: {
               duration: 3000,

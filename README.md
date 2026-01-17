@@ -1,353 +1,165 @@
-# MakerCycle
+# MakerCycle Mobile
 
-<img src="public/logo.webp" alt="MakerCycle Logo" width="200" height="auto" />
+Aplicación móvil nativa de MakerCycle - Calculadora de costes y gestor de proyectos de impresión 3D.
 
-**MakerCycle** es una plataforma SaaS moderna para la gestión integral de negocios de impresión 3D. Desde el cálculo preciso de costos hasta la gestión completa de ventas, clientes y equipos.
+## 🚀 Tecnologías
 
-## ✨ Características Principales
+- **Next.js 14** - Framework React con App Router
+- **Capacitor.js 6** - Framework para aplicaciones móviles nativas
+- **Tailwind CSS** - Framework CSS utility-first
+- **Supabase** - Backend as a Service (Auth + Database)
+- **Framer Motion** - Animaciones
+- **TypeScript** - Tipado estático
 
-### 🧮 **Calculadora de Costos Inteligente**
-- Cálculo automático de costos de filamento, electricidad y materiales
-- Configuración flexible de precios y márgenes de beneficio
-- Estimación precisa de tiempo de impresión
-- Soporte para múltiples configuraciones de impresora
-- Gestión de piezas individuales por proyecto
+## 📱 Plataformas Soportadas
 
-### 📊 **Dashboard Analítico Avanzado**
-- Estadísticas en tiempo real de proyectos y ventas
-- Gráficos interactivos de rentabilidad y tendencias
-- Análisis detallado de costos y beneficios
-- Métricas clave de negocio con filtros avanzados
-- Reportes personalizables
+- iOS 13+
+- Android 5.1+ (API 22+)
+- Web (PWA)
 
-### 💼 **Gestión Completa de Ventas**
-- Sistema de ventas con múltiples elementos por factura
-- Gestión de clientes con información completa
-- Generación automática de albaranes y facturas
-- Control de pagos y estados de venta
-- Historial completo de transacciones
+## 🛠️ Configuración del Entorno
 
-### 👥 **Colaboración en Equipo**
-- Creación y gestión de equipos de trabajo
-- Roles y permisos configurables
-- Notificaciones en tiempo real
-- Compartir proyectos y recursos
-- Gestión de miembros del equipo
+### Requisitos Previos
 
-### 📋 **Gestión de Proyectos Tipo Kanban**
-- Tablero visual tipo Trello para proyectos
-- Estados personalizables (pendiente, en progreso, completado)
-- Asignación de tareas a miembros del equipo
-- Seguimiento de progreso en tiempo real
+- Node.js 18+
+- pnpm (recomendado) o npm
+- Para iOS: macOS + Xcode 15+
+- Para Android: Android Studio + JDK 17
 
-### 💰 **Contabilidad Integrada**
-- Registro de gastos por categorías
-- Control de costos operativos
-- Análisis de rentabilidad por proyecto
-- Reportes financieros automáticos
-- Integración con sistema de ventas
+### Variables de Entorno
 
-### 🔐 **Seguridad Robusta**
-- Autenticación con Supabase Auth
-- Row Level Security (RLS) en toda la base de datos
-- Almacenamiento seguro en la nube
-- Sincronización automática de datos
-- Backup automático de proyectos
-
-## 🛠️ Stack Tecnológico
-
-### Frontend
-- **[Next.js 14](https://nextjs.org/)** - Framework React con App Router
-- **[React 18](https://react.dev/)** - Biblioteca de interfaz de usuario
-- **[TypeScript](https://www.typescriptlang.org/)** - Tipado estático
-- **[Tailwind CSS](https://tailwindcss.com/)** - Framework CSS utilitario
-- **[Framer Motion](https://www.framer.com/motion/)** - Animaciones fluidas
-
-### Backend & Base de Datos
-- **[Supabase](https://supabase.com/)** - Backend-as-a-Service
-- **[PostgreSQL](https://www.postgresql.org/)** - Base de datos relacional
-- **[Row Level Security](https://supabase.com/docs/guides/auth/row-level-security)** - Seguridad a nivel de fila
-- **[Realtime](https://supabase.com/docs/guides/realtime)** - Actualizaciones en tiempo real
-
-### Herramientas de Desarrollo
-- **[pnpm](https://pnpm.io/)** - Gestor de paquetes rápido
-- **[ESLint](https://eslint.org/)** - Linter de código
-- **[Prettier](https://prettier.io/)** - Formateador de código
-
-## 🚀 Despliegue Local
-
-### Prerrequisitos
-
-- **Node.js** >= 18.0.0
-- **pnpm** (recomendado) o npm/yarn
-- **Git** para clonar el repositorio
-- Cuenta en [Supabase](https://supabase.com/) (gratuita)
-
-### Paso 1: Clonar el Repositorio
-
-```bash
-git clone https://github.com/tu-usuario/MakerCycle.git
-cd MakerCycle
-```
-
-### Paso 2: Instalar Dependencias
-
-```bash
-# Instalar pnpm si no lo tienes
-npm install -g pnpm
-
-# Instalar dependencias del proyecto
-pnpm install
-```
-
-### Paso 3: Configurar Supabase
-
-#### 3.1 Crear Proyecto en Supabase
-1. Ve a [supabase.com](https://supabase.com/)
-2. Crea una cuenta gratuita
-3. Crea un nuevo proyecto
-4. Anota la URL y las claves de API
-
-#### 3.2 Configurar Variables de Entorno
-
-```bash
-# Copiar archivo de ejemplo
-cp .env.example .env.local
-```
-
-Edita `.env.local` con tus credenciales de Supabase:
+Crea un archivo `.env.local` con:
 
 ```env
-# Supabase Configuration
-NEXT_PUBLIC_SUPABASE_URL=https://tu-proyecto.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=tu-anon-key-aqui
-SUPABASE_SERVICE_ROLE_KEY=tu-service-role-key-aqui
-
-# Optional: Analytics
-NEXT_PUBLIC_GA_ID=tu-google-analytics-id
+NEXT_PUBLIC_SUPABASE_URL=tu_url_de_supabase
+NEXT_PUBLIC_SUPABASE_ANON_KEY=tu_clave_anonima
 ```
 
-### Paso 4: Configurar Base de Datos
-
-#### 4.1 Instalar Supabase CLI (Opcional)
+### Instalación
 
 ```bash
-# Con npm
-npm install -g supabase
+# Instalar dependencias
+pnpm install
 
-# Con pnpm
-pnpm add -g supabase
+# Inicializar Capacitor (primera vez)
+npx cap sync
 ```
 
-#### 4.2 Ejecutar Migraciones
+## 🏃‍♂️ Desarrollo
+
+### Desarrollo Web
 
 ```bash
-# Opción A: Usando Supabase CLI
-supabase db push
-
-# Opción B: Ejecutar migración manualmente
-# Copia el contenido de supabase/migrations/001_initial_schema.sql
-# y ejecútalo en el SQL Editor de Supabase
-```
-
-### Paso 5: Iniciar el Servidor de Desarrollo
-
-```bash
+# Servidor de desarrollo
 pnpm dev
 ```
 
-Abre [http://localhost:3000](http://localhost:3000) en tu navegador 🎉
-
-### Paso 6: Crear Usuario Inicial
-
-1. Ve a [http://localhost:3000](http://localhost:3000)
-2. Haz clic en "Registrarse"
-3. Crea tu cuenta de usuario
-4. ¡Ya puedes empezar a usar MakerCycle!
-
-## 📁 Estructura del Proyecto
-
-```
-MakerCycle/
-├── 📁 app/                    # Páginas y layouts (Next.js App Router)
-│   ├── 📁 auth/              # Páginas de autenticación
-│   ├── 📁 dashboard/         # Dashboard principal
-│   ├── 📁 settings/          # Configuraciones
-│   └── 📄 layout.tsx         # Layout raíz
-├── 📁 src/
-│   ├── 📁 components/        # Componentes reutilizables
-│   │   ├── 📁 cost-calculator/   # Calculadora de costos
-│   │   ├── 📁 accounting/        # Contabilidad
-│   │   ├── 📁 kanban/           # Gestión de proyectos
-│   │   ├── 📁 auth/             # Componentes de autenticación
-│   │   └── 📁 providers/        # Providers de contexto
-│   ├── 📁 hooks/             # Custom hooks
-│   ├── 📁 services/          # Servicios de API
-│   └── 📁 types/             # Definiciones de tipos
-├── 📁 supabase/              # Configuración de base de datos
-│   ├── 📁 migrations/        # Migraciones SQL
-│   └── 📄 config.toml        # Configuración de Supabase
-├── 📁 public/                # Archivos estáticos
-└── 📄 package.json           # Dependencias y scripts
-```
-
-## 🎯 Casos de Uso
-
-### Para Impresores Profesionales
-- ✅ Calcula costos precisos para cotizaciones
-- ✅ Gestiona múltiples proyectos simultáneamente
-- ✅ Analiza la rentabilidad de tu negocio
-- ✅ Mantén un historial completo de trabajos
-- ✅ Gestiona equipos de trabajo
-- ✅ Controla ventas y clientes
-
-### Para Aficionados
-- ✅ Aprende sobre costos de impresión 3D
-- ✅ Organiza tus proyectos de manera profesional
-- ✅ Optimiza el uso de materiales
-- ✅ Planifica mejor tus impresiones
-- ✅ Registra tus ventas y gastos
-
-### Para Equipos de Trabajo
-- ✅ Colabora en proyectos compartidos
-- ✅ Asigna tareas y responsabilidades
-- ✅ Comunícate mediante notificaciones
-- ✅ Comparte recursos y conocimientos
-
-## 🔧 Configuración Avanzada
-
-### Variables de Entorno Disponibles
-
-| Variable | Descripción | Requerida | Default |
-|----------|-------------|-----------|---------|
-| `NEXT_PUBLIC_SUPABASE_URL` | URL de tu proyecto Supabase | ✅ | - |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Clave anónima de Supabase | ✅ | - |
-| `SUPABASE_SERVICE_ROLE_KEY` | Clave de servicio de Supabase | ✅ | - |
-| `NEXT_PUBLIC_GA_ID` | Google Analytics ID | ❌ | - |
-
-### Scripts Disponibles
+### Desarrollo iOS
 
 ```bash
-# Desarrollo
-pnpm dev              # Servidor de desarrollo
-pnpm build            # Construcción para producción
-pnpm start            # Servidor de producción
+# Compilar y sincronizar
+pnpm build:mobile
 
-# Calidad de código
-pnpm lint             # Verificar código con ESLint
-pnpm lint:fix         # Corregir errores automáticamente
-pnpm type-check       # Verificar tipos de TypeScript
+# Abrir en Xcode
+pnpm cap:open:ios
 
-# Base de datos
-pnpm db:reset         # Resetear base de datos local
-pnpm db:push          # Subir migraciones a producción
-pnpm db:diff          # Ver diferencias en esquema
+# O ejecutar directamente
+pnpm cap:run:ios
 ```
 
-### Configuración de Supabase
+### Desarrollo Android
 
-El proyecto incluye una configuración optimizada de Supabase en `supabase/config.toml` con:
+```bash
+# Compilar y sincronizar
+pnpm build:mobile
 
-- ✅ Autenticación habilitada
-- ✅ Realtime habilitado
-- ✅ Storage configurado
-- ✅ Puertos optimizados para desarrollo local
+# Abrir en Android Studio
+pnpm cap:open:android
 
-## 🗄️ Base de Datos
-
-### Esquema Consolidado
-
-MakerCycle utiliza un esquema de base de datos consolidado y optimizado:
-
-#### Tablas Principales (12)
-- **profiles** - Usuarios del sistema
-- **teams** - Equipos de trabajo
-- **team_members** - Miembros de equipos
-- **projects** - Proyectos de impresión 3D
-- **pieces** - Piezas individuales de proyectos
-- **clients** - Clientes
-- **sales** - Ventas
-- **sale_items** - Elementos de venta
-- **expenses** - Gastos
-- **company_settings** - Configuración de empresa
-- **notifications** - Notificaciones
-- **kanban_board** - Gestión de proyectos tipo Trello
-
-#### Características de Seguridad
-- ✅ **Row Level Security (RLS)** habilitado en todas las tablas
-- ✅ **50+ políticas de seguridad** implementadas
-- ✅ **Acceso controlado** por usuario y equipo
-- ✅ **Triggers automáticos** para actualización de datos
-
-## 🚀 Despliegue en Producción
-
-### Opción 1: Vercel (Recomendado)
-
-1. **Conecta tu repositorio a Vercel**
-2. **Configura las variables de entorno**
-3. **Deploy automático en cada push**
-
-### Opción 2: Netlify
-
-1. **Conecta tu repositorio a Netlify**
-2. **Configura build command**: `pnpm build`
-3. **Configura publish directory**: `out`
-
-### Opción 3: Docker
-
-```dockerfile
-FROM node:18-alpine
-WORKDIR /app
-COPY package*.json ./
-RUN npm install -g pnpm && pnpm install
-COPY . .
-RUN pnpm build
-EXPOSE 3000
-CMD ["pnpm", "start"]
+# O ejecutar directamente
+pnpm cap:run:android
 ```
 
-## 🤝 Contribuir
+## 📦 Compilación para Producción
 
-¡Nos encantaría que contribuyas al proyecto! 
+### Build Web/PWA
 
-### ¿Cómo puedo ayudar?
+```bash
+pnpm build
+```
 
-- 🐛 **Reportar bugs** - Crea un issue con detalles
-- 💡 **Sugerir características** - Usa GitHub Discussions
-- 📝 **Mejorar documentación** - Envía un PR
-- 🔧 **Contribuir código** - Fork y PR
+### Build para Móvil
 
-### Guía de Contribución
+```bash
+# Compilar y sincronizar con plataformas nativas
+pnpm build:mobile
+```
 
-1. **Fork el repositorio**
-2. **Crea una rama** para tu feature (`git checkout -b feature/nueva-funcionalidad`)
-3. **Commit tus cambios** (`git commit -am 'Agregar nueva funcionalidad'`)
-4. **Push a la rama** (`git push origin feature/nueva-funcionalidad`)
-5. **Crea un Pull Request**
+### Generar APK/IPA
+
+1. **Android**: Abre en Android Studio y genera desde `Build > Build Bundle(s) / APK(s)`
+2. **iOS**: Abre en Xcode y genera desde `Product > Archive`
+
+## 📂 Estructura del Proyecto
+
+```
+├── app/                    # Rutas de Next.js App Router
+│   ├── auth/              # Páginas de autenticación
+│   ├── dashboard/         # Dashboard principal
+│   └── legal/             # Páginas legales
+├── src/
+│   ├── components/        # Componentes React
+│   │   ├── mobile/        # Componentes específicos para móvil
+│   │   ├── providers/     # Context providers
+│   │   └── ...
+│   ├── hooks/             # Custom hooks
+│   ├── services/          # Servicios de API
+│   ├── types/             # Tipos TypeScript
+│   └── utils/             # Utilidades
+├── public/                # Assets estáticos
+├── ios/                   # Proyecto nativo iOS (generado)
+├── android/               # Proyecto nativo Android (generado)
+└── capacitor.config.ts    # Configuración de Capacitor
+```
+
+## 🎨 Características Móviles
+
+- **Bottom Navigation**: Navegación inferior nativa para móvil
+- **Safe Areas**: Soporte para notch y home indicator
+- **Gestos táctiles**: Interacciones optimizadas para touch
+- **Haptic Feedback**: Retroalimentación táctil en acciones
+- **Status Bar**: Integración con barra de estado nativa
+- **Splash Screen**: Pantalla de carga personalizada
+- **Keyboard handling**: Manejo inteligente del teclado
+
+## 🔧 Comandos Útiles
+
+```bash
+# Sincronizar cambios web con apps nativas
+pnpm cap:sync
+
+# Verificar configuración de Capacitor
+npx cap doctor
+
+# Actualizar plugins de Capacitor
+npx cap update
+
+# Limpiar cache
+pnpm clean
+```
+
+## 🔐 Configuración de Seguridad
+
+Para producción, asegúrate de:
+
+1. Configurar correctamente las políticas RLS en Supabase
+2. Usar HTTPS para todas las conexiones
+3. Configurar los dominios permitidos en Supabase
 
 ## 📄 Licencia
 
-Este proyecto está bajo la **Licencia MIT**. Ver el archivo `LICENSE` para más detalles.
+Este proyecto está bajo la licencia MIT. Ver [LICENSE](LICENSE) para más detalles.
 
-## 📞 Soporte
+## 🤝 Contribuir
 
-- **Issues**: [GitHub Issues](https://github.com/tu-usuario/MakerCycle/issues)
-- **Discusiones**: [GitHub Discussions](https://github.com/tu-usuario/MakerCycle/discussions)
-- **Documentación**: [Wiki del proyecto](https://github.com/tu-usuario/MakerCycle/wiki)
-
-## 🎉 Agradecimientos
-
-- [Supabase](https://supabase.com/) por el excelente backend-as-a-service
-- [Next.js](https://nextjs.org/) por el framework React
-- [Tailwind CSS](https://tailwindcss.com/) por los estilos
-- [Framer Motion](https://www.framer.com/motion/) por las animaciones
-
----
-
-<div align="center">
-
-**¿Te gusta MakerCycle? ¡Dale una ⭐ al repositorio!**
-
-**Hecho con ❤️ para la comunidad de impresión 3D**
-
-</div> 
+Ver [CONTRIBUTING.md](CONTRIBUTING.md) para guías de contribución.

@@ -1,29 +1,81 @@
+'use client'
+
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { useAuth } from '@/components/providers/AuthProvider'
 import AuthForm from '@/components/auth/AuthForm'
+import { ArrowLeft } from 'lucide-react'
+import Link from 'next/link'
 
 export default function AuthPage() {
+  const { user, loading } = useAuth()
+  const router = useRouter()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  useEffect(() => {
+    if (mounted && !loading && user) {
+      router.push('/dashboard/')
+    }
+  }, [user, loading, router, mounted])
+
+  if (!mounted || loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
+        <div className="flex flex-col items-center space-y-4">
+          <div className="w-12 h-12 border-4 border-slate-300 border-t-slate-700 rounded-full animate-spin" />
+          <p className="text-slate-600 font-medium">Cargando...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
+        <div className="flex flex-col items-center space-y-4">
+          <div className="w-12 h-12 border-4 border-slate-300 border-t-slate-700 rounded-full animate-spin" />
+          <p className="text-slate-600 font-medium">Redirigiendo...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="text-center">
-          <div className="flex justify-center mb-6">
-            <div className="w-16 h-16 bg-gradient-to-br from-slate-700 to-slate-800 rounded-xl flex items-center justify-center shadow-lg">
-              <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-              </svg>
-            </div>
-          </div>
-          <h2 className="mt-6 text-3xl font-bold tracking-tight text-slate-900">
-            Accede a tu cuenta
-          </h2>
-          <p className="mt-2 text-sm text-slate-600">
-            O crea una nueva cuenta para empezar
-          </p>
+    <div className="min-h-screen-safe bg-gradient-to-br from-slate-50 to-slate-100 safe-area-inset">
+      {/* Back button */}
+      <div className="fixed top-0 left-0 right-0 z-10 safe-area-top">
+        <div className="p-4">
+          <Link
+            href="/"
+            className="inline-flex items-center text-slate-600 hover:text-slate-900 transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5 mr-2" />
+            <span className="font-medium">Volver</span>
+          </Link>
         </div>
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow-xl rounded-2xl border border-slate-200 sm:px-10">
-          <AuthForm />
+      {/* Auth form */}
+      <div className="flex items-center justify-center min-h-screen-safe px-4 py-20">
+        <div className="w-full max-w-md">
+          {/* Logo */}
+          <div className="text-center mb-8">
+            <img 
+              src="/logo.webp" 
+              alt="MakerCycle" 
+              className="w-16 h-16 mx-auto mb-4"
+            />
+            <h1 className="text-2xl font-bold text-slate-900">MakerCycle</h1>
+            <p className="text-slate-600 mt-2">Gestión profesional de impresión 3D</p>
+          </div>
+
+          <div className="bg-white rounded-2xl shadow-xl p-6 border border-slate-200">
+            <AuthForm />
+          </div>
         </div>
       </div>
     </div>

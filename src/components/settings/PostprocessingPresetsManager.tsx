@@ -36,7 +36,7 @@ export default function PostprocessingPresetsManager() {
     description: '',
     cost_per_unit: 0,
     unit: 'unidad',
-    category: null,
+    category: undefined,
     notes: '',
     is_default: false,
     team_id: null,
@@ -48,7 +48,7 @@ export default function PostprocessingPresetsManager() {
       description: '',
       cost_per_unit: 0,
       unit: 'unidad',
-      category: null,
+      category: undefined,
       notes: '',
       is_default: false,
       team_id: null,
@@ -93,7 +93,7 @@ export default function PostprocessingPresetsManager() {
         description: preset.description || '',
         cost_per_unit: preset.cost_per_unit,
         unit: preset.unit,
-        category: preset.category || null,
+        category: preset.category || undefined,
         notes: preset.notes || '',
         is_default: preset.is_default,
         team_id: preset.team_id || null,
@@ -252,7 +252,7 @@ export default function PostprocessingPresetsManager() {
               </label>
               <select
                 value={formData.category || ''}
-                onChange={(e) => setFormData({ ...formData, category: e.target.value || null })}
+                onChange={(e) => setFormData({ ...formData, category: e.target.value || undefined })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
               >
                 <option value="">Sin categoría</option>

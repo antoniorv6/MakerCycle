@@ -27,7 +27,8 @@ interface UseCostCalculationsProps {
   postprocessingItems?: Array<{
     id: string;
     name: string;
-    cost_per_unit: number;
+    cost?: number; // Alias para cost_per_unit
+    cost_per_unit?: number;
     quantity: number;
     unit: string;
   }>;
@@ -138,7 +139,10 @@ export const useCostCalculations = ({
     // Calcular costes
     const electricityCostTotal = totalPrintHours * printerPower * electricityCost;
     const materialsCost = materials.reduce((sum, material) => sum + (material.price || 0), 0);
-    const postprocessingCost = postprocessingItems.reduce((sum, item) => sum + (item.cost_per_unit * (item.quantity || 1)), 0);
+    const postprocessingCost = postprocessingItems.reduce((sum, item) => {
+      const unitCost = item.cost_per_unit ?? item.cost ?? 0;
+      return sum + (unitCost * (item.quantity || 1));
+    }, 0);
     const totalCost = totalFilamentCost + electricityCostTotal + materialsCost + postprocessingCost;
 
     setCosts({

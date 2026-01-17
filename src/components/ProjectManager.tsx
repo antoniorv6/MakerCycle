@@ -54,6 +54,7 @@ export default function ProjectManager({ onLoadProject }: ProjectManagerProps) {
   const [filterStatus, setFilterStatus] = useState('all');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newProjectName, setNewProjectName] = useState('');
+  const [newProjectType, setNewProjectType] = useState<'filament' | 'resin'>('filament');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
 
@@ -545,8 +546,13 @@ export default function ProjectManager({ onLoadProject }: ProjectManagerProps) {
             <h2 className="text-xl font-semibold mb-4">Crear nuevo proyecto</h2>
             <ProjectInfo
               projectName={newProjectName}
+              projectType={newProjectType}
               onProjectNameChange={setNewProjectName}
-              onReset={() => setNewProjectName('')}
+              onProjectTypeChange={setNewProjectType}
+              onReset={() => {
+                setNewProjectName('');
+                setNewProjectType('filament');
+              }}
               onSave={handleCreateProject}
             />
             <div className="mt-4">

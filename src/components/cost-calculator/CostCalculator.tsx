@@ -100,7 +100,7 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
   const [postprocessingItems, setPostprocessingItems] = useState<Array<{
     id: string;
     name: string;
-    cost: number;
+    cost_per_unit: number;
     quantity: number;
     unit: string;
     preset_id?: string | null;

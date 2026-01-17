@@ -17,10 +17,12 @@ const UNITS = [
   'pieza'
 ];
 
+type EditablePostprocessingFields = 'name' | 'cost_per_unit' | 'quantity' | 'unit' | 'description' | 'category';
+
 interface ExtendedMaterialsSectionProps extends MaterialsSectionProps {
   postprocessingItems?: PostprocessingItem[];
   onAddPostprocessingItem?: () => void;
-  onUpdatePostprocessingItem?: (id: string, field: keyof PostprocessingItem, value: string | number) => void;
+  onUpdatePostprocessingItem?: (id: string, field: EditablePostprocessingFields, value: string | number) => void;
   onRemovePostprocessingItem?: (id: string) => void;
   onLoadPreset?: (presetId: string) => void;
   onNavigateToSettings?: () => void;
@@ -67,7 +69,7 @@ const MaterialsSection: React.FC<ExtendedMaterialsSectionProps> = ({
 
   const handleUpdateItem = (id: string, field: 'name' | 'cost_per_unit' | 'quantity' | 'unit', value: string | number) => {
     if (usePostprocessing && onUpdatePostprocessingItem) {
-      onUpdatePostprocessingItem(id, field as keyof PostprocessingItem, value);
+      onUpdatePostprocessingItem(id, field, value);
     } else {
       if (field === 'name' || field === 'cost_per_unit') {
         onUpdateMaterial(id, field === 'name' ? 'name' : 'price', value);
