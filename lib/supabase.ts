@@ -232,6 +232,49 @@ export type Database = {
           updated_at?: string
         }
       }
+      postprocessing_presets: {
+        Row: {
+          id: string
+          user_id: string
+          team_id: string | null
+          name: string
+          description: string | null
+          cost_per_unit: number
+          unit: string
+          category: string | null
+          notes: string | null
+          is_default: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          team_id?: string | null
+          name: string
+          description?: string | null
+          cost_per_unit: number
+          unit?: string
+          category?: string | null
+          notes?: string | null
+          is_default?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          team_id?: string | null
+          name?: string
+          description?: string | null
+          cost_per_unit?: number
+          unit?: string
+          category?: string | null
+          notes?: string | null
+          is_default?: boolean
+          updated_at?: string
+        }
+      }
       projects: {
         Row: {
           id: string
@@ -242,11 +285,13 @@ export type Database = {
           print_hours: number
           electricity_cost: number
           materials: any
+          postprocessing_items: any
           total_cost: number
           vat_percentage: number
           profit_margin: number
           recommended_price: number
           status: 'draft' | 'calculated' | 'completed'
+          project_type: 'filament' | 'resin'
           created_at: string
           updated_at: string
         }
@@ -259,11 +304,13 @@ export type Database = {
           print_hours: number
           electricity_cost: number
           materials?: any
+          postprocessing_items?: any
           total_cost: number
           vat_percentage?: number
           profit_margin?: number
           recommended_price?: number
           status?: 'draft' | 'calculated' | 'completed'
+          project_type?: 'filament' | 'resin'
           created_at?: string
           updated_at?: string
         }
@@ -276,11 +323,13 @@ export type Database = {
           print_hours?: number
           electricity_cost?: number
           materials?: any
+          postprocessing_items?: any
           total_cost?: number
           vat_percentage?: number
           profit_margin?: number
           recommended_price?: number
           status?: 'draft' | 'calculated' | 'completed'
+          project_type?: 'filament' | 'resin'
           updated_at?: string
         }
       }

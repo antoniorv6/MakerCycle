@@ -5,18 +5,18 @@ import { useAuth } from '@/components/providers/AuthProvider';
 // Lista de monedas disponibles
 export const CURRENCIES = [
   { code: 'EUR', symbol: '€', name: 'Euro' },
-  { code: 'USD', symbol: '$', name: 'Dólar estadounidense' },
-  { code: 'ARS', symbol: '$', name: 'Peso argentino' },
+  { code: 'USD', symbol: 'US$', name: 'Dólar estadounidense' },
+  { code: 'ARS', symbol: 'ARS$', name: 'Peso argentino' },
   { code: 'BRL', symbol: 'R$', name: 'Real brasileño' },
-  { code: 'CLP', symbol: '$', name: 'Peso chileno' },
-  { code: 'COP', symbol: '$', name: 'Peso colombiano' },
+  { code: 'CLP', symbol: 'CLP$', name: 'Peso chileno' },
+  { code: 'COP', symbol: 'COP$', name: 'Peso colombiano' },
   { code: 'PEN', symbol: 'S/', name: 'Sol peruano' },
-  { code: 'UYU', symbol: '$', name: 'Peso uruguayo' },
+  { code: 'UYU', symbol: 'UYU$', name: 'Peso uruguayo' },
   { code: 'PYG', symbol: '₲', name: 'Guaraní paraguayo' },
   { code: 'BOB', symbol: 'Bs.', name: 'Boliviano boliviano' },
-  { code: 'VES', symbol: 'Bs.', name: 'Bolívar venezolano' },
-  { code: 'GYD', symbol: '$', name: 'Dólar guyanés' },
-  { code: 'SRD', symbol: '$', name: 'Dólar surinamés' },
+  { code: 'VES', symbol: 'Bs.S', name: 'Bolívar venezolano' },
+  { code: 'GYD', symbol: 'GY$', name: 'Dólar guyanés' },
+  { code: 'SRD', symbol: 'SRD$', name: 'Dólar surinamés' },
 ] as const;
 
 export type CurrencyCode = typeof CURRENCIES[number]['code'];

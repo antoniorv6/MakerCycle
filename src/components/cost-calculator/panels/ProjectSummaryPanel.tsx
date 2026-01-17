@@ -8,24 +8,66 @@ const ProjectSummaryPanel: React.FC<ProjectSummaryProps> = ({
   totalFilamentWeight,
   totalPrintHours,
   totalFilamentCost,
-  totalElectricityCost
+  totalElectricityCost,
+  totalPostprocessingCost = 0,
+  projectType
 }) => {
   const { formatCurrency, currencySymbol } = useFormatCurrency();
   const totalPieces = pieces.reduce((sum, piece) => sum + piece.quantity, 0);
   const uniquePieces = pieces.length;
-  const totalCost = totalFilamentCost + totalElectricityCost;
+  const totalCost = totalFilamentCost + totalElectricityCost + totalPostprocessingCost;
+
+  // Detectar tipo de proyecto si no se proporciona
+  const detectedProjectType = projectType || (() => {
+    // Detectar desde los materiales de las piezas
+    for (const piece of pieces) {
+      if (piece.materials && piece.materials.length > 0) {
+        const hasResin = piece.materials.some(m => m.category === 'resin');
+        if (hasResin) return 'resin';
+      }
+    }
+    return 'filament';
+  })();
 
   // Calcular estadísticas de materiales
   const totalMaterials = pieces.reduce((sum, piece) => {
-    return sum + (piece.materials?.length || 0);
+    // Contar materiales del array materials si existe y tiene elementos
+    if (piece.materials && Array.isArray(piece.materials) && piece.materials.length > 0) {
+      return sum + piece.materials.length;
+    }
+    // Si no tiene materiales pero tiene datos legacy (filamentWeight > 0), contar como 1 material
+    if (piece.filamentWeight > 0) {
+      return sum + 1;
+    }
+    return sum;
   }, 0);
 
-  const uniqueMaterials = new Set();
+  const uniqueMaterials = new Set<string>();
   pieces.forEach(piece => {
-    piece.materials?.forEach(material => {
-      uniqueMaterials.add(material.materialName || 'Material sin nombre');
-    });
+    // Procesar materiales del array materials
+    if (piece.materials && Array.isArray(piece.materials) && piece.materials.length > 0) {
+      piece.materials.forEach(material => {
+        if (material && material.materialName) {
+          uniqueMaterials.add(material.materialName);
+        } else if (material) {
+          uniqueMaterials.add('Material sin nombre');
+        }
+      });
+    } 
+    // Si no tiene materiales pero tiene datos legacy, contar como material único
+    else if (piece.filamentWeight > 0) {
+      uniqueMaterials.add('Filamento Principal');
+    }
   });
+
+  // Función para formatear peso/volumen según el tipo
+  const formatWeight = (weight: number) => {
+    if (detectedProjectType === 'resin') {
+      return weight >= 1000 ? `${(weight / 1000).toFixed(1)}L` : `${weight.toFixed(1)}ml`;
+    } else {
+      return weight >= 1000 ? `${(weight / 1000).toFixed(1)}kg` : `${weight.toFixed(1)}g`;
+    }
+  };
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
@@ -57,10 +99,12 @@ const ProjectSummaryPanel: React.FC<ProjectSummaryProps> = ({
         <div className="bg-orange-50 rounded-lg p-4 border border-orange-100">
           <div className="flex items-center gap-2 mb-2">
             <Weight className="w-4 h-4 text-orange-600" />
-            <span className="text-sm font-medium text-orange-700">Peso total</span>
+            <span className="text-sm font-medium text-orange-700">
+              {detectedProjectType === 'resin' ? 'Volumen total' : 'Peso total'}
+            </span>
           </div>
           <div className="text-2xl font-bold text-orange-900">
-            {totalFilamentWeight >= 1000 ? `${(totalFilamentWeight / 1000).toFixed(1)}kg` : `${totalFilamentWeight.toFixed(1)}g`}
+            {formatWeight(totalFilamentWeight)}
           </div>
           <div className="text-xs text-orange-600">Material necesario</div>
         </div>
@@ -85,14 +129,27 @@ const ProjectSummaryPanel: React.FC<ProjectSummaryProps> = ({
         {pieces.map((piece, index) => {
           const pieceWeight = piece.materials && piece.materials.length > 0 
             ? piece.materials.reduce((sum, material) => {
-                const weightInGrams = material.unit === 'kg' ? material.weight * 1000 : material.weight;
-                return sum + weightInGrams;
+                if (material.category === 'resin') {
+                  // Para resina, convertir a ml
+                  const volumeInMl = material.unit === 'L' ? material.weight * 1000 : material.weight;
+                  return sum + volumeInMl;
+                } else {
+                  // Para filamento, convertir a gramos
+                  const weightInGrams = material.unit === 'kg' ? material.weight * 1000 : material.weight;
+                  return sum + weightInGrams;
+                }
               }, 0)
             : piece.filamentWeight;
           
           const pieceCost = piece.materials && piece.materials.length > 0
             ? piece.materials.reduce((sum, material) => {
-                const weightInKg = material.unit === 'g' ? material.weight / 1000 : material.weight;
+                let weightInKg;
+                if (material.category === 'resin') {
+                  // Para resina, convertir volumen a "kg equivalente" para cálculo
+                  weightInKg = material.unit === 'L' ? material.weight : material.weight / 1000;
+                } else {
+                  weightInKg = material.unit === 'g' ? material.weight / 1000 : material.weight;
+                }
                 return sum + (weightInKg * material.pricePerKg);
               }, 0)
             : (piece.filamentWeight * piece.filamentPrice) / 1000;
@@ -116,7 +173,7 @@ const ProjectSummaryPanel: React.FC<ProjectSummaryProps> = ({
                 <div className="text-right">
                   <div className="text-lg font-bold text-gray-900">{formatCurrency(pieceCost * piece.quantity)}</div>
                   <div className="text-sm text-gray-600">
-                    {pieceWeight >= 1000 ? `${(pieceWeight / 1000).toFixed(1)}kg` : `${pieceWeight.toFixed(1)}g`} • {(piece.printHours * piece.quantity).toFixed(1)}h
+                    {formatWeight(pieceWeight)} • {(piece.printHours * piece.quantity).toFixed(1)}h
                   </div>
                 </div>
               </div>
@@ -144,10 +201,15 @@ const ProjectSummaryPanel: React.FC<ProjectSummaryProps> = ({
                         </div>
                         <div className="text-right">
                           <div className="text-sm font-medium text-gray-900">
-                            {material.weight || 0}{material.unit || 'g'}
+                            {material.weight || 0}{material.unit || (material.category === 'resin' ? 'ml' : 'g')}
                           </div>
                           <div className="text-xs text-gray-500">
-                            {formatCurrency((material.weight || 0) * (material.pricePerKg || 0) / (material.unit === 'kg' ? 1 : 1000))}
+                            {formatCurrency(
+                              (material.weight || 0) * (material.pricePerKg || 0) / 
+                              (material.category === 'resin' 
+                                ? (material.unit === 'L' ? 1 : 1000)
+                                : (material.unit === 'kg' ? 1 : 1000))
+                            )} • {currencySymbol}{material.pricePerKg || 0}/{material.category === 'resin' ? 'L' : 'kg'}
                           </div>
                         </div>
                       </div>
@@ -174,6 +236,7 @@ const ProjectSummaryPanel: React.FC<ProjectSummaryProps> = ({
               <div className="text-lg font-semibold text-gray-900">Coste total del proyecto</div>
               <div className="text-sm text-gray-600">
                 Materiales: {formatCurrency(totalFilamentCost)} • Electricidad: {formatCurrency(totalElectricityCost)}
+                {totalPostprocessingCost > 0 && ` • Postproducción: ${formatCurrency(totalPostprocessingCost)}`}
               </div>
             </div>
             <div className="text-right">

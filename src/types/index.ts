@@ -17,7 +17,8 @@ export interface Project {
   filament_price: number;
   print_hours: number;
   electricity_cost: number;
-  materials: Material[];
+  materials: Material[]; // DEPRECATED: usar postprocessing_items
+  postprocessing_items?: PostprocessingItem[];
   total_cost: number;
   vat_percentage: number;
   profit_margin: number;
@@ -37,7 +38,8 @@ export interface AppProject {
   printHours: number;
   electricityCost: number;
   printerPower: number;
-  materials: Material[];
+  materials: Material[]; // DEPRECATED: usar postprocessingItems
+  postprocessingItems?: PostprocessingItem[];
   totalCost: number;
   vatPercentage: number;
   profitMargin: number;
@@ -66,12 +68,14 @@ export interface DatabaseProject {
   filament_price: number;
   print_hours: number;
   electricity_cost: number;
-  materials: Material[];
+  materials: Material[]; // DEPRECATED: usar postprocessing_items
+  postprocessing_items?: PostprocessingItem[];
   total_cost: number;
   vat_percentage: number;
   profit_margin: number;
   recommended_price: number;
   status: 'draft' | 'calculated' | 'completed';
+  project_type?: 'filament' | 'resin';
   team_id?: string | null;
   pieces?: DatabasePiece[];
   created_at: string;
@@ -141,6 +145,49 @@ export interface Material {
   id: string;
   name: string;
   price: number;
+}
+
+// Postprocessing types
+export interface PostprocessingPreset {
+  id: string;
+  user_id: string;
+  team_id?: string | null;
+  name: string;
+  description?: string;
+  cost_per_unit: number;
+  unit: string;
+  category?: string;
+  notes?: string;
+  is_default: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DatabasePostprocessingPreset {
+  id: string;
+  user_id: string;
+  team_id?: string | null;
+  name: string;
+  description?: string;
+  cost_per_unit: number;
+  unit: string;
+  category?: string;
+  notes?: string;
+  is_default: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PostprocessingItem {
+  id: string;
+  name: string;
+  cost_per_unit: number; // Coste por unidad (se multiplica por quantity para obtener el total)
+  quantity: number;
+  unit: string;
+  preset_id?: string | null;
+  is_from_preset: boolean;
+  description?: string;
+  category?: string;
 }
 
 // Client related types
@@ -366,6 +413,8 @@ export interface ProjectSummaryProps {
   totalPrintHours: number;
   totalFilamentCost: number;
   totalElectricityCost: number;
+  totalPostprocessingCost?: number;
+  projectType?: 'filament' | 'resin';
 }
 
 // Cost calculator panel props

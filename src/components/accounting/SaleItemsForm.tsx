@@ -16,7 +16,7 @@ interface SaleItemsFormProps {
 export function SaleItemsForm({ items, onItemsChange }: SaleItemsFormProps) {
   const { currentTeam, userTeams, getEffectiveTeam } = useTeam();
   const { user } = useAuth();
-  const { formatCurrency } = useFormatCurrency();
+  const { formatCurrency, currencySymbol } = useFormatCurrency();
   const supabase = createClient();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loadingProjects, setLoadingProjects] = useState(false);
@@ -230,7 +230,7 @@ export function SaleItemsForm({ items, onItemsChange }: SaleItemsFormProps) {
                               >
                                 <div className="font-medium text-sm">{project.name}</div>
                                 <div className="text-xs text-gray-500">
-                                  Coste: €{project.total_cost.toFixed(2)} | Horas: {project.print_hours}h
+                                  Coste: {formatCurrency(project.total_cost)} | Horas: {project.print_hours}h
                                 </div>
                               </button>
                             ))}
@@ -247,7 +247,7 @@ export function SaleItemsForm({ items, onItemsChange }: SaleItemsFormProps) {
               {/* Cost and Quantity */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Coste Unitario (€)
+                  Coste Unitario ({currencySymbol})
                 </label>
                 <input
                   type="number"
@@ -283,7 +283,7 @@ export function SaleItemsForm({ items, onItemsChange }: SaleItemsFormProps) {
               {/* Sale Price and Print Hours */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Precio de Venta (€)
+                  Precio de Venta ({currencySymbol})
                 </label>
                 <input
                   type="number"

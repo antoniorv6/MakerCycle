@@ -6,6 +6,7 @@ import { useMaterialPresets } from '@/hooks/useMaterialPresets';
 
 interface PieceMaterialsSectionProps {
   materials: CostCalculatorPieceMaterial[];
+  projectType?: 'filament' | 'resin';
   onAddMaterial: () => void;
   onUpdateMaterial: (id: string, field: keyof CostCalculatorPieceMaterial, value: string | number) => void;
   onRemoveMaterial: (id: string) => void;
@@ -59,16 +60,25 @@ const MaterialCard: React.FC<{
     const selectedPreset = presets.find(p => p.id === presetId);
     
     if (selectedPreset) {
-      // Convertir el precio a €/kg si es necesario
       let pricePerKg = selectedPreset.price_per_unit;
-      if (selectedPreset.unit !== 'kg') {
-        pricePerKg = convertPrice(selectedPreset.price_per_unit, selectedPreset.unit, 'kg');
+      
+      if (selectedPreset.category === 'resin') {
+        // Para resina, usar el precio tal cual del preset
+        // Si el preset está en ml, mantener el precio por ml
+        // Si el preset está en L, mantener el precio por L
+        pricePerKg = selectedPreset.price_per_unit;
+      } else {
+        // Para filamento, convertir a €/kg si es necesario
+        if (selectedPreset.unit !== 'kg') {
+          pricePerKg = convertPrice(selectedPreset.price_per_unit, selectedPreset.unit, 'kg');
+        }
       }
       
       // Actualizar todos los campos del material con los datos del preset
       onUpdate('materialName', selectedPreset.name);
       onUpdate('materialType', selectedPreset.material_type);
       onUpdate('pricePerKg', pricePerKg);
+      onUpdate('unit', selectedPreset.unit); // Mantener la unidad original del preset
       onUpdate('category', selectedPreset.category);
       onUpdate('color', selectedPreset.color || '');
       onUpdate('brand', selectedPreset.brand || '');
@@ -290,7 +300,9 @@ const MaterialCard: React.FC<{
                             <div className="text-sm font-bold text-purple-600 group-hover:text-purple-700 transition-colors">
                               {preset.price_per_unit.toFixed(2)}{currencySymbol}
                             </div>
-                            <div className="text-xs text-gray-500">por {preset.unit}</div>
+                            <div className="text-xs text-gray-500">
+                              por {preset.unit}
+                            </div>
                           </div>
                         </div>
                       </button>
@@ -381,7 +393,7 @@ const MaterialCard: React.FC<{
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <div className="md:col-span-2 lg:col-span-1">
           <label className="block text-xs font-medium text-gray-700 mb-1">
-            Peso utilizado ({material.unit}) <span className="text-blue-600">*</span>
+            {material.category === 'resin' ? 'Volumen utilizado' : 'Peso utilizado'} ({material.unit}) <span className="text-blue-600">*</span>
           </label>
           <input
             type="number"
@@ -392,13 +404,15 @@ const MaterialCard: React.FC<{
             placeholder="0.0"
           />
           <p className="text-xs text-gray-500 mt-1">
-            Cantidad de material que has usado para esta pieza
+            {material.category === 'resin' 
+              ? 'Cantidad de resina que has usado para esta pieza' 
+              : 'Cantidad de material que has usado para esta pieza'}
           </p>
         </div>
 
         <div>
           <label className="block text-xs font-medium text-gray-700 mb-1">
-            Precio ({currencySymbol}/kg)
+            Precio ({currencySymbol}/{material.category === 'resin' ? 'L' : 'kg'})
           </label>
           <input
             type="number"
@@ -413,6 +427,11 @@ const MaterialCard: React.FC<{
             }`}
             placeholder="0.00"
           />
+          <p className="text-xs text-gray-500 mt-1">
+            {material.category === 'resin' 
+              ? 'Precio por litro de resina' 
+              : 'Precio por kilogramo de filamento'}
+          </p>
         </div>
 
         <div>
@@ -429,8 +448,17 @@ const MaterialCard: React.FC<{
                 : 'border-gray-300 bg-white'
             }`}
           >
-            <option value="g">Gramos (g)</option>
-            <option value="kg">Kilogramos (kg)</option>
+            {material.category === 'resin' ? (
+              <>
+                <option value="ml">Mililitros (ml)</option>
+                <option value="L">Litros (L)</option>
+              </>
+            ) : (
+              <>
+                <option value="g">Gramos (g)</option>
+                <option value="kg">Kilogramos (kg)</option>
+              </>
+            )}
           </select>
         </div>
 
@@ -493,7 +521,9 @@ const MaterialCard: React.FC<{
       <div className="mt-4 pt-4 border-t border-gray-200">
         <div className="grid grid-cols-2 gap-4">
           <div className="bg-blue-50 rounded-lg p-3 border border-blue-100">
-            <div className="text-xs font-medium text-blue-700 mb-1">Peso total</div>
+            <div className="text-xs font-medium text-blue-700 mb-1">
+              {material.category === 'resin' ? 'Volumen total' : 'Peso total'}
+            </div>
             <div className="text-sm font-bold text-blue-900">
               {material.weight.toFixed(1)}{material.unit}
             </div>
@@ -512,6 +542,7 @@ const MaterialCard: React.FC<{
 
 const PieceMaterialsSection: React.FC<PieceMaterialsSectionProps> = ({
   materials,
+  projectType = 'filament',
   onAddMaterial,
   onUpdateMaterial,
   onRemoveMaterial,
@@ -520,19 +551,43 @@ const PieceMaterialsSection: React.FC<PieceMaterialsSectionProps> = ({
   onSaveAsPreset
 }) => {
   const { formatCurrency } = useFormatCurrency();
+  
+  // Calcular totales - convertir todo a la unidad base según el tipo
   const totalWeight = materials.reduce((sum, material) => {
-    const weightInGrams = material.unit === 'kg' ? material.weight * 1000 : material.weight;
-    return sum + weightInGrams;
+    if (material.category === 'resin') {
+      // Para resina, convertir a ml
+      const volumeInMl = material.unit === 'L' ? material.weight * 1000 : material.weight;
+      return sum + volumeInMl;
+    } else {
+      // Para filamento, convertir a gramos
+      const weightInGrams = material.unit === 'kg' ? material.weight * 1000 : material.weight;
+      return sum + weightInGrams;
+    }
   }, 0);
 
   const totalCost = materials.reduce((sum, material) => {
-    const weightInKg = material.unit === 'g' ? material.weight / 1000 : material.weight;
+    // Convertir a kg para calcular coste (asumiendo que pricePerKg es el precio por kg o por L)
+    let weightInKg;
+    if (material.category === 'resin') {
+      // Para resina, convertir volumen a "kg equivalente" para cálculo de precio
+      // Asumimos que 1L de resina ≈ 1kg para cálculo de precio
+      weightInKg = material.unit === 'L' ? material.weight : material.weight / 1000;
+    } else {
+      weightInKg = material.unit === 'g' ? material.weight / 1000 : material.weight;
+    }
     return sum + (weightInKg * material.pricePerKg);
   }, 0);
 
-  // Determinar la mejor unidad para mostrar el peso total
-  const displayWeight = totalWeight >= 1000 ? (totalWeight / 1000).toFixed(2) : totalWeight.toFixed(1);
-  const displayUnit = totalWeight >= 1000 ? 'kg' : 'g';
+  // Determinar la mejor unidad para mostrar el total
+  let displayWeight: string;
+  let displayUnit: string;
+  if (projectType === 'resin') {
+    displayWeight = totalWeight >= 1000 ? (totalWeight / 1000).toFixed(2) : totalWeight.toFixed(1);
+    displayUnit = totalWeight >= 1000 ? 'L' : 'ml';
+  } else {
+    displayWeight = totalWeight >= 1000 ? (totalWeight / 1000).toFixed(2) : totalWeight.toFixed(1);
+    displayUnit = totalWeight >= 1000 ? 'kg' : 'g';
+  }
 
   // Usar refs para evitar bucles infinitos
   const lastSyncedWeight = useRef<number>(0);
@@ -589,7 +644,9 @@ const PieceMaterialsSection: React.FC<PieceMaterialsSectionProps> = ({
           <h5 className="font-semibold text-gray-900 mb-3">Resumen de materiales</h5>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="bg-blue-50 rounded-lg p-3 border border-blue-100">
-              <div className="text-sm font-medium text-blue-700 mb-1">Peso total</div>
+              <div className="text-sm font-medium text-blue-700 mb-1">
+                {projectType === 'resin' ? 'Volumen total' : 'Peso total'}
+              </div>
               <div className="text-lg font-bold text-blue-900">
                 {displayWeight}{displayUnit}
               </div>

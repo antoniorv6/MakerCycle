@@ -18,6 +18,7 @@ export default function MaterialPresetsManager() {
   const [selectedCategory, setSelectedCategory] = useState<'filament' | 'resin'>('filament');
   const [showTypeSelector, setShowTypeSelector] = useState(false);
   const { presets, loading, addPreset, updatePreset, removePreset, setAsDefault, stats } = useMaterialPresets();
+  const { currencySymbol } = useFormatCurrency();
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
@@ -85,6 +86,8 @@ export default function MaterialPresetsManager() {
       return;
     }
 
+    // Guardar el preset tal cual, sin conversiones
+    // El precio se guarda tal como lo introduce el usuario
     if (editingId) {
       const success = await updatePreset(editingId, formData);
       if (success) {
@@ -101,6 +104,7 @@ export default function MaterialPresetsManager() {
   const handleEdit = (presetId: string) => {
     const preset = presets.find(p => p.id === presetId);
     if (preset) {
+      // Cargar el preset tal cual, sin conversiones
       setFormData({
         name: preset.name,
         price_per_unit: preset.price_per_unit,
@@ -285,7 +289,7 @@ export default function MaterialPresetsManager() {
                 value={formData.price_per_unit}
                 onChange={(e) => setFormData({ ...formData, price_per_unit: parseFloat(e.target.value) || 0 })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                placeholder="25.00"
+                placeholder={formData.category === 'resin' ? '50.00' : '25.00'}
                 required
               />
             </div>

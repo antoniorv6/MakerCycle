@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Save, Euro, FileText, Calendar, Users, User } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useTeam } from '@/components/providers/TeamProvider';
+import { useFormatCurrency } from '@/hooks/useFormatCurrency';
 import type { Expense, ExpenseFormData, Team } from '@/types';
 
 interface AddExpenseFormProps {
@@ -12,6 +13,7 @@ interface AddExpenseFormProps {
 
 export function AddExpenseForm({ expense, onSave, onCancel }: AddExpenseFormProps) {
   const { currentTeam, userTeams, getEffectiveTeam } = useTeam();
+  const { currencySymbol } = useFormatCurrency();
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
   
   const [formData, setFormData] = useState<ExpenseFormData>({
@@ -114,7 +116,7 @@ export function AddExpenseForm({ expense, onSave, onCancel }: AddExpenseFormProp
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Cantidad (€)
+                    Cantidad ({currencySymbol})
                   </label>
                   <input
                     type="number"

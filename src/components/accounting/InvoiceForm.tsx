@@ -127,7 +127,7 @@ export function InvoiceForm({ sale, onClose, onGeneratePDF }: InvoiceFormProps) 
     onGeneratePDF(formData);
   };
 
-  const { formatCurrency } = useFormatCurrency();
+  const { formatCurrency, currencySymbol } = useFormatCurrency();
 
   return (
     <AnimatePresence>
@@ -339,7 +339,7 @@ export function InvoiceForm({ sale, onClose, onGeneratePDF }: InvoiceFormProps) 
 
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Precio Unitario (€) *
+                          Precio Unitario ({currencySymbol}) *
                         </label>
                         <input
                           type="number"
