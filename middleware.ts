@@ -2,10 +2,19 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string
-
 export async function middleware(req: NextRequest) {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+  // Si las variables de entorno no están disponibles (durante el build), permitir todas las rutas
+  // Esto evita errores durante el build time
+  if (!supabaseUrl || !supabaseAnonKey || 
+      supabaseUrl === 'https://placeholder.supabase.co' || 
+      supabaseAnonKey === 'placeholder-key') {
+    // Durante el build, simplemente permitir todas las rutas
+    return NextResponse.next()
+  }
+
   const res = NextResponse.next()
   const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
     cookies: {

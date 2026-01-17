@@ -1,5 +1,9 @@
 import PasswordRecoveryForm from '@/components/auth/PasswordRecoveryForm'
 
+// Forzar renderizado dinámico para evitar problemas durante el build
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+
 export default function ForgotPasswordPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 py-12 px-4 sm:px-6 lg:px-8">
