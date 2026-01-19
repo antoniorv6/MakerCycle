@@ -1,11 +1,12 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { Save, Building2, User, Shield, Bell, Palette, Settings, Package, DollarSign, Paintbrush } from 'lucide-react'
+import { Save, Building2, User, Shield, Bell, Palette, Settings, Package, DollarSign, Paintbrush, Printer } from 'lucide-react'
 import { useCompanySettings } from '@/hooks/useCompanySettings'
 import { useUserCurrency } from '@/hooks/useUserCurrency'
 import MaterialPresetsManager from './MaterialPresetsManager'
 import PostprocessingPresetsManager from './PostprocessingPresetsManager'
+import PrinterPresetsManager from './PrinterPresetsManager'
 
 interface SettingsPageProps {
   initialTab?: string;
@@ -56,6 +57,7 @@ export default function SettingsPage({ initialTab = 'company' }: SettingsPagePro
   const tabs = [
     { id: 'company', label: 'Empresa', icon: Building2 },
     { id: 'materials', label: 'Perfiles Materiales', icon: Package },
+    { id: 'printers', label: 'Impresoras', icon: Printer },
     { id: 'postprocessing', label: 'Postproducción', icon: Paintbrush },
     { id: 'profile', label: 'Perfil', icon: User },
     { id: 'currency', label: 'Moneda', icon: DollarSign },
@@ -112,6 +114,10 @@ export default function SettingsPage({ initialTab = 'company' }: SettingsPagePro
 
             {activeTab === 'postprocessing' && (
               <PostprocessingPresetsManager />
+            )}
+
+            {activeTab === 'printers' && (
+              <PrinterPresetsManager />
             )}
 
             {activeTab === 'company' && (

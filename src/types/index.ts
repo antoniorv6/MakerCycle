@@ -423,6 +423,7 @@ export interface CostBreakdownPanelProps {
     filament: number;
     electricity: number;
     materials: number;
+    amortization?: number;
     total: number;
   };
 }
@@ -523,4 +524,56 @@ export interface KanbanCard {
   created_at: string;
   updated_at: string;
   project?: Project; // opcional, para joins
+}
+
+// Printer preset types
+export interface PrinterPreset {
+  id: string;
+  user_id: string;
+  team_id?: string | null;
+  name: string;
+  power_consumption: number; // Consumo en kW
+  purchase_price: number; // Precio de compra de la impresora
+  amortization_hours: number; // Horas de vida útil estimadas para amortización
+  current_usage_hours: number; // Horas de uso actuales
+  brand?: string;
+  model?: string;
+  notes?: string;
+  is_default: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DatabasePrinterPreset {
+  id: string;
+  user_id: string;
+  team_id?: string | null;
+  name: string;
+  power_consumption: number;
+  purchase_price: number;
+  amortization_hours: number;
+  current_usage_hours: number;
+  brand?: string;
+  model?: string;
+  notes?: string;
+  is_default: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AppPrinterPreset {
+  id: string;
+  name: string;
+  powerConsumption: number;
+  purchasePrice: number;
+  amortizationHours: number;
+  currentUsageHours: number;
+  brand?: string;
+  model?: string;
+  notes?: string;
+  isDefault: boolean;
+  // Campos calculados
+  amortizationCostPerHour: number; // purchasePrice / amortizationHours
+  remainingAmortizationHours: number; // amortizationHours - currentUsageHours
+  amortizationProgress: number; // (currentUsageHours / amortizationHours) * 100
 } 

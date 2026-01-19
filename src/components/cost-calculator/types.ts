@@ -1,3 +1,5 @@
+import type { PrinterPreset } from '@/types';
+
 // Form section props interfaces
 export interface ElectricitySectionProps {
   printHours: number;
@@ -5,6 +7,14 @@ export interface ElectricitySectionProps {
   printerPower: number;
   onElectricityCostChange: (cost: number) => void;
   onPrinterPowerChange: (power: number) => void;
+  // Nuevas props para selección de impresora
+  selectedPrinterId?: string | null;
+  onPrinterSelect?: (printerId: string | null) => void;
+  printerPresets?: PrinterPreset[];
+  onNavigateToSettings?: () => void;
+  // Props para amortización
+  includeAmortization?: boolean;
+  onIncludeAmortizationChange?: (include: boolean) => void;
 }
 
 export interface FilamentSectionProps {
