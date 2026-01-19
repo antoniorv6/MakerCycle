@@ -8,6 +8,7 @@ import { useFormatCurrency } from '@/hooks/useFormatCurrency';
 import { AccountingHeader } from './AccountingHeader';
 import { SalesTable } from './SalesTable';
 import { ExpensesTable } from './ExpensesTable';
+import { AmortizationsSection } from './AmortizationsSection';
 import { AddSaleForm } from './AddSaleForm';
 import { AddExpenseForm } from './AddExpenseForm';
 import { InvoiceForm } from './InvoiceForm';
@@ -18,7 +19,7 @@ import { salesService } from '@/services/salesService';
 import type { Sale, Expense, SaleFormData, ExpenseFormData } from '@/types';
 import { toast } from 'react-hot-toast';
 
-type TabType = 'sales' | 'expenses';
+type TabType = 'sales' | 'expenses' | 'amortizations';
 
 export default function Accounting() {
   const [activeTab, setActiveTab] = useState<TabType>('sales');
@@ -81,6 +82,19 @@ export default function Accounting() {
             updated_at: ''
           }));
           await salesService.updateSaleItems(editingSale.id, items);
+        }
+
+        // Update printer amortizations
+        if (saleData.printer_amortizations) {
+          const totalAmount = saleData.items.reduce((sum, item) => sum + item.sale_price, 0);
+          const totalCost = saleData.items.reduce((sum, item) => sum + (item.unit_cost * item.quantity), 0);
+          const profitBeforeAmortization = totalAmount - totalCost;
+          
+          await salesService.updateSaleAmortizations(
+            editingSale.id,
+            saleData.printer_amortizations,
+            profitBeforeAmortization
+          );
         }
         
         setEditingSale(null);
@@ -236,6 +250,18 @@ export default function Accounting() {
                 </span>
               </div>
             </button>
+            <button
+              onClick={() => setActiveTab('amortizations')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200 ${
+                activeTab === 'amortizations'
+                  ? 'border-slate-500 text-slate-600'
+                  : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+              }`}
+            >
+              <div className="flex items-center space-x-2">
+                <span>Amortizaciones</span>
+              </div>
+            </button>
           </nav>
         </div>
 
@@ -257,7 +283,7 @@ export default function Accounting() {
                 onAddSale={() => setShowAddForm(true)}
                 onGenerateInvoice={handleGenerateInvoice}
               />
-            ) : (
+            ) : activeTab === 'expenses' ? (
               <ExpensesTable
                 expenses={expenses}
                 searchTerm={expenseSearchTerm}
@@ -266,6 +292,8 @@ export default function Accounting() {
                 onEditExpense={handleEditExpense}
                 onAddExpense={() => setShowAddExpenseForm(true)}
               />
+            ) : (
+              <AmortizationsSection />
             )}
           </motion.div>
         </div>

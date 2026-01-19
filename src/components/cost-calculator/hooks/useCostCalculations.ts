@@ -1,13 +1,11 @@
 import { useEffect, useState } from 'react';
-import type { Material, PrinterPreset } from '@/types';
+import type { Material } from '@/types';
 import type { CostCalculatorPieceMaterial } from '../types';
-import { calculateAmortizationCostPerHour } from '@/services/printerPresetService';
 
 interface CostBreakdown {
   filament: number;
   electricity: number;
   materials: number;
-  amortization: number;
   total: number;
 }
 
@@ -47,9 +45,6 @@ interface UseCostCalculationsProps {
     notes?: string;
     materials?: CostCalculatorPieceMaterial[];
   }>;
-  // Campos para amortización de impresora
-  selectedPrinter?: PrinterPreset | null;
-  includeAmortization?: boolean;
 }
 
 export const useCostCalculations = ({
@@ -62,15 +57,12 @@ export const useCostCalculations = ({
   postprocessingItems = [],
   vatPercentage,
   profitMargin,
-  pieces = [],
-  selectedPrinter = null,
-  includeAmortization = true
+  pieces = []
 }: UseCostCalculationsProps) => {
   const [costs, setCosts] = useState<CostBreakdown>({
     filament: 0,
     electricity: 0,
     materials: 0,
-    amortization: 0,
     total: 0
   });
 
@@ -151,27 +143,12 @@ export const useCostCalculations = ({
       const unitCost = item.cost_per_unit ?? item.cost ?? 0;
       return sum + (unitCost * (item.quantity || 1));
     }, 0);
-    
-    // Calcular coste de amortización de impresora
-    let amortizationCost = 0;
-    if (selectedPrinter && includeAmortization && selectedPrinter.purchase_price > 0) {
-      const isFullyAmortized = selectedPrinter.current_usage_hours >= selectedPrinter.amortization_hours;
-      if (!isFullyAmortized) {
-        const costPerHour = calculateAmortizationCostPerHour(
-          selectedPrinter.purchase_price,
-          selectedPrinter.amortization_hours
-        );
-        amortizationCost = costPerHour * totalPrintHours;
-      }
-    }
-    
-    const totalCost = totalFilamentCost + electricityCostTotal + materialsCost + postprocessingCost + amortizationCost;
+    const totalCost = totalFilamentCost + electricityCostTotal + materialsCost + postprocessingCost;
 
     setCosts({
       filament: totalFilamentCost,
       electricity: electricityCostTotal,
       materials: materialsCost + postprocessingCost,
-      amortization: amortizationCost,
       total: totalCost
     });
 
@@ -187,7 +164,7 @@ export const useCostCalculations = ({
       priceWithTax,
       recommendedPrice
     });
-  }, [filamentWeight, filamentPrice, printHours, electricityCost, printerPower, materials, postprocessingItems, vatPercentage, profitMargin, pieces, selectedPrinter, includeAmortization]);
+  }, [filamentWeight, filamentPrice, printHours, electricityCost, printerPower, materials, postprocessingItems, vatPercentage, profitMargin, pieces]);
 
   const { totalFilamentWeight, totalPrintHours, totalFilamentCost } = calculateTotalsFromPieces();
 

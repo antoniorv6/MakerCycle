@@ -98,9 +98,8 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
   const [printerPower, setPrinterPower] = useState(0.35);
   const [vatPercentage, setVatPercentage] = useState(21);
   const [profitMargin, setProfitMargin] = useState(15);
-  // Estado para impresora seleccionada
+  // Estado para impresora seleccionada (solo para consumo eléctrico)
   const [selectedPrinterId, setSelectedPrinterId] = useState<string | null>(null);
-  const [includeAmortization, setIncludeAmortization] = useState(true);
   const [materials, setMaterials] = useState<Array<{ id: string; name: string; price: number }>>([]);
   const [postprocessingItems, setPostprocessingItems] = useState<Array<{
     id: string;
@@ -282,9 +281,6 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
     }, 0);
   };
 
-  // Obtener la impresora seleccionada
-  const selectedPrinter = printerPresets.find(p => p.id === selectedPrinterId) || null;
-
   // Efecto para establecer la impresora por defecto cuando cargue
   useEffect(() => {
     if (defaultPrinter && !selectedPrinterId && !loadedProject) {
@@ -310,9 +306,7 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
     materials,
     postprocessingItems,
     vatPercentage,
-    profitMargin,
-    selectedPrinter,
-    includeAmortization
+    profitMargin
   });
 
   const addMaterial = () => {
@@ -913,8 +907,6 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
             onPrinterSelect={setSelectedPrinterId}
             printerPresets={printerPresets}
             onNavigateToSettings={onNavigateToSettings}
-            includeAmortization={includeAmortization}
-            onIncludeAmortizationChange={setIncludeAmortization}
           />
 
           <PricingConfig

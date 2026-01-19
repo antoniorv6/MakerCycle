@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Plus, Trash2, Star, Edit2, X, Check, Printer, Zap, Clock, TrendingUp, AlertCircle } from 'lucide-react';
+import { Plus, Trash2, Star, Edit2, X, Check, Zap, Clock, TrendingUp, AlertCircle, Search, Sparkles } from 'lucide-react';
 import { usePrinterPresets } from '@/hooks/usePrinterPresets';
 import { useFormatCurrency } from '@/hooks/useFormatCurrency';
+import { PRINTER_TEMPLATES, getTemplatesByCategory, searchTemplates, templateToPreset, type PrinterTemplate } from '@/data/printerTemplates';
 import type { DatabasePrinterPreset } from '@/types';
 
 export default function PrinterPresetsManager() {
@@ -9,6 +10,9 @@ export default function PrinterPresetsManager() {
   const { currencySymbol, formatCurrency } = useFormatCurrency();
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [showTemplateSelector, setShowTemplateSelector] = useState(false);
+  const [templateSearchQuery, setTemplateSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<'filamento' | 'resina' | 'all'>('all');
 
   const [formData, setFormData] = useState<Omit<DatabasePrinterPreset, 'id' | 'user_id' | 'created_at' | 'updated_at'>>({
     name: '',
@@ -21,6 +25,9 @@ export default function PrinterPresetsManager() {
     notes: '',
     is_default: false,
     team_id: null,
+    amortization_method: 'percentage',
+    amortization_value: 10,
+    is_being_amortized: false,
   });
 
   const resetForm = () => {
@@ -35,9 +42,54 @@ export default function PrinterPresetsManager() {
       notes: '',
       is_default: false,
       team_id: null,
+      amortization_method: 'percentage',
+      amortization_value: 10,
+      is_being_amortized: false,
     });
     setIsAdding(false);
     setEditingId(null);
+    setShowTemplateSelector(false);
+    setTemplateSearchQuery('');
+    setSelectedCategory('all');
+  };
+
+  const handleStartAdding = () => {
+    setShowTemplateSelector(true);
+  };
+
+  const handleSelectTemplate = (template: PrinterTemplate) => {
+    const preset = templateToPreset(template);
+    setFormData(preset);
+    setShowTemplateSelector(false);
+    setIsAdding(true);
+  };
+
+  const handleCreateFromScratch = () => {
+    setShowTemplateSelector(false);
+    setIsAdding(true);
+  };
+
+  // Filtrar plantillas según búsqueda y categoría
+  const getFilteredTemplates = (): PrinterTemplate[] => {
+    let filtered = PRINTER_TEMPLATES;
+
+    // Filtrar por categoría
+    if (selectedCategory !== 'all') {
+      filtered = getTemplatesByCategory(selectedCategory);
+    }
+
+    // Filtrar por búsqueda
+    if (templateSearchQuery.trim()) {
+      const searchResults = searchTemplates(templateSearchQuery);
+      // Si hay búsqueda, también aplicar filtro de categoría si está activo
+      if (selectedCategory !== 'all') {
+        filtered = searchResults.filter(t => t.category === selectedCategory);
+      } else {
+        filtered = searchResults;
+      }
+    }
+
+    return filtered;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -74,6 +126,9 @@ export default function PrinterPresetsManager() {
         notes: preset.notes || '',
         is_default: preset.is_default,
         team_id: preset.team_id || null,
+        amortization_method: preset.amortization_method || 'percentage',
+        amortization_value: preset.amortization_value || 10,
+        is_being_amortized: preset.is_being_amortized || false,
       });
       setEditingId(presetId);
       setIsAdding(false);
@@ -111,17 +166,16 @@ export default function PrinterPresetsManager() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <Printer className="w-6 h-6 text-amber-600" />
+          <h2 className="text-2xl font-bold text-gray-900">
             Perfiles de Impresoras
           </h2>
           <p className="text-gray-600 mt-1">
             Configura tus impresoras para calcular consumo y amortización
           </p>
         </div>
-        {!isAdding && !editingId && (
+        {!isAdding && !editingId && !showTemplateSelector && (
           <button
-            onClick={() => setIsAdding(true)}
+            onClick={handleStartAdding}
             className="flex items-center gap-2 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors"
           >
             <Plus className="w-5 h-5" />
@@ -152,11 +206,133 @@ export default function PrinterPresetsManager() {
         </div>
       )}
 
+      {/* Template Selector */}
+      {showTemplateSelector && (
+        <div className="mb-6 p-6 bg-gradient-to-br from-amber-50 to-purple-50 rounded-xl border border-amber-200">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-amber-600" />
+              <h3 className="text-lg font-semibold text-gray-900">Seleccionar Plantilla</h3>
+            </div>
+            <button
+              onClick={() => setShowTemplateSelector(false)}
+              className="p-1 text-gray-400 hover:text-gray-600"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          <p className="text-sm text-gray-600 mb-4">
+            Elige una plantilla para rellenar automáticamente los datos, o crea una impresora desde cero
+          </p>
+
+          {/* Search and Category Filter */}
+          <div className="mb-4 space-y-3">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Buscar impresora (marca, modelo)..."
+                value={templateSearchQuery}
+                onChange={(e) => setTemplateSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+              />
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setSelectedCategory('all')}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                  selectedCategory === 'all'
+                    ? 'bg-amber-600 text-white'
+                    : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                Todas
+              </button>
+              <button
+                onClick={() => setSelectedCategory('filamento')}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                  selectedCategory === 'filamento'
+                    ? 'bg-amber-600 text-white'
+                    : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                Filamento
+              </button>
+              <button
+                onClick={() => setSelectedCategory('resina')}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                  selectedCategory === 'resina'
+                    ? 'bg-amber-600 text-white'
+                    : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                Resina
+              </button>
+            </div>
+          </div>
+
+          {/* Templates Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-96 overflow-y-auto mb-4">
+            {getFilteredTemplates().map(template => (
+              <button
+                key={template.id}
+                onClick={() => handleSelectTemplate(template)}
+                className="text-left p-3 bg-white rounded-lg border border-gray-200 hover:border-amber-300 hover:shadow-md transition-all"
+              >
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex-1">
+                    <div className="font-semibold text-gray-900">{template.name}</div>
+                    <div className="text-sm text-gray-600">{template.brand} {template.model}</div>
+                  </div>
+                  <span className={`text-xs px-2 py-1 rounded ${
+                    template.category === 'filamento' ? 'bg-blue-100 text-blue-700' :
+                    'bg-pink-100 text-pink-700'
+                  }`}>
+                    {template.category === 'filamento' ? 'Filamento' : 'Resina'}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-xs text-gray-600 mt-2">
+                  <div>
+                    <Zap className="w-3 h-3 inline mr-1" />
+                    {template.power_consumption} kW
+                  </div>
+                  <div>
+                    <TrendingUp className="w-3 h-3 inline mr-1" />
+                    {formatCurrency(template.purchase_price)}
+                  </div>
+                </div>
+                {template.description && (
+                  <p className="text-xs text-gray-500 mt-2 line-clamp-2">{template.description}</p>
+                )}
+              </button>
+            ))}
+          </div>
+
+          {getFilteredTemplates().length === 0 && (
+            <div className="text-center py-8 text-gray-500">
+              <p className="text-sm">No se encontraron plantillas</p>
+            </div>
+          )}
+
+          {/* Create from scratch button */}
+          <div className="pt-4 border-t border-amber-200">
+            <button
+              onClick={handleCreateFromScratch}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              Crear desde cero (sin plantilla)
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Form for adding/editing printer */}
       {(isAdding || editingId) && (
         <form onSubmit={handleSubmit} className="mb-6 p-4 bg-amber-50 rounded-lg border border-amber-200">
-          <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <Printer className="w-5 h-5 text-amber-600" />
+          <h3 className="font-semibold text-gray-900 mb-4">
             {editingId ? 'Editar Impresora' : 'Nueva Impresora'}
           </h3>
           
@@ -279,6 +455,54 @@ export default function PrinterPresetsManager() {
             </div>
           </div>
 
+          {/* Método de amortización por defecto */}
+          {formData.purchase_price > 0 && (
+            <div className="mb-4 p-4 bg-purple-50 rounded-lg border border-purple-200">
+              <h4 className="text-sm font-medium text-gray-900 mb-3 flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-purple-600" />
+                Método de Amortización por Defecto
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Método
+                  </label>
+                  <select
+                    value={formData.amortization_method || 'percentage'}
+                    onChange={(e) => setFormData({ 
+                      ...formData, 
+                      amortization_method: e.target.value as 'fixed' | 'percentage',
+                      // Reset value when changing method
+                      amortization_value: e.target.value === 'percentage' ? 10 : 0
+                    })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  >
+                    <option value="percentage">Porcentaje del beneficio</option>
+                    <option value="fixed">Cantidad fija</option>
+                  </select>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Este método se usará por defecto al crear ventas, pero podrás cambiarlo en cada venta
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    {formData.amortization_method === 'percentage' ? 'Porcentaje (%)' : `Cantidad fija (${currencySymbol})`}
+                  </label>
+                  <input
+                    type="number"
+                    step={formData.amortization_method === 'percentage' ? '0.1' : '0.01'}
+                    min="0"
+                    max={formData.amortization_method === 'percentage' ? '100' : undefined}
+                    value={formData.amortization_value || 0}
+                    onChange={(e) => setFormData({ ...formData, amortization_value: parseFloat(e.target.value) || 0 })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    placeholder={formData.amortization_method === 'percentage' ? '10' : '0'}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="flex items-center gap-2 mb-4">
             <input
               type="checkbox"
@@ -345,16 +569,18 @@ export default function PrinterPresetsManager() {
       {/* List of printers */}
       {presets.length === 0 ? (
         <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
-          <Printer className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-gray-900 mb-2">
             No tienes perfiles de impresora
           </h3>
           <p className="text-gray-600 mb-4">
             Añade tu primera impresora para calcular costes de electricidad y amortización
           </p>
-          {!isAdding && (
+          <p className="text-sm text-gray-500 mb-4">
+            💡 Puedes elegir una plantilla predefinida o crear una impresora personalizada
+          </p>
+          {!isAdding && !showTemplateSelector && (
             <button
-              onClick={() => setIsAdding(true)}
+              onClick={handleStartAdding}
               className="inline-flex items-center gap-2 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors"
             >
               <Plus className="w-5 h-5" />
@@ -500,18 +726,15 @@ export default function PrinterPresetsManager() {
 
       {/* Info section */}
       <div className="mt-6 p-4 bg-amber-50 rounded-lg border border-amber-200">
-        <div className="flex items-start gap-3">
-          <Printer className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
-          <div className="text-sm text-amber-900">
-            <h4 className="font-medium mb-1">💡 Sobre la amortización de impresoras</h4>
-            <ul className="space-y-1 text-amber-700">
-              <li>• El <strong>coste por hora</strong> se calcula dividiendo el precio de compra entre las horas de vida útil</li>
-              <li>• Este coste se añade automáticamente a tus proyectos al seleccionar la impresora</li>
-              <li>• Las <strong>horas de uso</strong> se actualizan manualmente o al guardar proyectos</li>
-              <li>• Cuando la impresora esté totalmente amortizada, el coste por hora será de {currencySymbol}0</li>
-              <li>• Valores típicos de vida útil: 2000-5000h para impresoras FDM, 1000-2000h para resina</li>
-            </ul>
-          </div>
+        <div className="text-sm text-amber-900">
+          <h4 className="font-medium mb-1">💡 Sobre la amortización de impresoras</h4>
+          <ul className="space-y-1 text-amber-700">
+            <li>• El <strong>coste por hora</strong> se calcula dividiendo el precio de compra entre las horas de vida útil</li>
+            <li>• Este coste se añade automáticamente a tus proyectos al seleccionar la impresora</li>
+            <li>• Las <strong>horas de uso</strong> se actualizan manualmente o al guardar proyectos</li>
+            <li>• Cuando la impresora esté totalmente amortizada, el coste por hora será de {currencySymbol}0</li>
+            <li>• Valores típicos de vida útil: 2000-5000h para impresoras FDM, 1000-2000h para resina</li>
+          </ul>
         </div>
       </div>
     </div>

@@ -1,12 +1,7 @@
 import React, { useState } from 'react';
-import { Zap, Info, Printer, Plus, ChevronDown, Settings, TrendingUp } from 'lucide-react';
+import { Zap, Info, Plus, ChevronDown, Settings, X } from 'lucide-react';
 import type { ElectricitySectionProps } from '../types';
 import { useFormatCurrency } from '@/hooks/useFormatCurrency';
-import { 
-  calculateAmortizationCostPerHour, 
-  calculateAmortizationProgress,
-  calculateRemainingAmortizationAmount 
-} from '@/services/printerPresetService';
 
 const ElectricitySection: React.FC<ElectricitySectionProps> = ({
   printHours,
@@ -17,26 +12,12 @@ const ElectricitySection: React.FC<ElectricitySectionProps> = ({
   selectedPrinterId,
   onPrinterSelect,
   printerPresets = [],
-  onNavigateToSettings,
-  includeAmortization = true,
-  onIncludeAmortizationChange
+  onNavigateToSettings
 }) => {
   const [showPrinterSelector, setShowPrinterSelector] = useState(false);
   const { formatCurrency, currencySymbol } = useFormatCurrency();
   
   const selectedPrinter = printerPresets.find(p => p.id === selectedPrinterId);
-  
-  // Calcular datos de amortización si hay impresora seleccionada
-  const amortizationData = selectedPrinter && selectedPrinter.purchase_price > 0 ? {
-    costPerHour: calculateAmortizationCostPerHour(selectedPrinter.purchase_price, selectedPrinter.amortization_hours),
-    progress: calculateAmortizationProgress(selectedPrinter.current_usage_hours, selectedPrinter.amortization_hours),
-    remainingAmount: calculateRemainingAmortizationAmount(
-      selectedPrinter.purchase_price,
-      selectedPrinter.current_usage_hours,
-      selectedPrinter.amortization_hours
-    ),
-    isFullyAmortized: selectedPrinter.current_usage_hours >= selectedPrinter.amortization_hours
-  } : null;
 
   const handlePrinterSelect = (printerId: string | null) => {
     if (printerId && onPrinterSelect) {
@@ -51,10 +32,6 @@ const ElectricitySection: React.FC<ElectricitySectionProps> = ({
     }
     setShowPrinterSelector(false);
   };
-
-  const amortizationCostForProject = amortizationData && includeAmortization && !amortizationData.isFullyAmortized
-    ? amortizationData.costPerHour * printHours
-    : 0;
 
   return (
     <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-shadow duration-300">
@@ -72,7 +49,6 @@ const ElectricitySection: React.FC<ElectricitySectionProps> = ({
               onClick={() => setShowPrinterSelector(!showPrinterSelector)}
               className="flex items-center gap-2 px-3 py-2 text-sm bg-amber-50 text-amber-700 rounded-lg hover:bg-amber-100 transition-colors border border-amber-200"
             >
-              <Printer className="w-4 h-4" />
               {selectedPrinter ? selectedPrinter.name : 'Seleccionar impresora'}
               <ChevronDown className={`w-4 h-4 transition-transform ${showPrinterSelector ? 'rotate-180' : ''}`} />
             </button>
@@ -143,82 +119,37 @@ const ElectricitySection: React.FC<ElectricitySectionProps> = ({
       {/* Info de impresora seleccionada */}
       {selectedPrinter && (
         <div className="mb-4 p-3 bg-amber-50 rounded-lg border border-amber-200">
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Printer className="w-4 h-4 text-amber-600" />
               <span className="font-medium text-amber-900">{selectedPrinter.name}</span>
               {selectedPrinter.brand && (
                 <span className="text-sm text-amber-600">({selectedPrinter.brand} {selectedPrinter.model})</span>
               )}
+              <span className="text-xs text-amber-600 bg-amber-100 px-2 py-1 rounded">
+                {selectedPrinter.power_consumption} kW
+              </span>
             </div>
-            {onNavigateToSettings && (
+            <div className="flex items-center gap-2">
+              {onNavigateToSettings && (
+                <button
+                  type="button"
+                  onClick={onNavigateToSettings}
+                  className="p-1 text-amber-500 hover:text-amber-700 hover:bg-amber-100 rounded"
+                  title="Editar impresora"
+                >
+                  <Settings className="w-4 h-4" />
+                </button>
+              )}
               <button
                 type="button"
-                onClick={onNavigateToSettings}
-                className="p-1 text-amber-500 hover:text-amber-700 hover:bg-amber-100 rounded"
-                title="Editar impresora"
+                onClick={() => handlePrinterSelect(null)}
+                className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded"
+                title="Quitar impresora"
               >
-                <Settings className="w-4 h-4" />
+                <X className="w-4 h-4" />
               </button>
-            )}
-          </div>
-          
-          {amortizationData && (
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <div className="flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4 text-amber-600" />
-                  <span className="text-amber-700">Amortización:</span>
-                </div>
-                <div className="text-right">
-                  {amortizationData.isFullyAmortized ? (
-                    <span className="text-green-600 font-medium">✓ Totalmente amortizada</span>
-                  ) : (
-                    <span className="text-amber-900 font-medium">
-                      {formatCurrency(amortizationData.costPerHour)}/h
-                    </span>
-                  )}
-                </div>
-              </div>
-              
-              {/* Barra de progreso */}
-              <div>
-                <div className="flex justify-between text-xs text-amber-600 mb-1">
-                  <span>{amortizationData.progress.toFixed(1)}% amortizado</span>
-                  <span>Restante: {formatCurrency(amortizationData.remainingAmount)}</span>
-                </div>
-                <div className="w-full bg-amber-200 rounded-full h-1.5">
-                  <div
-                    className={`h-1.5 rounded-full transition-all ${
-                      amortizationData.isFullyAmortized ? 'bg-green-500' : 'bg-amber-500'
-                    }`}
-                    style={{ width: `${Math.min(amortizationData.progress, 100)}%` }}
-                  />
-                </div>
-              </div>
-
-              {/* Toggle de incluir amortización */}
-              {!amortizationData.isFullyAmortized && onIncludeAmortizationChange && (
-                <div className="flex items-center justify-between pt-2 border-t border-amber-200">
-                  <label htmlFor="include-amortization" className="text-sm text-amber-700 flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      id="include-amortization"
-                      checked={includeAmortization}
-                      onChange={(e) => onIncludeAmortizationChange(e.target.checked)}
-                      className="w-4 h-4 text-amber-600 border-amber-300 rounded focus:ring-amber-500"
-                    />
-                    Incluir coste de amortización en el proyecto
-                  </label>
-                  {includeAmortization && (
-                    <span className="text-sm font-medium text-amber-900">
-                      +{formatCurrency(amortizationCostForProject)}
-                    </span>
-                  )}
-                </div>
-              )}
             </div>
-          )}
+          </div>
         </div>
       )}
 
@@ -277,22 +208,6 @@ const ElectricitySection: React.FC<ElectricitySectionProps> = ({
               {formatCurrency(printHours * printerPower * electricityCost)}
             </span>
           </div>
-          {amortizationData && includeAmortization && !amortizationData.isFullyAmortized && (
-            <div className="flex items-center justify-between text-sm mt-1">
-              <span className="text-amber-600">Coste de amortización:</span>
-              <span className="font-medium text-amber-700">
-                {formatCurrency(amortizationCostForProject)}
-              </span>
-            </div>
-          )}
-          {amortizationData && includeAmortization && !amortizationData.isFullyAmortized && (
-            <div className="flex items-center justify-between text-sm mt-2 pt-2 border-t border-gray-100">
-              <span className="text-gray-700 font-medium">Total electricidad + amortización:</span>
-              <span className="font-bold text-gray-900">
-                {formatCurrency((printHours * printerPower * electricityCost) + amortizationCostForProject)}
-              </span>
-            </div>
-          )}
         </div>
       )}
     </div>

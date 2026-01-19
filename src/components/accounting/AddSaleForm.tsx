@@ -5,6 +5,7 @@ import { useTeam } from '@/components/providers/TeamProvider';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { ClientSelector } from './ClientSelector';
 import { SaleItemsForm } from './SaleItemsForm';
+import { PrinterAmortizationSection } from './PrinterAmortizationSection';
 import { roundCurrency, roundTime } from '@/utils/numberUtils';
 import { useFormatCurrency } from '@/hooks/useFormatCurrency';
 import type { Sale, SaleFormData, SaleItemFormData } from '@/types';
@@ -25,7 +26,8 @@ export function AddSaleForm({ sale, onSave, onCancel }: AddSaleFormProps) {
     date: new Date().toISOString().split('T')[0],
     team_id: null,
     client_id: null,
-    items: []
+    items: [],
+    printer_amortizations: []
   });
 
   useEffect(() => {
@@ -40,11 +42,19 @@ export function AddSaleForm({ sale, onSave, onCancel }: AddSaleFormProps) {
         print_hours: item.print_hours
       })) || [];
 
+      // Cargar amortizaciones si existen
+      const printerAmortizations = sale.printer_amortizations?.map(amort => ({
+        printer_preset_id: amort.printer_preset_id,
+        amortization_method: amort.amortization_method,
+        amortization_value: amort.amortization_value
+      })) || [];
+
       setFormData({
         date: sale.date,
         team_id: sale.team_id || null,
         client_id: sale.client_id || null,
-        items
+        items,
+        printer_amortizations: printerAmortizations
       });
     } else {
       // For new sales, use effective team context
@@ -236,6 +246,20 @@ export function AddSaleForm({ sale, onSave, onCancel }: AddSaleFormProps) {
             onItemsChange={handleItemsChange}
           />
 
+          {/* Amortización de Impresoras */}
+          {formData.items.length > 0 && calculateTotalProfit() > 0 && (
+            <PrinterAmortizationSection
+              profit={calculateTotalProfit()}
+              amortizations={formData.printer_amortizations || []}
+              onAmortizationsChange={(amortizations) => {
+                setFormData(prev => ({
+                  ...prev,
+                  printer_amortizations: amortizations
+                }));
+              }}
+            />
+          )}
+
           {/* Resumen de la Venta */}
           {formData.items.length > 0 && (
             <div className="bg-blue-50 rounded-lg p-4">
@@ -257,7 +281,12 @@ export function AddSaleForm({ sale, onSave, onCancel }: AddSaleFormProps) {
                   <div className={`text-2xl font-bold ${calculateTotalProfit() >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                     {formatCurrencyValue(calculateTotalProfit())}
                   </div>
-                  <div className="text-sm text-gray-600">Beneficio</div>
+                  <div className="text-sm text-gray-600">Beneficio Bruto</div>
+                  {formData.printer_amortizations && formData.printer_amortizations.length > 0 && (
+                    <div className="text-xs text-purple-600 mt-1">
+                      Ver amortización abajo
+                    </div>
+                  )}
                 </div>
                 <div className="text-center">
                   <div className={`text-2xl font-bold ${calculateTotalMargin() >= 0 ? 'text-green-600' : 'text-red-600'}`}>

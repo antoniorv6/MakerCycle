@@ -1,5 +1,4 @@
 import React from 'react';
-import { Printer } from 'lucide-react';
 import { useFormatCurrency } from '@/hooks/useFormatCurrency';
 import type { CostBreakdownPanelProps } from '@/types';
 
@@ -18,15 +17,6 @@ const CostBreakdownPanel: React.FC<CostBreakdownPanelProps> = ({ costs }) => {
           <span className="text-slate-700 font-medium">Electricidad</span>
           <span className="text-xl font-semibold text-slate-900">{formatCurrency(costs.electricity)}</span>
         </div>
-        {costs.amortization !== undefined && costs.amortization > 0 && (
-          <div className="flex justify-between items-center py-3 border-b border-amber-200 bg-amber-50 -mx-2 px-4 rounded-lg">
-            <span className="text-amber-700 font-medium flex items-center gap-2">
-              <Printer className="w-4 h-4" />
-              Amortización Impresora
-            </span>
-            <span className="text-xl font-semibold text-amber-700">{formatCurrency(costs.amortization)}</span>
-          </div>
-        )}
         <div className="flex justify-between items-center py-3 border-b border-slate-200">
           <span className="text-slate-700 font-medium">Postproducción</span>
           <span className="text-xl font-semibold text-slate-900">{formatCurrency(costs.materials)}</span>

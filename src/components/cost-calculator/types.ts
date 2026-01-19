@@ -7,14 +7,11 @@ export interface ElectricitySectionProps {
   printerPower: number;
   onElectricityCostChange: (cost: number) => void;
   onPrinterPowerChange: (power: number) => void;
-  // Nuevas props para selección de impresora
+  // Props para selección de impresora (solo para consumo eléctrico)
   selectedPrinterId?: string | null;
   onPrinterSelect?: (printerId: string | null) => void;
   printerPresets?: PrinterPreset[];
   onNavigateToSettings?: () => void;
-  // Props para amortización
-  includeAmortization?: boolean;
-  onIncludeAmortizationChange?: (include: boolean) => void;
 }
 
 export interface FilamentSectionProps {
