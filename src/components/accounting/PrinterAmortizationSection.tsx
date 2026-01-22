@@ -51,7 +51,7 @@ export function PrinterAmortizationSection({
         amortization_value: value
       }
     ]);
-    setExpandedPrinters(new Set([...expandedPrinters, printerId]));
+    setExpandedPrinters(new Set([...Array.from(expandedPrinters), printerId]));
   };
 
   const removeAmortization = (printerId: string) => {
