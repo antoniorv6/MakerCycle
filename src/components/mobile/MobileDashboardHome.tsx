@@ -16,7 +16,7 @@ interface MobileDashboardHomeProps {
 }
 
 export default function MobileDashboardHome({ stats, onNavigate }: MobileDashboardHomeProps) {
-  const { formatCurrency } = useFormatCurrency()
+  const { formatCurrency, currencySymbol } = useFormatCurrency()
   const { triggerHaptic } = useHaptics()
   const formatPercentage = (value: number) => `${value.toFixed(1)}%`
   
@@ -66,7 +66,7 @@ export default function MobileDashboardHome({ stats, onNavigate }: MobileDashboa
     {
       title: 'Eficiencia',
       value: formatCurrency(efficiencyRatio),
-      subtitle: '€/hora',
+      subtitle: `${currencySymbol}/hora`,
       icon: Zap,
       color: 'text-amber-600',
       bg: 'bg-amber-50',
@@ -260,7 +260,7 @@ export default function MobileDashboardHome({ stats, onNavigate }: MobileDashboa
             </div>
             <div>
               <p className="text-lg font-bold text-slate-900">{formatCurrency(stats.averageEurosPerHour)}</p>
-              <p className="text-[10px] text-slate-500">€/hora</p>
+              <p className="text-[10px] text-slate-500">{currencySymbol}/hora</p>
             </div>
           </div>
         </div>

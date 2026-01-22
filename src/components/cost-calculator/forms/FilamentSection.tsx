@@ -1,5 +1,6 @@
 import React from 'react';
 import { Package } from 'lucide-react';
+import { useFormatCurrency } from '@/hooks/useFormatCurrency';
 import type { FilamentSectionProps } from '../types';
 
 const FilamentSection: React.FC<FilamentSectionProps> = ({
@@ -8,6 +9,8 @@ const FilamentSection: React.FC<FilamentSectionProps> = ({
   onWeightChange,
   onPriceChange
 }) => {
+  const { currencySymbol } = useFormatCurrency();
+  
   return (
     <div className="bg-white rounded-xl shadow-lg p-6 border border-slate-100 hover:shadow-xl transition-shadow duration-300">
       <div className="flex items-center mb-4">
@@ -30,7 +33,7 @@ const FilamentSection: React.FC<FilamentSectionProps> = ({
         </div>
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-2">
-            Precio por kilogramo (€)
+            Precio por kilogramo ({currencySymbol})
           </label>
           <input
             type="number"

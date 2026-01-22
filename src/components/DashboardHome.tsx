@@ -17,7 +17,7 @@ interface DashboardHomeProps {
 }
 
 export default function DashboardHome({ stats, onNavigate }: DashboardHomeProps) {
-  const { formatCurrency } = useFormatCurrency();
+  const { formatCurrency, currencySymbol } = useFormatCurrency();
   const formatPercentage = (value: number) => `${value.toFixed(1)}%`;
 
   // Calcular métricas adicionales
@@ -64,7 +64,7 @@ export default function DashboardHome({ stats, onNavigate }: DashboardHomeProps)
     {
       title: 'Eficiencia Operativa',
       value: formatCurrency(efficiencyRatio),
-      subtitle: '€/hora de impresión',
+      subtitle: `${currencySymbol}/hora de impresión`,
       icon: Zap,
       color: 'from-yellow-500 to-orange-500',
       bgColor: 'bg-yellow-50',
@@ -337,7 +337,7 @@ export default function DashboardHome({ stats, onNavigate }: DashboardHomeProps)
           </div>
           <div className="text-center">
             <p className="text-2xl font-bold text-slate-900">{formatCurrency(stats.averageEurosPerHour)}</p>
-            <p className="text-sm text-slate-600">€/hora promedio</p>
+            <p className="text-sm text-slate-600">{currencySymbol}/hora promedio</p>
           </div>
           <div className="text-center">
             <p className="text-2xl font-bold text-slate-900">{stats.totalExpenses}</p>

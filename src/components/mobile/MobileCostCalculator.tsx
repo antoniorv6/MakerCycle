@@ -959,7 +959,7 @@ export default function MobileCostCalculator({
         return (
           <div className="space-y-4">
             <MobileInput
-              label="Coste electricidad (€/kWh)"
+              label={`Coste electricidad (${currencySymbol}/kWh)`}
               type="number"
               value={electricityCost}
               onChange={(e) => setElectricityCost(parseFloat(e.target.value) || 0)}
@@ -983,7 +983,7 @@ export default function MobileCostCalculator({
                 {formatCurrency(totalPrintHours * electricityCost * printerPower)}
               </p>
               <p className="text-sm text-amber-600 mt-1">
-                {totalPrintHours.toFixed(1)}h × {electricityCost}€/kWh × {printerPower}kW
+                {totalPrintHours.toFixed(1)}h × {electricityCost}{currencySymbol}/kWh × {printerPower}kW
               </p>
             </div>
           </div>
