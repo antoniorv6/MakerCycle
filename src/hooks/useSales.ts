@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useTeam } from '@/components/providers/TeamProvider';
 import { salesService } from '@/services/salesService';
@@ -10,23 +10,33 @@ export function useSales() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
-  const { currentTeam, getEffectiveTeam } = useTeam();
+  const { currentTeam, isEditingMode, editingTeam } = useTeam();
+  
+  // Calcular el equipo efectivo directamente
+  const effectiveTeamId = isEditingMode && editingTeam ? editingTeam.id : currentTeam?.id;
+  
+  // Usar ref para evitar llamadas duplicadas
+  // Usamos un símbolo especial para indicar "nunca fetched" vs "fetched con undefined/null"
+  const NEVER_FETCHED = useRef(Symbol('NEVER_FETCHED'));
+  const lastFetchedTeamId = useRef<string | null | undefined | symbol>(NEVER_FETCHED.current);
 
-  useEffect(() => {
-    if (user) {
-      fetchSales();
+  const fetchSales = useCallback(async () => {
+    if (!user) {
+      setLoading(false);
+      return;
     }
-  }, [user, getEffectiveTeam]);
-
-  const fetchSales = async () => {
-    if (!user) return;
+    
+    // Evitar refetch si el equipo no ha cambiado (y ya se hizo un fetch)
+    if (lastFetchedTeamId.current !== NEVER_FETCHED.current && lastFetchedTeamId.current === effectiveTeamId) {
+      return;
+    }
     
     try {
       setLoading(true);
       setError(null);
-      const effectiveTeam = getEffectiveTeam();
-      const data = await salesService.getSales(user.id, effectiveTeam?.id);
+      const data = await salesService.getSales(user.id, effectiveTeamId);
       setSales(data);
+      lastFetchedTeamId.current = effectiveTeamId;
     } catch (err) {
       console.error('Error fetching sales:', err);
       setError(err instanceof Error ? err.message : 'Error fetching sales');
@@ -34,16 +44,32 @@ export function useSales() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, effectiveTeamId]);
+
+  useEffect(() => {
+    if (user) {
+      // Reset lastFetchedTeamId cuando cambia el equipo para forzar refetch
+      if (lastFetchedTeamId.current !== NEVER_FETCHED.current && lastFetchedTeamId.current !== effectiveTeamId) {
+        lastFetchedTeamId.current = NEVER_FETCHED.current;
+      }
+      fetchSales();
+    }
+  }, [user, effectiveTeamId, fetchSales]);
 
   const createSale = async (saleData: SaleFormData) => {
     if (!user) throw new Error('User not authenticated');
     
     try {
-      const effectiveTeam = getEffectiveTeam();
-      const newSale = await salesService.createSale(user.id, saleData, effectiveTeam?.id);
-      setSales(prev => [newSale, ...prev]);
-      toast.success('Sale created successfully');
+      // Usar el team_id del formData si está especificado, sino usar el equipo efectivo
+      const teamIdToUse = saleData.team_id !== undefined ? saleData.team_id : effectiveTeamId;
+      const newSale = await salesService.createSale(user.id, saleData, teamIdToUse);
+      
+      // Solo agregar a la lista si el equipo coincide con el contexto actual
+      if ((teamIdToUse || null) === (effectiveTeamId || null)) {
+        setSales(prev => [newSale, ...prev]);
+      }
+      
+      toast.success('Venta creada correctamente');
       return newSale;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error creating sale';
@@ -81,6 +107,12 @@ export function useSales() {
     return salesService.calculateSaleStats(sales);
   };
 
+  // Función de refetch que fuerza la actualización
+  const refetch = useCallback(async () => {
+    lastFetchedTeamId.current = NEVER_FETCHED.current;
+    await fetchSales();
+  }, [fetchSales]);
+
   return {
     sales,
     loading,
@@ -89,6 +121,6 @@ export function useSales() {
     updateSale,
     deleteSale,
     getSaleStats,
-    refetch: fetchSales
+    refetch
   };
 } 

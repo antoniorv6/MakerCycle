@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useTeam } from '@/components/providers/TeamProvider';
 import {
@@ -16,13 +16,16 @@ import { toast } from 'react-hot-toast';
 
 export function usePostprocessingPresets(category?: string) {
   const { user } = useAuth();
-  const { getEffectiveTeam } = useTeam();
+  const { currentTeam, isEditingMode, editingTeam } = useTeam();
   const [presets, setPresets] = useState<PostprocessingPreset[]>([]);
   const [defaultPreset, setDefaultPreset] = useState<PostprocessingPreset | null>(null);
   const [stats, setStats] = useState<{ total: number; byCategory: { [key: string]: number } }>({ total: 0, byCategory: {} });
   const [loading, setLoading] = useState(true);
+  
+  // Calcular el equipo efectivo directamente
+  const effectiveTeamId = isEditingMode && editingTeam ? editingTeam.id : currentTeam?.id;
 
-  const loadPresets = async () => {
+  const loadPresets = useCallback(async () => {
     if (!user) {
       setPresets([]);
       setDefaultPreset(null);
@@ -42,13 +45,11 @@ export function usePostprocessingPresets(category?: string) {
         setStats({ total: 0, byCategory: {} });
         return;
       }
-
-      const teamId = getEffectiveTeam()?.id;
       
       const [presetsData, defaultPresetData, statsData] = await Promise.all([
-        getPostprocessingPresets(user.id, teamId, category),
-        getDefaultPostprocessingPreset(user.id, teamId, category),
-        getPostprocessingPresetStats(user.id, teamId),
+        getPostprocessingPresets(user.id, effectiveTeamId, category),
+        getDefaultPostprocessingPreset(user.id, effectiveTeamId, category),
+        getPostprocessingPresetStats(user.id, effectiveTeamId),
       ]);
 
       setPresets(presetsData);
@@ -60,12 +61,12 @@ export function usePostprocessingPresets(category?: string) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, effectiveTeamId, category]);
 
   // Cargar presets al montar el componente
   useEffect(() => {
     loadPresets();
-  }, [user?.id, category]);
+  }, [loadPresets]);
 
   // Crear un nuevo preset
   const addPreset = async (
@@ -80,7 +81,7 @@ export function usePostprocessingPresets(category?: string) {
       const newPreset = await createPostprocessingPreset(
         preset,
         user.id,
-        getEffectiveTeam()?.id
+        effectiveTeamId
       );
 
       if (newPreset) {
@@ -207,7 +208,7 @@ export function usePostprocessingPresets(category?: string) {
         category: item.category,
         notes: `Creado desde item: ${item.name}`,
         is_default: false
-      }, user.id, getEffectiveTeam()?.id);
+      }, user.id, effectiveTeamId);
       
       if (!newPreset) {
         throw new Error('No se pudo crear el preset');

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useTeam } from '@/components/providers/TeamProvider';
 import {
@@ -21,7 +21,7 @@ import { toast } from 'react-hot-toast';
 
 export function usePrinterPresets() {
   const { user } = useAuth();
-  const { getEffectiveTeam } = useTeam();
+  const { currentTeam, isEditingMode, editingTeam } = useTeam();
   const [presets, setPresets] = useState<PrinterPreset[]>([]);
   const [defaultPreset, setDefaultPreset] = useState<PrinterPreset | null>(null);
   const [stats, setStats] = useState<{ 
@@ -31,8 +31,11 @@ export function usePrinterPresets() {
     totalRemaining: number;
   }>({ total: 0, totalPurchaseValue: 0, totalAmortized: 0, totalRemaining: 0 });
   const [loading, setLoading] = useState(true);
+  
+  // Calcular el equipo efectivo directamente
+  const effectiveTeamId = isEditingMode && editingTeam ? editingTeam.id : currentTeam?.id;
 
-  const loadPresets = async () => {
+  const loadPresets = useCallback(async () => {
     if (!user) {
       setPresets([]);
       setDefaultPreset(null);
@@ -57,13 +60,11 @@ export function usePrinterPresets() {
         setStats({ total: 0, totalPurchaseValue: 0, totalAmortized: 0, totalRemaining: 0 });
         return;
       }
-
-      const teamId = getEffectiveTeam()?.id;
       
       const [presetsData, defaultPresetData, statsData] = await Promise.all([
-        getPrinterPresets(user.id, teamId),
-        getDefaultPrinterPreset(user.id, teamId),
-        getPrinterPresetStats(user.id, teamId),
+        getPrinterPresets(user.id, effectiveTeamId),
+        getDefaultPrinterPreset(user.id, effectiveTeamId),
+        getPrinterPresetStats(user.id, effectiveTeamId),
       ]);
 
       setPresets(presetsData);
@@ -75,12 +76,12 @@ export function usePrinterPresets() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, effectiveTeamId]);
 
   // Cargar presets al montar el componente
   useEffect(() => {
     loadPresets();
-  }, [user?.id]);
+  }, [loadPresets]);
 
   // Crear un nuevo perfil de impresora
   const addPreset = async (
@@ -95,7 +96,7 @@ export function usePrinterPresets() {
       const newPreset = await createPrinterPreset(
         preset,
         user.id,
-        getEffectiveTeam()?.id
+        effectiveTeamId
       );
 
       if (newPreset) {

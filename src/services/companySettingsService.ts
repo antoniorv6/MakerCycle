@@ -80,18 +80,21 @@ export async function getCompanySettings(userId: string, teamId?: string | null)
       query = query.eq('user_id', userId).is('team_id', null);
     }
 
-    const { data, error } = await query.single()
+    // Use maybeSingle() instead of single() to handle 0 results without error
+    const { data, error } = await query.maybeSingle()
 
     if (error) {
-      if (error.code === 'PGRST116') {
-        // No settings found, return defaults
-        return DEFAULT_COMPANY_DATA
-      }
-      // Si es un error de tabla no encontrada, también retornar defaults
+      // Si es un error de tabla no encontrada, retornar defaults
       if (error.message && error.message.includes('relation "company_settings" does not exist')) {
         return DEFAULT_COMPANY_DATA
       }
-      throw error
+      console.error('Error fetching company settings:', error)
+      return DEFAULT_COMPANY_DATA
+    }
+
+    // If no data found, return defaults
+    if (!data) {
+      return DEFAULT_COMPANY_DATA
     }
 
     const formattedData = fromDatabaseFormat(data);
@@ -106,47 +109,65 @@ export async function saveCompanySettings(userId: string, data: CompanyData, tea
   const supabase = createClient()
   
   try {
-    
-    let updateQuery;
-    
-    if (teamId) {
-      // Update team settings
-      updateQuery = supabase
-        .from('company_settings')
-        .update(toDatabaseFormat(data, userId))
-        .eq('team_id', teamId);
-    } else {
-      // Update personal settings (where team_id is null)
-      updateQuery = supabase
-        .from('company_settings')
-        .update(toDatabaseFormat(data, userId))
-        .eq('user_id', userId)
-        .is('team_id', null);
+    // Prepare the data for insert/update
+    const dbData = {
+      ...toDatabaseFormat(data, userId),
+      team_id: teamId || null
     }
-    
-    // First, try to update existing settings
-    const { error: updateError } = await updateQuery
 
-    if (updateError) {
-      if (updateError.code === 'PGRST116') {
-        // No existing settings, insert new ones
-        const { error: insertError } = await supabase
-          .from('company_settings')
-          .insert(toDatabaseFormat(data, userId))
+    // Check if settings already exist
+    let existingQuery = supabase
+      .from('company_settings')
+      .select('id')
 
-        if (insertError) {
-          // Si la tabla no existe, no lanzar error, solo log
-          if (insertError.message && insertError.message.includes('relation "company_settings" does not exist')) {
-            return;
-          }
-          throw insertError
-        }
+    if (teamId) {
+      existingQuery = existingQuery.eq('team_id', teamId);
+    } else {
+      existingQuery = existingQuery.eq('user_id', userId).is('team_id', null);
+    }
+
+    const { data: existing, error: checkError } = await existingQuery.maybeSingle()
+
+    if (checkError) {
+      // Si es un error de tabla no encontrada, no lanzar error
+      if (checkError.message && checkError.message.includes('relation "company_settings" does not exist')) {
+        return;
+      }
+      console.error('Error checking existing settings:', checkError)
+      throw checkError
+    }
+
+    if (existing) {
+      // Update existing settings
+      let updateQuery = supabase
+        .from('company_settings')
+        .update(dbData)
+
+      if (teamId) {
+        updateQuery = updateQuery.eq('team_id', teamId);
       } else {
-        // Si es un error de tabla no encontrada, no lanzar error
-        if (updateError.message && updateError.message.includes('relation "company_settings" does not exist')) {
+        updateQuery = updateQuery.eq('user_id', userId).is('team_id', null);
+      }
+
+      const { error: updateError } = await updateQuery
+
+      if (updateError) {
+        console.error('Error updating company settings:', updateError)
+        throw updateError
+      }
+    } else {
+      // Insert new settings
+      const { error: insertError } = await supabase
+        .from('company_settings')
+        .insert(dbData)
+
+      if (insertError) {
+        // Si la tabla no existe, no lanzar error, solo log
+        if (insertError.message && insertError.message.includes('relation "company_settings" does not exist')) {
           return;
         }
-        throw updateError
+        console.error('Error inserting company settings:', insertError)
+        throw insertError
       }
     }
   } catch (error) {

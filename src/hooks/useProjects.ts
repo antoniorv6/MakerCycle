@@ -14,9 +14,12 @@ export function useProjects() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
-  const { currentTeam } = useTeam();
+  const { currentTeam, isEditingMode, editingTeam } = useTeam();
+  
+  // Calcular el equipo efectivo directamente
+  const effectiveTeamId = isEditingMode && editingTeam ? editingTeam.id : currentTeam?.id;
 
-  const cacheKey = `${user?.id || ''}-${currentTeam?.id || 'personal'}`;
+  const cacheKey = `${user?.id || ''}-${effectiveTeamId || 'personal'}`;
 
   const fetchProjects = useCallback(async () => {
     if (!user) return;
@@ -32,7 +35,7 @@ export function useProjects() {
     try {
       setLoading(true);
       setError(null);
-      const data = await projectService.getProjects(user.id, currentTeam?.id);
+      const data = await projectService.getProjects(user.id, effectiveTeamId);
       
       // Update cache
       projectsCache.set(cacheKey, { data, timestamp: Date.now() });
@@ -44,7 +47,7 @@ export function useProjects() {
     } finally {
       setLoading(false);
     }
-  }, [user, currentTeam, cacheKey]);
+  }, [user, effectiveTeamId, cacheKey]);
 
   const invalidateCache = useCallback(() => {
     projectsCache.delete(cacheKey);
@@ -54,7 +57,7 @@ export function useProjects() {
     if (user) {
       fetchProjects();
     }
-  }, [user, currentTeam, fetchProjects]);
+  }, [user, effectiveTeamId, fetchProjects]);
 
   const createProject = useCallback(async (projectData: Omit<DatabaseProject, 'id' | 'created_at' | 'updated_at'>) => {
     if (!user) throw new Error('User not authenticated');
