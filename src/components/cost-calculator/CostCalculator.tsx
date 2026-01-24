@@ -832,7 +832,7 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
       if (projectId) {
         // Always delete all pieces and their materials for this project
         await supabase.from('piece_materials').delete().in('piece_id', 
-          (await supabase.from('pieces').select('id').eq('project_id', projectId)).data?.map(p => p.id) || []
+          (await supabase.from('pieces').select('id').eq('project_id', projectId)).data?.map((p: { id: string }) => p.id) || []
         );
         await supabase.from('pieces').delete().eq('project_id', projectId);
 

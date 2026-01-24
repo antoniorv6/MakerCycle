@@ -75,7 +75,7 @@ export default function MobileProjectManager({ onLoadProject }: MobileProjectMan
       }
 
       const projectsWithPieces = await Promise.all(
-        (data || []).map(async (project) => {
+        (data || []).map(async (project: DatabaseProject) => {
           const { data: pieces } = await supabase
             .from('pieces')
             .select('*, piece_materials (*)')

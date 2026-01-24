@@ -359,7 +359,7 @@ export async function getPostprocessingPresetStats(userId: string, teamId?: stri
       byCategory: {} as { [key: string]: number }
     };
 
-    data?.forEach(preset => {
+    data?.forEach((preset: { category: string | null }) => {
       const category = preset.category || 'Sin categoría';
       stats.byCategory[category] = (stats.byCategory[category] || 0) + 1;
     });

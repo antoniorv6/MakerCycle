@@ -826,3 +826,12 @@ html {
   background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
 }
 
+/* ChatBot SVG - Remove white background */
+img[src="/makerbot.svg"] {
+  background: transparent;
+}
+
+/* Hide the white background group in makerbot SVG */
+img[src="/makerbot.svg"] g[id="#fefefeff"] path:first-child {
+  display: none;
+}

@@ -38,7 +38,7 @@ export class ProjectService {
 
     // Migrate legacy pieces for each project
     const projectsWithMigratedPieces = await Promise.all(
-      data.map(async (project) => {
+      data.map(async (project: DatabaseProject & { pieces?: any[] }) => {
         if (project.pieces && project.pieces.length > 0) {
           const processedPieces = await this.processPieces(project.pieces);
           return {

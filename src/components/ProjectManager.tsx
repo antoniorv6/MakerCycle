@@ -91,7 +91,7 @@ export default function ProjectManager({ onLoadProject }: ProjectManagerProps) {
 
       // Fetch pieces for each project with their materials
       const projectsWithPieces = await Promise.all(
-        (data || []).map(async (project) => {
+        (data || []).map(async (project: DatabaseProject) => {
           const { data: pieces } = await supabase
             .from('pieces')
             .select(`

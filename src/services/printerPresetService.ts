@@ -367,16 +367,19 @@ export async function getPrinterPresetStats(userId: string, teamId?: string | nu
       totalRemaining: 0
     };
 
-    data?.forEach(preset => {
+    data?.forEach((preset: { purchase_price: number | null; current_usage_hours: number | null; amortization_hours: number | null }) => {
       stats.totalPurchaseValue += preset.purchase_price || 0;
-      const amortized = preset.amortization_hours > 0 
-        ? (preset.current_usage_hours / preset.amortization_hours) * preset.purchase_price 
+      const purchasePrice = preset.purchase_price || 0;
+      const currentUsage = preset.current_usage_hours || 0;
+      const amortizationHours = preset.amortization_hours || 0;
+      const amortized = amortizationHours > 0 
+        ? (currentUsage / amortizationHours) * purchasePrice 
         : 0;
-      stats.totalAmortized += Math.min(amortized, preset.purchase_price);
+      stats.totalAmortized += Math.min(amortized, purchasePrice);
       stats.totalRemaining += calculateRemainingAmortizationAmount(
-        preset.purchase_price,
-        preset.current_usage_hours,
-        preset.amortization_hours
+        purchasePrice,
+        currentUsage,
+        amortizationHours
       );
     });
 

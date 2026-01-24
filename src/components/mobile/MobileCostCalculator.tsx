@@ -413,7 +413,7 @@ export default function MobileCostCalculator({
         // Eliminar materiales de piezas existentes
         const existingPieces = await supabase.from('pieces').select('id').eq('project_id', projectId)
         if (existingPieces.data?.length) {
-          await supabase.from('piece_materials').delete().in('piece_id', existingPieces.data.map(p => p.id))
+          await supabase.from('piece_materials').delete().in('piece_id', existingPieces.data.map((p: { id: string }) => p.id))
         }
         await supabase.from('pieces').delete().eq('project_id', projectId)
 

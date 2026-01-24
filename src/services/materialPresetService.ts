@@ -390,7 +390,7 @@ export async function getMaterialPresetStats(userId: string, teamId?: string | n
       byCategory: {} as { [key: string]: number }
     };
 
-    data?.forEach(preset => {
+    data?.forEach((preset: { category: string }) => {
       stats.byCategory[preset.category] = (stats.byCategory[preset.category] || 0) + 1;
     });
 
