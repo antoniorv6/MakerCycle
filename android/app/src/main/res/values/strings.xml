@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">MakerCycle</string>
+    <string name="title_activity_main">MakerCycle</string>
+    <string name="package_name">com.makercycle.app</string>
+    <string name="custom_url_scheme">com.makercycle.app</string>
+</resources>

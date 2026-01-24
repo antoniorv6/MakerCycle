@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Plus, Trash2, Package, Edit3, Save, X, Bookmark, Settings, Loader2, Check } from 'lucide-react';
+import { useFormatCurrency } from '@/hooks/useFormatCurrency';
 import type { CostCalculatorPieceMaterial } from '../types';
 import { useMaterialPresets } from '@/hooks/useMaterialPresets';
 
 interface PieceMaterialsSectionProps {
   materials: CostCalculatorPieceMaterial[];
+  projectType?: 'filament' | 'resin';
   onAddMaterial: () => void;
   onUpdateMaterial: (id: string, field: keyof CostCalculatorPieceMaterial, value: string | number) => void;
   onRemoveMaterial: (id: string) => void;
@@ -18,8 +20,10 @@ const MaterialCard: React.FC<{
   onUpdate: (field: keyof CostCalculatorPieceMaterial, value: string | number) => void;
   onRemove: () => void;
   onNavigateToSettings?: () => void;
+  currencySymbol?: string;
   onSaveAsPreset?: (material: CostCalculatorPieceMaterial) => void;
 }> = ({ material, onUpdate, onRemove, onNavigateToSettings, onSaveAsPreset }) => {
+  const { formatCurrency, currencySymbol } = useFormatCurrency();
   const [isEditingName, setIsEditingName] = useState(false);
   const [tempName, setTempName] = useState(material.materialName);
   const { presets, loading: presetsLoading, convertPrice } = useMaterialPresets();
@@ -28,6 +32,18 @@ const MaterialCard: React.FC<{
   const [isPresetLoaded, setIsPresetLoaded] = useState(false);
   const [isSavingAsPreset, setIsSavingAsPreset] = useState(false);
   const [isSavedAsPreset, setIsSavedAsPreset] = useState(false);
+  // Estado local para inputs numéricos (permite que estén vacíos)
+  const [weightInput, setWeightInput] = useState<string>(material.weight?.toString() || '');
+  const [priceInput, setPriceInput] = useState<string>(material.pricePerKg?.toString() || '');
+
+  // Sincronizar con props cuando cambian externamente
+  React.useEffect(() => {
+    setWeightInput(material.weight?.toString() || '');
+  }, [material.weight]);
+
+  React.useEffect(() => {
+    setPriceInput(material.pricePerKg?.toString() || '');
+  }, [material.pricePerKg]);
 
 
   // Filtrar presets por categoría seleccionada
@@ -56,16 +72,25 @@ const MaterialCard: React.FC<{
     const selectedPreset = presets.find(p => p.id === presetId);
     
     if (selectedPreset) {
-      // Convertir el precio a €/kg si es necesario
       let pricePerKg = selectedPreset.price_per_unit;
-      if (selectedPreset.unit !== 'kg') {
-        pricePerKg = convertPrice(selectedPreset.price_per_unit, selectedPreset.unit, 'kg');
+      
+      if (selectedPreset.category === 'resin') {
+        // Para resina, usar el precio tal cual del preset
+        // Si el preset está en ml, mantener el precio por ml
+        // Si el preset está en L, mantener el precio por L
+        pricePerKg = selectedPreset.price_per_unit;
+      } else {
+        // Para filamento, convertir a €/kg si es necesario
+        if (selectedPreset.unit !== 'kg') {
+          pricePerKg = convertPrice(selectedPreset.price_per_unit, selectedPreset.unit, 'kg');
+        }
       }
       
       // Actualizar todos los campos del material con los datos del preset
       onUpdate('materialName', selectedPreset.name);
       onUpdate('materialType', selectedPreset.material_type);
       onUpdate('pricePerKg', pricePerKg);
+      onUpdate('unit', selectedPreset.unit); // Mantener la unidad original del preset
       onUpdate('category', selectedPreset.category);
       onUpdate('color', selectedPreset.color || '');
       onUpdate('brand', selectedPreset.brand || '');
@@ -285,9 +310,11 @@ const MaterialCard: React.FC<{
                           </div>
                           <div className="text-right ml-2">
                             <div className="text-sm font-bold text-purple-600 group-hover:text-purple-700 transition-colors">
-                              {preset.price_per_unit.toFixed(2)}€
+                              {preset.price_per_unit.toFixed(2)}{currencySymbol}
                             </div>
-                            <div className="text-xs text-gray-500">por {preset.unit}</div>
+                            <div className="text-xs text-gray-500">
+                              por {preset.unit}
+                            </div>
                           </div>
                         </div>
                       </button>
@@ -378,16 +405,17 @@ const MaterialCard: React.FC<{
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <div className="md:col-span-2 lg:col-span-1">
           <label className="block text-xs font-medium text-gray-700 mb-1">
-            Peso utilizado ({material.unit}) <span className="text-blue-600">*</span>
+            {material.category === 'resin' ? 'Volumen utilizado' : 'Peso utilizado'} ({material.unit}) <span className="text-blue-600">*</span>
           </label>
           <input
             type="number"
             step="0.1"
-            value={material.weight?.toString() || ''}
+            value={weightInput}
             onChange={(e) => {
               if (isPresetLoaded) return;
               const value = e.target.value;
-              // Allow any input while typing
+              setWeightInput(value);
+              // Only update parent if we have a valid number
               if (value !== '' && value !== '-' && value !== '.') {
                 const numValue = parseFloat(value);
                 if (!isNaN(numValue)) {
@@ -397,14 +425,17 @@ const MaterialCard: React.FC<{
             }}
             onBlur={(e) => {
               if (isPresetLoaded) return;
-              const value = e.target.value;
+              const value = weightInput;
               if (value === '' || value === '-' || value === '.') {
+                setWeightInput('0');
                 onUpdate('weight', 0);
               } else {
                 const numValue = parseFloat(value);
                 if (!isNaN(numValue)) {
+                  setWeightInput(numValue.toString());
                   onUpdate('weight', numValue);
                 } else {
+                  setWeightInput('0');
                   onUpdate('weight', 0);
                 }
               }
@@ -413,22 +444,25 @@ const MaterialCard: React.FC<{
             placeholder="0.0"
           />
           <p className="text-xs text-gray-500 mt-1">
-            Cantidad de material que has usado para esta pieza
+            {material.category === 'resin' 
+              ? 'Cantidad de resina que has usado para esta pieza' 
+              : 'Cantidad de material que has usado para esta pieza'}
           </p>
         </div>
 
         <div>
           <label className="block text-xs font-medium text-gray-700 mb-1">
-            Precio (€/kg)
+            Precio ({currencySymbol}/{material.category === 'resin' ? 'L' : 'kg'})
           </label>
           <input
             type="number"
             step="0.01"
-            value={material.pricePerKg?.toString() || ''}
+            value={priceInput}
             onChange={(e) => {
               if (isPresetLoaded) return;
               const value = e.target.value;
-              // Allow any input while typing
+              setPriceInput(value);
+              // Only update parent if we have a valid number
               if (value !== '' && value !== '-' && value !== '.') {
                 const numValue = parseFloat(value);
                 if (!isNaN(numValue)) {
@@ -438,14 +472,17 @@ const MaterialCard: React.FC<{
             }}
             onBlur={(e) => {
               if (isPresetLoaded) return;
-              const value = e.target.value;
+              const value = priceInput;
               if (value === '' || value === '-' || value === '.') {
+                setPriceInput('0');
                 onUpdate('pricePerKg', 0);
               } else {
                 const numValue = parseFloat(value);
                 if (!isNaN(numValue)) {
+                  setPriceInput(numValue.toString());
                   onUpdate('pricePerKg', numValue);
                 } else {
+                  setPriceInput('0');
                   onUpdate('pricePerKg', 0);
                 }
               }
@@ -458,6 +495,11 @@ const MaterialCard: React.FC<{
             }`}
             placeholder="0.00"
           />
+          <p className="text-xs text-gray-500 mt-1">
+            {material.category === 'resin' 
+              ? 'Precio por litro de resina' 
+              : 'Precio por kilogramo de filamento'}
+          </p>
         </div>
 
         <div>
@@ -474,8 +516,17 @@ const MaterialCard: React.FC<{
                 : 'border-gray-300 bg-white'
             }`}
           >
-            <option value="g">Gramos (g)</option>
-            <option value="kg">Kilogramos (kg)</option>
+            {material.category === 'resin' ? (
+              <>
+                <option value="ml">Mililitros (ml)</option>
+                <option value="L">Litros (L)</option>
+              </>
+            ) : (
+              <>
+                <option value="g">Gramos (g)</option>
+                <option value="kg">Kilogramos (kg)</option>
+              </>
+            )}
           </select>
         </div>
 
@@ -538,7 +589,9 @@ const MaterialCard: React.FC<{
       <div className="mt-4 pt-4 border-t border-gray-200">
         <div className="grid grid-cols-2 gap-4">
           <div className="bg-blue-50 rounded-lg p-3 border border-blue-100">
-            <div className="text-xs font-medium text-blue-700 mb-1">Peso total</div>
+            <div className="text-xs font-medium text-blue-700 mb-1">
+              {material.category === 'resin' ? 'Volumen total' : 'Peso total'}
+            </div>
             <div className="text-sm font-bold text-blue-900">
               {material.weight.toFixed(1)}{material.unit}
             </div>
@@ -546,7 +599,7 @@ const MaterialCard: React.FC<{
           <div className="bg-green-50 rounded-lg p-3 border border-green-100">
             <div className="text-xs font-medium text-green-700 mb-1">Coste</div>
             <div className="text-sm font-bold text-green-900">
-              {((material.weight / (material.unit === 'kg' ? 1 : 1000)) * material.pricePerKg).toFixed(2)}€
+              {formatCurrency((material.weight / (material.unit === 'kg' ? 1 : 1000)) * material.pricePerKg)}
             </div>
           </div>
         </div>
@@ -557,6 +610,7 @@ const MaterialCard: React.FC<{
 
 const PieceMaterialsSection: React.FC<PieceMaterialsSectionProps> = ({
   materials,
+  projectType = 'filament',
   onAddMaterial,
   onUpdateMaterial,
   onRemoveMaterial,
@@ -564,19 +618,44 @@ const PieceMaterialsSection: React.FC<PieceMaterialsSectionProps> = ({
   onSyncPieceFields,
   onSaveAsPreset
 }) => {
+  const { formatCurrency } = useFormatCurrency();
+  
+  // Calcular totales - convertir todo a la unidad base según el tipo
   const totalWeight = materials.reduce((sum, material) => {
-    const weightInGrams = material.unit === 'kg' ? material.weight * 1000 : material.weight;
-    return sum + weightInGrams;
+    if (material.category === 'resin') {
+      // Para resina, convertir a ml
+      const volumeInMl = material.unit === 'L' ? material.weight * 1000 : material.weight;
+      return sum + volumeInMl;
+    } else {
+      // Para filamento, convertir a gramos
+      const weightInGrams = material.unit === 'kg' ? material.weight * 1000 : material.weight;
+      return sum + weightInGrams;
+    }
   }, 0);
 
   const totalCost = materials.reduce((sum, material) => {
-    const weightInKg = material.unit === 'g' ? material.weight / 1000 : material.weight;
+    // Convertir a kg para calcular coste (asumiendo que pricePerKg es el precio por kg o por L)
+    let weightInKg;
+    if (material.category === 'resin') {
+      // Para resina, convertir volumen a "kg equivalente" para cálculo de precio
+      // Asumimos que 1L de resina ≈ 1kg para cálculo de precio
+      weightInKg = material.unit === 'L' ? material.weight : material.weight / 1000;
+    } else {
+      weightInKg = material.unit === 'g' ? material.weight / 1000 : material.weight;
+    }
     return sum + (weightInKg * material.pricePerKg);
   }, 0);
 
-  // Determinar la mejor unidad para mostrar el peso total
-  const displayWeight = totalWeight >= 1000 ? (totalWeight / 1000).toFixed(2) : totalWeight.toFixed(1);
-  const displayUnit = totalWeight >= 1000 ? 'kg' : 'g';
+  // Determinar la mejor unidad para mostrar el total
+  let displayWeight: string;
+  let displayUnit: string;
+  if (projectType === 'resin') {
+    displayWeight = totalWeight >= 1000 ? (totalWeight / 1000).toFixed(2) : totalWeight.toFixed(1);
+    displayUnit = totalWeight >= 1000 ? 'L' : 'ml';
+  } else {
+    displayWeight = totalWeight >= 1000 ? (totalWeight / 1000).toFixed(2) : totalWeight.toFixed(1);
+    displayUnit = totalWeight >= 1000 ? 'kg' : 'g';
+  }
 
   // Usar refs para evitar bucles infinitos
   const lastSyncedWeight = useRef<number>(0);
@@ -633,7 +712,9 @@ const PieceMaterialsSection: React.FC<PieceMaterialsSectionProps> = ({
           <h5 className="font-semibold text-gray-900 mb-3">Resumen de materiales</h5>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="bg-blue-50 rounded-lg p-3 border border-blue-100">
-              <div className="text-sm font-medium text-blue-700 mb-1">Peso total</div>
+              <div className="text-sm font-medium text-blue-700 mb-1">
+                {projectType === 'resin' ? 'Volumen total' : 'Peso total'}
+              </div>
               <div className="text-lg font-bold text-blue-900">
                 {displayWeight}{displayUnit}
               </div>
@@ -641,7 +722,7 @@ const PieceMaterialsSection: React.FC<PieceMaterialsSectionProps> = ({
             <div className="bg-green-50 rounded-lg p-3 border border-green-100">
               <div className="text-sm font-medium text-green-700 mb-1">Coste total</div>
               <div className="text-lg font-bold text-green-900">
-                {totalCost.toFixed(2)}€
+                {formatCurrency(totalCost)}
               </div>
             </div>
             <div className="bg-purple-50 rounded-lg p-3 border border-purple-100">

@@ -4,7 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useTeam } from '@/components/providers/TeamProvider';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { createClient } from '@/lib/supabase';
-import { roundCurrency, roundTime, formatCurrency, formatPercentage } from '@/utils/numberUtils';
+import { roundCurrency, roundTime, formatPercentage } from '@/utils/numberUtils';
+import { useFormatCurrency } from '@/hooks/useFormatCurrency';
 import type { SaleItemFormData, Project } from '@/types';
 
 interface SaleItemsFormProps {
@@ -15,10 +16,13 @@ interface SaleItemsFormProps {
 export function SaleItemsForm({ items, onItemsChange }: SaleItemsFormProps) {
   const { currentTeam, userTeams, getEffectiveTeam } = useTeam();
   const { user } = useAuth();
+  const { formatCurrency, currencySymbol } = useFormatCurrency();
   const supabase = createClient();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loadingProjects, setLoadingProjects] = useState(false);
   const [showProjectSelector, setShowProjectSelector] = useState<number | null>(null);
+  // Estado local para inputs numéricos (permite que estén vacíos)
+  const [inputValues, setInputValues] = useState<Record<number, { unit_cost?: string; sale_price?: string; print_hours?: string; quantity?: string }>>({});
 
   // Fetch projects when component mounts or team changes
   useEffect(() => {
@@ -145,6 +149,25 @@ export function SaleItemsForm({ items, onItemsChange }: SaleItemsFormProps) {
   const formatCurrencyValue = (value: number) => formatCurrency(value);
   const formatPercentageValue = (value: number) => formatPercentage(value);
 
+  // Obtener el valor del input local o el del prop
+  const getInputValue = (index: number, field: 'unit_cost' | 'sale_price' | 'print_hours' | 'quantity', propValue: number | undefined): string => {
+    if (inputValues[index]?.[field] !== undefined) {
+      return inputValues[index][field] || '';
+    }
+    return propValue?.toString() || '';
+  };
+
+  // Actualizar el valor del input local
+  const setInputValue = (index: number, field: 'unit_cost' | 'sale_price' | 'print_hours' | 'quantity', value: string) => {
+    setInputValues(prev => ({
+      ...prev,
+      [index]: {
+        ...prev[index],
+        [field]: value
+      }
+    }));
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -228,7 +251,7 @@ export function SaleItemsForm({ items, onItemsChange }: SaleItemsFormProps) {
                               >
                                 <div className="font-medium text-sm">{project.name}</div>
                                 <div className="text-xs text-gray-500">
-                                  Coste: €{project.total_cost.toFixed(2)} | Horas: {project.print_hours}h
+                                  Coste: {formatCurrency(project.total_cost)} | Horas: {project.print_hours}h
                                 </div>
                               </button>
                             ))}
@@ -245,14 +268,15 @@ export function SaleItemsForm({ items, onItemsChange }: SaleItemsFormProps) {
               {/* Cost and Quantity */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Coste Unitario (€)
+                  Coste Unitario ({currencySymbol})
                 </label>
                 <input
                   type="number"
-                  value={item.unit_cost?.toString() || ''}
+                  value={getInputValue(index, 'unit_cost', item.unit_cost)}
                   onChange={(e) => {
                     const value = e.target.value;
-                    // Allow any input while typing
+                    setInputValue(index, 'unit_cost', value);
+                    // Only update parent if we have a valid number
                     if (value !== '' && value !== '-' && value !== '.') {
                       const numValue = parseFloat(value);
                       if (!isNaN(numValue)) {
@@ -265,14 +289,17 @@ export function SaleItemsForm({ items, onItemsChange }: SaleItemsFormProps) {
                     }
                   }}
                   onBlur={(e) => {
-                    const value = e.target.value;
+                    const value = getInputValue(index, 'unit_cost', item.unit_cost);
                     if (value === '' || value === '-' || value === '.') {
+                      setInputValue(index, 'unit_cost', '0');
                       updateItem(index, 'unit_cost', 0);
                     } else {
                       const numValue = parseFloat(value);
                       if (!isNaN(numValue)) {
+                        setInputValue(index, 'unit_cost', numValue.toString());
                         updateItem(index, 'unit_cost', numValue);
                       } else {
+                        setInputValue(index, 'unit_cost', '0');
                         updateItem(index, 'unit_cost', 0);
                       }
                     }
@@ -289,10 +316,11 @@ export function SaleItemsForm({ items, onItemsChange }: SaleItemsFormProps) {
                 </label>
                 <input
                   type="number"
-                  value={item.quantity?.toString() || ''}
+                  value={getInputValue(index, 'quantity', item.quantity)}
                   onChange={(e) => {
                     const value = e.target.value;
-                    // Allow any input while typing
+                    setInputValue(index, 'quantity', value);
+                    // Only update parent if we have a valid number
                     if (value !== '' && value !== '-') {
                       const numValue = parseInt(value);
                       if (!isNaN(numValue)) {
@@ -301,14 +329,17 @@ export function SaleItemsForm({ items, onItemsChange }: SaleItemsFormProps) {
                     }
                   }}
                   onBlur={(e) => {
-                    const value = e.target.value;
+                    const value = getInputValue(index, 'quantity', item.quantity);
                     if (value === '' || value === '-') {
+                      setInputValue(index, 'quantity', '0');
                       updateItem(index, 'quantity', 0);
                     } else {
                       const numValue = parseInt(value);
                       if (!isNaN(numValue)) {
+                        setInputValue(index, 'quantity', numValue.toString());
                         updateItem(index, 'quantity', numValue);
                       } else {
+                        setInputValue(index, 'quantity', '0');
                         updateItem(index, 'quantity', 0);
                       }
                     }
@@ -322,14 +353,15 @@ export function SaleItemsForm({ items, onItemsChange }: SaleItemsFormProps) {
               {/* Sale Price and Print Hours */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Precio de Venta (€)
+                  Precio de Venta ({currencySymbol})
                 </label>
                 <input
                   type="number"
-                  value={item.sale_price?.toString() || ''}
+                  value={getInputValue(index, 'sale_price', item.sale_price)}
                   onChange={(e) => {
                     const value = e.target.value;
-                    // Allow any input while typing
+                    setInputValue(index, 'sale_price', value);
+                    // Only update parent if we have a valid number
                     if (value !== '' && value !== '-' && value !== '.') {
                       const numValue = parseFloat(value);
                       if (!isNaN(numValue)) {
@@ -338,14 +370,17 @@ export function SaleItemsForm({ items, onItemsChange }: SaleItemsFormProps) {
                     }
                   }}
                   onBlur={(e) => {
-                    const value = e.target.value;
+                    const value = getInputValue(index, 'sale_price', item.sale_price);
                     if (value === '' || value === '-' || value === '.') {
+                      setInputValue(index, 'sale_price', '0');
                       updateItem(index, 'sale_price', 0);
                     } else {
                       const numValue = parseFloat(value);
                       if (!isNaN(numValue)) {
+                        setInputValue(index, 'sale_price', numValue.toString());
                         updateItem(index, 'sale_price', numValue);
                       } else {
+                        setInputValue(index, 'sale_price', '0');
                         updateItem(index, 'sale_price', 0);
                       }
                     }
@@ -362,10 +397,11 @@ export function SaleItemsForm({ items, onItemsChange }: SaleItemsFormProps) {
                 </label>
                 <input
                   type="number"
-                  value={item.print_hours?.toString() || ''}
+                  value={getInputValue(index, 'print_hours', item.print_hours)}
                   onChange={(e) => {
                     const value = e.target.value;
-                    // Allow any input while typing
+                    setInputValue(index, 'print_hours', value);
+                    // Only update parent if we have a valid number
                     if (value !== '' && value !== '-' && value !== '.') {
                       const numValue = parseFloat(value);
                       if (!isNaN(numValue)) {
@@ -374,14 +410,17 @@ export function SaleItemsForm({ items, onItemsChange }: SaleItemsFormProps) {
                     }
                   }}
                   onBlur={(e) => {
-                    const value = e.target.value;
+                    const value = getInputValue(index, 'print_hours', item.print_hours);
                     if (value === '' || value === '-' || value === '.') {
+                      setInputValue(index, 'print_hours', '0');
                       updateItem(index, 'print_hours', 0);
                     } else {
                       const numValue = parseFloat(value);
                       if (!isNaN(numValue)) {
+                        setInputValue(index, 'print_hours', numValue.toString());
                         updateItem(index, 'print_hours', numValue);
                       } else {
+                        setInputValue(index, 'print_hours', '0');
                         updateItem(index, 'print_hours', 0);
                       }
                     }

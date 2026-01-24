@@ -21,6 +21,8 @@ import StickyNote from './StickyNote';
 import ConfirmModal from './ConfirmModal';
 import { useCostCalculations } from './hooks/useCostCalculations';
 import ProjectSavedSummary from './ProjectSavedSummary';
+import { usePostprocessingPresets } from '@/hooks/usePostprocessingPresets';
+import { usePrinterPresets } from '@/hooks/usePrinterPresets';
 import type { DatabaseProject, DatabasePiece, PieceMaterial } from '@/types';
 
 // Function to process pieces (solo sistema multi-material)
@@ -82,18 +84,34 @@ interface CostCalculatorProps {
 const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjectSaved, onNavigateToSettings, importedData }: CostCalculatorProps) => {
   const { user } = useAuth();
   const { getEffectiveTeam } = useTeam();
+  const { presets: postprocessingPresets } = usePostprocessingPresets();
+  const { presets: printerPresets, defaultPreset: defaultPrinter } = usePrinterPresets();
   const [isSaving, setIsSaving] = useState(false);
   const [savedProject, setSavedProject] = useState<DatabaseProject & { pieces?: DatabasePiece[] } | null>(null);
   const supabase = createClient();
   const [loading, setLoading] = useState(true);
   const [projectName, setProjectName] = useState('');
+  const [projectType, setProjectType] = useState<'filament' | 'resin'>('filament');
   const [filamentPrice, setFilamentPrice] = useState(25);
   const [printHours, setPrintHours] = useState(0);
   const [electricityCost, setElectricityCost] = useState(0.12);
   const [printerPower, setPrinterPower] = useState(0.35);
   const [vatPercentage, setVatPercentage] = useState(21);
   const [profitMargin, setProfitMargin] = useState(15);
+  // Estado para impresora seleccionada (solo para consumo eléctrico)
+  const [selectedPrinterId, setSelectedPrinterId] = useState<string | null>(null);
   const [materials, setMaterials] = useState<Array<{ id: string; name: string; price: number }>>([]);
+  const [postprocessingItems, setPostprocessingItems] = useState<Array<{
+    id: string;
+    name: string;
+    cost_per_unit: number;
+    quantity: number;
+    unit: string;
+    preset_id?: string | null;
+    is_from_preset: boolean;
+    description?: string;
+    category?: string;
+  }>>([]);
   const [pieces, setPieces] = useState<Array<{
     id: string;
     name: string;
@@ -139,12 +157,31 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
   useEffect(() => {
     if (loadedProject) {
       setProjectName(loadedProject.name);
+      setProjectType(loadedProject.project_type || 'filament');
       setFilamentPrice(loadedProject.filament_price);
       setPrintHours(loadedProject.print_hours);
       setElectricityCost(loadedProject.electricity_cost);
       setVatPercentage(loadedProject.vat_percentage);
       setProfitMargin(loadedProject.profit_margin);
       setMaterials(loadedProject.materials || []);
+      // Cargar postprocessing_items si existen, sino migrar desde materials
+      if (loadedProject.postprocessing_items && Array.isArray(loadedProject.postprocessing_items) && loadedProject.postprocessing_items.length > 0) {
+        setPostprocessingItems(loadedProject.postprocessing_items);
+      } else if (loadedProject.materials && loadedProject.materials.length > 0) {
+        // Migrar materials legacy a postprocessing_items
+        const migratedItems = loadedProject.materials.map((m: any) => ({
+          id: m.id || `migrated-${Date.now()}-${Math.random()}`,
+          name: m.name,
+          cost_per_unit: m.price, // El price legacy se trata como coste unitario
+          quantity: 1,
+          unit: 'unidad',
+          preset_id: null,
+          is_from_preset: false
+        }));
+        setPostprocessingItems(migratedItems);
+      } else {
+        setPostprocessingItems([]);
+      }
       
       // Para proyectos existentes, usar valor por defecto de potencia
       // La potencia no se guarda en la base de datos, por lo que usamos el valor por defecto
@@ -244,6 +281,14 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
     }, 0);
   };
 
+  // Efecto para establecer la impresora por defecto cuando cargue
+  useEffect(() => {
+    if (defaultPrinter && !selectedPrinterId && !loadedProject) {
+      setSelectedPrinterId(defaultPrinter.id);
+      setPrinterPower(defaultPrinter.power_consumption);
+    }
+  }, [defaultPrinter]);
+
   const {
     totalFilamentWeight,
     totalPrintHours,
@@ -259,6 +304,7 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
     electricityCost,
     printerPower,
     materials,
+    postprocessingItems,
     vatPercentage,
     profitMargin
   });
@@ -279,6 +325,56 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
 
   const removeMaterial = (id: string) => {
     setMaterials(materials.filter(material => material.id !== id));
+  };
+
+  // Funciones para manejar postprocessing items
+  const addPostprocessingItem = () => {
+    setPostprocessingItems([...postprocessingItems, {
+      id: Date.now().toString(),
+      name: '',
+      cost_per_unit: 0,
+      quantity: 1,
+      unit: 'unidad',
+      preset_id: null,
+      is_from_preset: false
+    }]);
+  };
+
+  const updatePostprocessingItem = (id: string, field: 'name' | 'cost_per_unit' | 'quantity' | 'unit' | 'description' | 'category', value: string | number) => {
+    setPostprocessingItems(postprocessingItems.map(item =>
+      item.id === id ? { ...item, [field]: value } : item
+    ));
+  };
+
+  const removePostprocessingItem = (id: string) => {
+    setPostprocessingItems(postprocessingItems.filter(item => item.id !== id));
+  };
+
+  const loadPostprocessingPreset = (presetId: string) => {
+    const preset = postprocessingPresets.find(p => p.id === presetId);
+    if (preset) {
+      setPostprocessingItems([...postprocessingItems, {
+        id: Date.now().toString(),
+        name: preset.name,
+        cost_per_unit: preset.cost_per_unit,
+        quantity: 1,
+        unit: preset.unit,
+        preset_id: preset.id,
+        is_from_preset: true,
+        description: preset.description || undefined,
+        category: preset.category || undefined
+      }]);
+      toast.success(`Preset "${preset.name}" cargado`);
+    }
+  };
+
+  const savePostprocessingItemAsPreset = async (item: typeof postprocessingItems[0]) => {
+    if (!user) {
+      toast.error('Debes iniciar sesión para guardar presets');
+      return;
+    }
+    // Esta función se implementará más adelante con el hook
+    toast.success('Funcionalidad de guardar preset próximamente');
   };
 
   const addPiece = useCallback(() => {
@@ -325,14 +421,18 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
 
   // Funciones para manejar materiales de piezas (memoizadas)
   const addMaterialToPiece = useCallback((pieceId: string) => {
+    const defaultUnit = projectType === 'resin' ? 'ml' : 'g';
+    const defaultCategory = projectType;
+    const defaultMaterialType = projectType === 'resin' ? 'Resina' : 'PLA';
+    
     const newMaterial = {
       id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
       materialName: 'Nuevo material',
-      materialType: 'PLA',
-      weight: 1, // Empezar con peso 1g en lugar de 0
+      materialType: defaultMaterialType,
+      weight: 1, // Empezar con peso 1 en lugar de 0
       pricePerKg: 25,
-      unit: 'g',
-      category: 'filament' as const,
+      unit: defaultUnit,
+      category: defaultCategory as 'filament' | 'resin',
       color: '#808080',
       brand: '',
       notes: ''
@@ -346,7 +446,7 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
           }
         : piece
     ));
-  }, []);
+  }, [projectType]);
 
   const updatePieceMaterial = useCallback((pieceId: string, materialId: string, field: string, value: string | number) => {
     setPieces(prevPieces => prevPieces.map(piece => 
@@ -379,12 +479,14 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
       return; // Prevent reset while saving
     }
     setProjectName('');
+    setProjectType('filament');
     setFilamentPrice(25);
     setPrintHours(0);
     setElectricityCost(0.12);
     setVatPercentage(21);
     setProfitMargin(15);
     setMaterials([]);
+    setPostprocessingItems([]);
     setPieces([{
       id: '1',
       name: 'Pieza principal',
@@ -550,11 +652,13 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
       const project = {
         user_id: user.id,
         name: projectName,
+        project_type: projectType,
         filament_weight: totalFilamentWeight,
         filament_price: filamentPrice,
         print_hours: totalPrintHours, // This is the total from all pieces
         electricity_cost: electricityCost,
-        materials,
+        materials, // Mantener para compatibilidad
+        postprocessing_items: postprocessingItems.length > 0 ? postprocessingItems : null,
         total_cost: costs.total,
         vat_percentage: vatPercentage,
         profit_margin: profitMargin,
@@ -765,7 +869,9 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
         <div className="lg:col-span-2 space-y-6">
           <ProjectInfo
             projectName={projectName}
+            projectType={projectType}
             onProjectNameChange={setProjectName}
+            onProjectTypeChange={setProjectType}
             onReset={resetForm}
             onSave={saveProject}
             isSaving={isSaving}
@@ -780,6 +886,7 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
           )}
           <PiecesSection
             pieces={pieces}
+            projectType={projectType}
             onAddPiece={addPiece}
             onUpdatePiece={updatePiece}
             onRemovePiece={removePiece}
@@ -796,6 +903,10 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
             printerPower={printerPower}
             onElectricityCostChange={setElectricityCost}
             onPrinterPowerChange={setPrinterPower}
+            selectedPrinterId={selectedPrinterId}
+            onPrinterSelect={setSelectedPrinterId}
+            printerPresets={printerPresets}
+            onNavigateToSettings={onNavigateToSettings}
           />
 
           <PricingConfig
@@ -810,6 +921,13 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
             onAddMaterial={addMaterial}
             onUpdateMaterial={updateMaterial}
             onRemoveMaterial={removeMaterial}
+            postprocessingItems={postprocessingItems}
+            onAddPostprocessingItem={addPostprocessingItem}
+            onUpdatePostprocessingItem={updatePostprocessingItem}
+            onRemovePostprocessingItem={removePostprocessingItem}
+            onLoadPreset={loadPostprocessingPreset}
+            onNavigateToSettings={onNavigateToSettings}
+            onSaveAsPreset={savePostprocessingItemAsPreset}
           />
         </div>
 
@@ -821,6 +939,8 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
             totalPrintHours={totalPrintHours}
             totalFilamentCost={totalFilamentCost}
             totalElectricityCost={totalElectricityCost}
+            totalPostprocessingCost={postprocessingItems.reduce((sum, item) => sum + (item.cost_per_unit * (item.quantity || 1)), 0)}
+            projectType={projectType}
           />
           
           <CostBreakdownPanel costs={costs} />

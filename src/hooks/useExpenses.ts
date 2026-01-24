@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useTeam } from '@/components/providers/TeamProvider';
 import { expenseService } from '@/services/expenseService';
@@ -10,39 +10,65 @@ export function useExpenses() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
-  const { currentTeam, getEffectiveTeam } = useTeam();
+  const { currentTeam, isEditingMode, editingTeam } = useTeam();
+  
+  // Calcular el equipo efectivo directamente
+  const effectiveTeamId = isEditingMode && editingTeam ? editingTeam.id : currentTeam?.id;
+  
+  // Usar ref para evitar llamadas duplicadas
+  // Usamos un símbolo especial para indicar "nunca fetched" vs "fetched con undefined/null"
+  const NEVER_FETCHED = useRef(Symbol('NEVER_FETCHED'));
+  const lastFetchedTeamId = useRef<string | null | undefined | symbol>(NEVER_FETCHED.current);
 
-  useEffect(() => {
-    if (user) {
-      fetchExpenses();
+  const fetchExpenses = useCallback(async () => {
+    if (!user) {
+      setLoading(false);
+      return;
     }
-  }, [user, getEffectiveTeam]);
-
-  const fetchExpenses = async () => {
-    if (!user) return;
+    
+    // Evitar refetch si el equipo no ha cambiado (y ya se hizo un fetch)
+    if (lastFetchedTeamId.current !== NEVER_FETCHED.current && lastFetchedTeamId.current === effectiveTeamId) {
+      return;
+    }
     
     try {
       setLoading(true);
       setError(null);
-      const effectiveTeam = getEffectiveTeam();
-      const data = await expenseService.getExpenses(user.id, effectiveTeam?.id);
+      const data = await expenseService.getExpenses(user.id, effectiveTeamId);
       setExpenses(data);
+      lastFetchedTeamId.current = effectiveTeamId;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error fetching expenses');
       toast.error('Error loading expenses');
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, effectiveTeamId]);
+
+  useEffect(() => {
+    if (user) {
+      // Reset lastFetchedTeamId cuando cambia el equipo para forzar refetch
+      if (lastFetchedTeamId.current !== NEVER_FETCHED.current && lastFetchedTeamId.current !== effectiveTeamId) {
+        lastFetchedTeamId.current = NEVER_FETCHED.current;
+      }
+      fetchExpenses();
+    }
+  }, [user, effectiveTeamId, fetchExpenses]);
 
   const createExpense = async (expenseData: ExpenseFormData) => {
     if (!user) throw new Error('User not authenticated');
     
     try {
-      const effectiveTeam = getEffectiveTeam();
-      const newExpense = await expenseService.createExpense(user.id, expenseData, effectiveTeam?.id);
-      setExpenses(prev => [newExpense, ...prev]);
-      toast.success('Expense created successfully');
+      // Usar el team_id del formData si está especificado, sino usar el equipo efectivo
+      const teamIdToUse = expenseData.team_id !== undefined ? expenseData.team_id : effectiveTeamId;
+      const newExpense = await expenseService.createExpense(user.id, expenseData, teamIdToUse);
+      
+      // Solo agregar a la lista si el equipo coincide con el contexto actual
+      if ((teamIdToUse || null) === (effectiveTeamId || null)) {
+        setExpenses(prev => [newExpense, ...prev]);
+      }
+      
+      toast.success('Gasto creado correctamente');
       return newExpense;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error creating expense';
@@ -84,6 +110,12 @@ export function useExpenses() {
     return expenseService.getExpenseCategories();
   };
 
+  // Función de refetch que fuerza la actualización
+  const refetch = useCallback(async () => {
+    lastFetchedTeamId.current = NEVER_FETCHED.current;
+    await fetchExpenses();
+  }, [fetchExpenses]);
+
   return {
     expenses,
     loading,
@@ -93,6 +125,6 @@ export function useExpenses() {
     deleteExpense,
     getExpenseStats,
     getExpenseCategories,
-    refetch: fetchExpenses
+    refetch
   };
 } 

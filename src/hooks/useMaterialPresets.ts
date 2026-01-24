@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useTeam } from '@/components/providers/TeamProvider';
 import {
@@ -17,14 +17,17 @@ import { toast } from 'react-hot-toast';
 
 export function useMaterialPresets(category?: 'filament' | 'resin') {
   const { user } = useAuth();
-  const { getEffectiveTeam } = useTeam();
+  const { currentTeam, isEditingMode, editingTeam } = useTeam();
   const [presets, setPresets] = useState<MaterialPreset[]>([]);
   const [defaultPreset, setDefaultPreset] = useState<MaterialPreset | null>(null);
   const [stats, setStats] = useState<{ total: number; byCategory: { [key: string]: number } }>({ total: 0, byCategory: {} });
   const [loading, setLoading] = useState(true);
+  
+  // Calcular el equipo efectivo directamente
+  const effectiveTeamId = isEditingMode && editingTeam ? editingTeam.id : currentTeam?.id;
 
 
-  const loadPresets = async () => {
+  const loadPresets = useCallback(async () => {
     if (!user) {
       setPresets([]);
       setDefaultPreset(null);
@@ -44,13 +47,11 @@ export function useMaterialPresets(category?: 'filament' | 'resin') {
         setStats({ total: 0, byCategory: {} });
         return;
       }
-
-      const teamId = getEffectiveTeam()?.id;
       
       const [presetsData, defaultPresetData, statsData] = await Promise.all([
-        getMaterialPresets(user.id, teamId, category),
-        getDefaultMaterialPreset(user.id, teamId, category),
-        getMaterialPresetStats(user.id, teamId),
+        getMaterialPresets(user.id, effectiveTeamId, category),
+        getDefaultMaterialPreset(user.id, effectiveTeamId, category),
+        getMaterialPresetStats(user.id, effectiveTeamId),
       ]);
 
       setPresets(presetsData);
@@ -62,13 +63,12 @@ export function useMaterialPresets(category?: 'filament' | 'resin') {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, effectiveTeamId, category]);
 
   // Cargar presets al montar el componente
   useEffect(() => {
-    const teamId = getEffectiveTeam()?.id;
     loadPresets();
-  }, [user?.id, category]); // Remover getEffectiveTeam() de las dependencias para evitar re-renders constantes
+  }, [loadPresets]);
 
   // Crear un nuevo preset
   const addPreset = async (
@@ -83,7 +83,7 @@ export function useMaterialPresets(category?: 'filament' | 'resin') {
       const newPreset = await createMaterialPreset(
         preset,
         user.id,
-        getEffectiveTeam()?.id
+        effectiveTeamId
       );
 
       if (newPreset) {
@@ -119,7 +119,7 @@ export function useMaterialPresets(category?: 'filament' | 'resin') {
       const newPresets = await createMaterialPresetsBatch(
         presets,
         user.id,
-        getEffectiveTeam()?.id
+        effectiveTeamId
       );
 
       if (newPresets.length > 0) {
@@ -289,7 +289,7 @@ export function useMaterialPresets(category?: 'filament' | 'resin') {
         brand: material.brand,
         notes: material.notes || `Creado desde material: ${material.materialName}`,
         is_default: false
-      }, user.id, getEffectiveTeam()?.id);
+      }, user.id, effectiveTeamId);
       
 
       if (!newPreset) {

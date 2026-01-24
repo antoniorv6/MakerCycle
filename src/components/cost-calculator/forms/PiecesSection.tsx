@@ -5,7 +5,8 @@ import { useMaterialPresets } from '@/hooks/useMaterialPresets';
 import PieceMaterialsSection from './PieceMaterialsSection';
 
 const PieceCard: React.FC<PieceCardProps & { onNavigateToSettings?: () => void }> = ({ 
-  piece, 
+  piece,
+  projectType = 'filament',
   onUpdate, 
   onRemove, 
   onDuplicate, 
@@ -20,6 +21,18 @@ const PieceCard: React.FC<PieceCardProps & { onNavigateToSettings?: () => void }
   const { presets, loading: presetsLoading, convertPrice, createPresetFromMaterial } = useMaterialPresets();
   const [showPresetSelector, setShowPresetSelector] = useState(false);
   const [selectedPresetCategory, setSelectedPresetCategory] = useState<'filament' | 'resin'>('filament');
+  // Estado local para inputs numéricos (permite que estén vacíos)
+  const [printHoursInput, setPrintHoursInput] = useState<string>(piece.printHours?.toString() || '');
+  const [quantityInput, setQuantityInput] = useState<string>(piece.quantity?.toString() || '');
+
+  // Sincronizar con props cuando cambian externamente
+  React.useEffect(() => {
+    setPrintHoursInput(piece.printHours?.toString() || '');
+  }, [piece.printHours]);
+
+  React.useEffect(() => {
+    setQuantityInput(piece.quantity?.toString() || '');
+  }, [piece.quantity]);
 
   const handleNameSave = () => {
     onUpdate('name', tempName);
@@ -37,10 +50,19 @@ const PieceCard: React.FC<PieceCardProps & { onNavigateToSettings?: () => void }
   const handlePresetSelect = (presetId: string) => {
     const selectedPreset = presets.find(p => p.id === presetId);
     if (selectedPreset) {
-      // Convertir el precio a €/kg si es necesario
+      // Para resina, convertir a €/L si es necesario
+      // Para filamento, convertir a €/kg si es necesario
       let pricePerKg = selectedPreset.price_per_unit;
-      if (selectedPreset.unit !== 'kg') {
-        pricePerKg = convertPrice(selectedPreset.price_per_unit, selectedPreset.unit, 'kg');
+      if (selectedPreset.category === 'resin') {
+        // Si está en ml, convertir a L (multiplicar por 1000)
+        if (selectedPreset.unit === 'ml' || selectedPreset.unit === 'mL') {
+          pricePerKg = selectedPreset.price_per_unit * 1000;
+        }
+      } else {
+        // Para filamento, convertir a €/kg si es necesario
+        if (selectedPreset.unit !== 'kg') {
+          pricePerKg = convertPrice(selectedPreset.price_per_unit, selectedPreset.unit, 'kg');
+        }
       }
       onUpdate('filamentPrice', pricePerKg);
       setShowPresetSelector(false);
@@ -57,14 +79,41 @@ const PieceCard: React.FC<PieceCardProps & { onNavigateToSettings?: () => void }
 
   // Calcular totales de materiales
   const totalWeight = piece.materials?.reduce((sum, material) => {
-    const weightInGrams = material.unit === 'kg' ? material.weight * 1000 : material.weight;
-    return sum + weightInGrams;
+    if (material.category === 'resin') {
+      // Para resina, convertir a ml
+      const volumeInMl = material.unit === 'L' ? material.weight * 1000 : material.weight;
+      return sum + volumeInMl;
+    } else {
+      // Para filamento, convertir a gramos
+      const weightInGrams = material.unit === 'kg' ? material.weight * 1000 : material.weight;
+      return sum + weightInGrams;
+    }
   }, 0) || 0;
 
   const totalCost = piece.materials?.reduce((sum, material) => {
-    const weightInKg = material.unit === 'g' ? material.weight / 1000 : material.weight;
+    let weightInKg;
+    if (material.category === 'resin') {
+      // Para resina, convertir volumen a "kg equivalente" para cálculo
+      weightInKg = material.unit === 'L' ? material.weight : material.weight / 1000;
+    } else {
+      weightInKg = material.unit === 'g' ? material.weight / 1000 : material.weight;
+    }
     return sum + (weightInKg * material.pricePerKg);
   }, 0) || 0;
+
+  // Determinar el tipo de proyecto desde los materiales
+  const pieceProjectType = piece.materials && piece.materials.length > 0 
+    ? (piece.materials.some(m => m.category === 'resin') ? 'resin' : 'filament')
+    : projectType;
+
+  // Formatear peso/volumen según el tipo
+  const formatWeight = (weight: number) => {
+    if (pieceProjectType === 'resin') {
+      return weight >= 1000 ? `${(weight / 1000).toFixed(1)}L` : `${weight.toFixed(1)}ml`;
+    } else {
+      return weight >= 1000 ? `${(weight / 1000).toFixed(1)}kg` : `${weight.toFixed(1)}g`;
+    }
+  };
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-all duration-200">
@@ -156,6 +205,7 @@ const PieceCard: React.FC<PieceCardProps & { onNavigateToSettings?: () => void }
         
         <PieceMaterialsSection
           materials={piece.materials || []}
+          projectType={projectType}
           onAddMaterial={onAddMaterial}
           onUpdateMaterial={onUpdateMaterial}
           onRemoveMaterial={onRemoveMaterial}
@@ -299,10 +349,11 @@ const PieceCard: React.FC<PieceCardProps & { onNavigateToSettings?: () => void }
           <input
             type="number"
             step="0.1"
-            value={piece.printHours?.toString() || ''}
+            value={printHoursInput}
             onChange={(e) => {
               const value = e.target.value;
-              // Allow any input while typing
+              setPrintHoursInput(value);
+              // Only update parent if we have a valid number
               if (value !== '' && value !== '-' && value !== '.') {
                 const numValue = parseFloat(value);
                 if (!isNaN(numValue)) {
@@ -311,14 +362,17 @@ const PieceCard: React.FC<PieceCardProps & { onNavigateToSettings?: () => void }
               }
             }}
             onBlur={(e) => {
-              const value = e.target.value;
+              const value = printHoursInput;
               if (value === '' || value === '-' || value === '.') {
+                setPrintHoursInput('0');
                 onUpdate('printHours', 0);
               } else {
                 const numValue = parseFloat(value);
                 if (!isNaN(numValue)) {
+                  setPrintHoursInput(numValue.toString());
                   onUpdate('printHours', numValue);
                 } else {
+                  setPrintHoursInput('0');
                   onUpdate('printHours', 0);
                 }
               }
@@ -335,10 +389,11 @@ const PieceCard: React.FC<PieceCardProps & { onNavigateToSettings?: () => void }
           <input
             type="number"
             min="0"
-            value={piece.quantity?.toString() || ''}
+            value={quantityInput}
             onChange={(e) => {
               const value = e.target.value;
-              // Allow any input while typing
+              setQuantityInput(value);
+              // Only update parent if we have a valid number
               if (value !== '' && value !== '-') {
                 const numValue = parseInt(value);
                 if (!isNaN(numValue)) {
@@ -347,14 +402,17 @@ const PieceCard: React.FC<PieceCardProps & { onNavigateToSettings?: () => void }
               }
             }}
             onBlur={(e) => {
-              const value = e.target.value;
+              const value = quantityInput;
               if (value === '' || value === '-') {
+                setQuantityInput('0');
                 onUpdate('quantity', 0);
               } else {
                 const numValue = parseInt(value);
                 if (!isNaN(numValue)) {
+                  setQuantityInput(numValue.toString());
                   onUpdate('quantity', numValue);
                 } else {
+                  setQuantityInput('0');
                   onUpdate('quantity', 0);
                 }
               }
@@ -383,9 +441,11 @@ const PieceCard: React.FC<PieceCardProps & { onNavigateToSettings?: () => void }
         <h5 className="font-semibold text-gray-900 mb-3">Resumen de la pieza</h5>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-blue-50 rounded-lg p-3 border border-blue-100">
-            <div className="text-sm font-medium text-blue-700 mb-1">Peso total</div>
+            <div className="text-sm font-medium text-blue-700 mb-1">
+              {pieceProjectType === 'resin' ? 'Volumen total' : 'Peso total'}
+            </div>
             <div className="text-lg font-bold text-blue-900">
-              {(totalWeight * piece.quantity).toFixed(1)}g
+              {formatWeight(totalWeight * piece.quantity)}
             </div>
           </div>
           <div className="bg-green-50 rounded-lg p-3 border border-green-100">
@@ -408,6 +468,7 @@ const PieceCard: React.FC<PieceCardProps & { onNavigateToSettings?: () => void }
 
 const PiecesSection: React.FC<PiecesSectionProps & { onNavigateToSettings?: () => void }> = ({
   pieces,
+  projectType = 'filament',
   onAddPiece,
   onUpdatePiece,
   onRemovePiece,
@@ -458,6 +519,7 @@ const PiecesSection: React.FC<PiecesSectionProps & { onNavigateToSettings?: () =
             <PieceCard
               key={piece.id}
               piece={piece}
+              projectType={projectType}
               onUpdate={(field, value) => onUpdatePiece(piece.id, field, value)}
               onRemove={() => onRemovePiece(piece.id)}
               onDuplicate={() => onDuplicatePiece(piece.id)}

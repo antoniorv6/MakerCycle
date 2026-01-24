@@ -53,6 +53,8 @@ export function TeamProvider({ children }: TeamProviderProps) {
 
     try {
       setLoading(true);
+      
+      // Obtener equipos usando join con team_members
       const { data, error } = await supabase
         .from('team_members')
         .select('team_id, teams(*)')
@@ -61,18 +63,23 @@ export function TeamProvider({ children }: TeamProviderProps) {
       if (error) {
         console.error('Error fetching teams:', error);
         console.error('Error details:', JSON.stringify(error, null, 2));
+        setUserTeams([]);
         return;
       }
 
-      const teams = data?.map((tm: any) => tm.teams) || [];
+      // Filtrar equipos válidos (no nulos)
+      const teams = data?.map((tm: any) => tm.teams).filter((t: any) => t !== null) || [];
       setUserTeams(teams);
 
-      // If no team is currently selected and user has teams, select the first one
-      if (!currentTeam && teams.length > 0) {
-        setCurrentTeam(teams[0]);
+      // Si el equipo actual ya no existe en la lista, deseleccionarlo
+      if (currentTeam && !teams.find((t: Team) => t.id === currentTeam.id)) {
+        setCurrentTeam(teams.length > 0 ? teams[0] : null);
       }
+      // Si no hay equipo seleccionado pero hay equipos disponibles, no seleccionar ninguno
+      // (dejar que el usuario trabaje en modo personal por defecto)
     } catch (error) {
       console.error('Error fetching teams:', error);
+      setUserTeams([]);
     } finally {
       setLoading(false);
     }

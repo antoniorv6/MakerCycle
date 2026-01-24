@@ -1,5 +1,6 @@
 import React from 'react';
 import { Package, Clock, Weight, Euro, Zap, Info, Layers, Settings, Palette } from 'lucide-react';
+import { useFormatCurrency } from '@/hooks/useFormatCurrency';
 import type { ProjectInfoPanelProps } from '../types';
 
 const ProjectInfoPanel: React.FC<ProjectInfoPanelProps> = ({ 
@@ -10,6 +11,7 @@ const ProjectInfoPanel: React.FC<ProjectInfoPanelProps> = ({
   totalElectricityCost,
   materials 
 }) => {
+  const { formatCurrency, currencySymbol } = useFormatCurrency();
   // Calcular estadísticas de materiales
   const totalMaterials = pieces.reduce((sum, piece) => {
     return sum + (piece.materials?.length || 0);
@@ -55,10 +57,37 @@ const ProjectInfoPanel: React.FC<ProjectInfoPanelProps> = ({
         <div className="bg-orange-50 rounded-lg p-4 border border-orange-100">
           <div className="flex items-center gap-2 mb-2">
             <Weight className="w-4 h-4 text-orange-600" />
-            <span className="text-sm font-medium text-orange-700">Peso total</span>
+            <span className="text-sm font-medium text-orange-700">
+              {(() => {
+                // Detectar tipo de proyecto desde los materiales
+                for (const piece of pieces) {
+                  if (piece.materials && piece.materials.length > 0) {
+                    const hasResin = piece.materials.some(m => m.category === 'resin');
+                    if (hasResin) return 'Volumen total';
+                  }
+                }
+                return 'Peso total';
+              })()}
+            </span>
           </div>
           <div className="text-2xl font-bold text-orange-900">
-            {totalFilamentWeight >= 1000 ? `${(totalFilamentWeight / 1000).toFixed(1)}kg` : `${totalFilamentWeight.toFixed(1)}g`}
+            {(() => {
+              // Detectar tipo de proyecto desde los materiales
+              let isResin = false;
+              for (const piece of pieces) {
+                if (piece.materials && piece.materials.length > 0) {
+                  if (piece.materials.some(m => m.category === 'resin')) {
+                    isResin = true;
+                    break;
+                  }
+                }
+              }
+              if (isResin) {
+                return totalFilamentWeight >= 1000 ? `${(totalFilamentWeight / 1000).toFixed(1)}L` : `${totalFilamentWeight.toFixed(1)}ml`;
+              } else {
+                return totalFilamentWeight >= 1000 ? `${(totalFilamentWeight / 1000).toFixed(1)}kg` : `${totalFilamentWeight.toFixed(1)}g`;
+              }
+            })()}
           </div>
           <div className="text-xs text-orange-600">Material necesario</div>
         </div>
@@ -83,17 +112,41 @@ const ProjectInfoPanel: React.FC<ProjectInfoPanelProps> = ({
         {pieces.map((piece, index) => {
           const pieceWeight = piece.materials && piece.materials.length > 0 
             ? piece.materials.reduce((sum, material) => {
-                const weightInGrams = material.unit === 'kg' ? material.weight * 1000 : material.weight;
-                return sum + weightInGrams;
+                if (material.category === 'resin') {
+                  const volumeInMl = material.unit === 'L' ? material.weight * 1000 : material.weight;
+                  return sum + volumeInMl;
+                } else {
+                  const weightInGrams = material.unit === 'kg' ? material.weight * 1000 : material.weight;
+                  return sum + weightInGrams;
+                }
               }, 0)
             : piece.filamentWeight;
           
           const pieceCost = piece.materials && piece.materials.length > 0
             ? piece.materials.reduce((sum, material) => {
-                const weightInKg = material.unit === 'g' ? material.weight / 1000 : material.weight;
+                let weightInKg;
+                if (material.category === 'resin') {
+                  weightInKg = material.unit === 'L' ? material.weight : material.weight / 1000;
+                } else {
+                  weightInKg = material.unit === 'g' ? material.weight / 1000 : material.weight;
+                }
                 return sum + (weightInKg * material.pricePerKg);
               }, 0)
             : (piece.filamentWeight * piece.filamentPrice) / 1000;
+
+          // Detectar tipo de proyecto desde los materiales de la pieza
+          const pieceProjectType = piece.materials && piece.materials.length > 0
+            ? (piece.materials.some(m => m.category === 'resin') ? 'resin' : 'filament')
+            : 'filament';
+
+          // Función para formatear peso/volumen
+          const formatWeight = (weight: number) => {
+            if (pieceProjectType === 'resin') {
+              return weight >= 1000 ? `${(weight / 1000).toFixed(1)}L` : `${weight.toFixed(1)}ml`;
+            } else {
+              return weight >= 1000 ? `${(weight / 1000).toFixed(1)}kg` : `${weight.toFixed(1)}g`;
+            }
+          };
 
           return (
             <div key={piece.id} className="bg-gray-50 rounded-lg p-5 border border-gray-200">
@@ -111,9 +164,9 @@ const ProjectInfoPanel: React.FC<ProjectInfoPanelProps> = ({
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-xl font-bold text-gray-900">€{(pieceCost * piece.quantity).toFixed(2)}</div>
+                  <div className="text-xl font-bold text-gray-900">{formatCurrency(pieceCost * piece.quantity)}</div>
                   <div className="text-sm text-gray-600">
-                    {pieceWeight >= 1000 ? `${(pieceWeight / 1000).toFixed(1)}kg` : `${pieceWeight.toFixed(1)}g`} totales
+                    {formatWeight(pieceWeight)} totales
                   </div>
                 </div>
               </div>
@@ -147,10 +200,15 @@ const ProjectInfoPanel: React.FC<ProjectInfoPanelProps> = ({
                           </div>
                           <div className="text-right">
                             <div className="text-lg font-bold text-gray-900">
-                              €{((material.weight || 0) * (material.pricePerKg || 0) / (material.unit === 'kg' ? 1 : 1000)).toFixed(2)}
+                              {formatCurrency(
+                                (material.weight || 0) * (material.pricePerKg || 0) / 
+                                (material.category === 'resin' 
+                                  ? (material.unit === 'L' ? 1 : 1000)
+                                  : (material.unit === 'kg' ? 1 : 1000))
+                              )}
                             </div>
                             <div className="text-sm text-gray-600">
-                              {material.weight || 0}{material.unit || 'g'} • €{material.pricePerKg || 0}/kg
+                              {material.weight || 0}{material.unit || (material.category === 'resin' ? 'ml' : 'g')} • {currencySymbol}{material.pricePerKg || 0}/{material.category === 'resin' ? 'L' : 'kg'}
                             </div>
                           </div>
                         </div>
@@ -158,15 +216,19 @@ const ProjectInfoPanel: React.FC<ProjectInfoPanelProps> = ({
                         {/* Detalles técnicos del material */}
                         <div className="grid grid-cols-2 gap-4 text-xs">
                           <div className="bg-gray-50 rounded p-2">
-                            <div className="text-gray-600">Peso utilizado</div>
+                            <div className="text-gray-600">
+                              {material.category === 'resin' ? 'Volumen utilizado' : 'Peso utilizado'}
+                            </div>
                             <div className="font-medium text-gray-900">
-                              {material.weight || 0}{material.unit || 'g'}
+                              {material.weight || 0}{material.unit || (material.category === 'resin' ? 'ml' : 'g')}
                             </div>
                           </div>
                           <div className="bg-gray-50 rounded p-2">
-                            <div className="text-gray-600">Precio por kg</div>
+                            <div className="text-gray-600">
+                              Precio por {material.category === 'resin' ? 'L' : 'kg'}
+                            </div>
                             <div className="font-medium text-gray-900">
-                              €{material.pricePerKg || 0}
+                              {currencySymbol}{material.pricePerKg || 0}
                             </div>
                           </div>
                           <div className="bg-gray-50 rounded p-2">
@@ -203,10 +265,10 @@ const ProjectInfoPanel: React.FC<ProjectInfoPanelProps> = ({
                       </div>
                       <div className="text-right">
                         <div className="text-lg font-bold text-blue-900">
-                          €{(pieceCost * piece.quantity).toFixed(2)}
+                          {formatCurrency(pieceCost * piece.quantity)}
                         </div>
                         <div className="text-sm text-blue-600">
-                          {pieceWeight >= 1000 ? `${(pieceWeight / 1000).toFixed(1)}kg` : `${pieceWeight.toFixed(1)}g`} • {(piece.printHours * piece.quantity).toFixed(1)}h
+                          {formatWeight(pieceWeight)} • {(piece.printHours * piece.quantity).toFixed(1)}h
                         </div>
                       </div>
                     </div>
@@ -219,7 +281,7 @@ const ProjectInfoPanel: React.FC<ProjectInfoPanelProps> = ({
                     <div>
                       <div className="font-medium text-yellow-800">Sistema Legacy</div>
                       <div className="text-sm text-yellow-700">
-                        Usando filamento único: {piece.filamentWeight}g a €{piece.filamentPrice}/kg
+                        Usando filamento único: {piece.filamentWeight}g a {currencySymbol}{piece.filamentPrice}/kg
                       </div>
                     </div>
                   </div>
@@ -241,7 +303,7 @@ const ProjectInfoPanel: React.FC<ProjectInfoPanelProps> = ({
             {materials.map((material, index) => (
               <div key={material.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                 <div className="font-medium text-gray-900">{material.name}</div>
-                <div className="text-sm font-semibold text-gray-700">€{material.price.toFixed(2)}</div>
+                <div className="text-sm font-semibold text-gray-700">{formatCurrency(material.price)}</div>
               </div>
             ))}
           </div>
@@ -255,13 +317,13 @@ const ProjectInfoPanel: React.FC<ProjectInfoPanelProps> = ({
             <div>
               <div className="text-lg font-semibold text-gray-900">Coste total del proyecto</div>
               <div className="text-sm text-gray-600">
-                Materiales: {totalFilamentCost.toFixed(2)}€ • Electricidad: {totalElectricityCost.toFixed(2)}€
-                {materials.length > 0 && ` • Adicionales: €${materials.reduce((sum, m) => sum + m.price, 0).toFixed(2)}`}
+                Materiales: {formatCurrency(totalFilamentCost)} • Electricidad: {formatCurrency(totalElectricityCost)}
+                {materials.length > 0 && ` • Adicionales: ${formatCurrency(materials.reduce((sum, m) => sum + m.price, 0))}`}
               </div>
             </div>
             <div className="text-right">
               <div className="text-3xl font-bold text-gray-900">
-                €{(totalFilamentCost + totalElectricityCost + materials.reduce((sum, m) => sum + m.price, 0)).toFixed(2)}
+                {formatCurrency(totalFilamentCost + totalElectricityCost + materials.reduce((sum, m) => sum + m.price, 0))}
               </div>
             </div>
           </div>

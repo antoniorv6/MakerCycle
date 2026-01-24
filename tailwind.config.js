@@ -64,15 +64,29 @@ module.exports = {
       spacing: {
         '18': '4.5rem',
         '70': '17.5rem',
+        'safe-top': 'env(safe-area-inset-top, 0px)',
+        'safe-bottom': 'env(safe-area-inset-bottom, 0px)',
+        'safe-left': 'env(safe-area-inset-left, 0px)',
+        'safe-right': 'env(safe-area-inset-right, 0px)',
       },
       width: {
         '64': '16rem',
         '70': '17.5rem',
       },
+      minHeight: {
+        'screen-safe': ['100vh', '100dvh'],
+      },
+      height: {
+        'screen-safe': ['100vh', '100dvh'],
+      },
+      borderWidth: {
+        '3': '3px',
+      },
       animation: {
         'fade-in': 'fadeIn 0.5s ease-in-out',
         'slide-up': 'slideUp 0.3s ease-out',
         'scale-in': 'scaleIn 0.2s ease-out',
+        'spin-slow': 'spin 2s linear infinite',
       },
       keyframes: {
         fadeIn: {
@@ -87,6 +101,11 @@ module.exports = {
           '0%': { transform: 'scale(0.95)', opacity: '0' },
           '100%': { transform: 'scale(1)', opacity: '1' },
         },
+      },
+      screens: {
+        'xs': '375px',
+        'touch': { 'raw': '(hover: none)' },
+        'pointer': { 'raw': '(hover: hover)' },
       },
     },
   },

@@ -4,6 +4,7 @@ import React, { useState, Suspense } from 'react'
 import { Settings } from 'lucide-react'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { useDashboardData } from '@/hooks/useDashboardData'
+import { useCapacitorContext } from '@/components/providers/CapacitorProvider'
 
 // Import existing components
 import Sidebar from './Sidebar'
@@ -16,6 +17,9 @@ import dynamic from 'next/dynamic';
 const KanbanBoard = dynamic(() => import('./kanban/KanbanBoard'), { ssr: false });
 import { KanbanBoardSkeleton } from './skeletons';
 
+// Import mobile layout
+import { MobileLayout } from './mobile'
+
 // Import lazy components
 import { 
   LazyAccounting, 
@@ -26,6 +30,7 @@ import {
 import { DashboardSkeleton } from './skeletons'
 
 export default function Dashboard({ initialPage }: { initialPage?: string } = {}) {
+  const { isNative, platform } = useCapacitorContext()
   const [currentPage, setCurrentPage] = useState(initialPage || 'home')
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [loadedProject, setLoadedProject] = useState<AppProject | null>(null)
@@ -192,6 +197,14 @@ export default function Dashboard({ initialPage }: { initialPage?: string } = {}
     }
   }
 
+  // Use mobile layout for native apps or small screens
+  // Also check window width for web mobile experience
+  const isMobileView = isNative || (typeof window !== 'undefined' && window.innerWidth < 768)
+
+  if (isMobileView) {
+    return <MobileLayout initialPage={initialPage} />
+  }
+
   return (
     <div className="flex h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       <Sidebar
@@ -206,8 +219,6 @@ export default function Dashboard({ initialPage }: { initialPage?: string } = {}
           {renderContent()}
         </div>
       </main>
-
-
     </div>
   )
 }

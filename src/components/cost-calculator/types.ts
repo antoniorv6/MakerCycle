@@ -1,3 +1,5 @@
+import type { PrinterPreset } from '@/types';
+
 // Form section props interfaces
 export interface ElectricitySectionProps {
   printHours: number;
@@ -5,6 +7,11 @@ export interface ElectricitySectionProps {
   printerPower: number;
   onElectricityCostChange: (cost: number) => void;
   onPrinterPowerChange: (power: number) => void;
+  // Props para selección de impresora (solo para consumo eléctrico)
+  selectedPrinterId?: string | null;
+  onPrinterSelect?: (printerId: string | null) => void;
+  printerPresets?: PrinterPreset[];
+  onNavigateToSettings?: () => void;
 }
 
 export interface FilamentSectionProps {
@@ -27,7 +34,9 @@ export interface MaterialsSectionProps {
 
 export interface ProjectInfoProps {
   projectName: string;
+  projectType: 'filament' | 'resin';
   onProjectNameChange: (name: string) => void;
+  onProjectTypeChange: (type: 'filament' | 'resin') => void;
   onReset: () => void;
   onSave: () => void;
   isSaving?: boolean;
@@ -65,6 +74,7 @@ export interface PiecesSectionProps {
     notes?: string;
     materials?: CostCalculatorPieceMaterial[]; // Nueva estructura
   }>;
+  projectType?: 'filament' | 'resin';
   onAddPiece: () => void;
   onUpdatePiece: (id: string, field: 'name' | 'filamentWeight' | 'filamentPrice' | 'printHours' | 'quantity' | 'notes', value: string | number) => void;
   onRemovePiece: (id: string) => void;
@@ -86,6 +96,7 @@ export interface PieceCardProps {
     notes?: string;
     materials?: CostCalculatorPieceMaterial[]; // Nueva estructura
   };
+  projectType?: 'filament' | 'resin';
   onUpdate: (field: 'name' | 'filamentWeight' | 'filamentPrice' | 'printHours' | 'quantity' | 'notes', value: string | number) => void;
   onRemove: () => void;
   onDuplicate: () => void;

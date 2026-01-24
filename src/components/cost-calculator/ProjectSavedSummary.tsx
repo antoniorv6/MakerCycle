@@ -1,5 +1,6 @@
 import React from 'react';
 import { CheckCircle, Edit3, Plus, Calculator, DollarSign, Clock, Package } from 'lucide-react';
+import { useFormatCurrency } from '@/hooks/useFormatCurrency';
 import type { DatabaseProject, DatabasePiece } from '@/types';
 
 interface ProjectSavedSummaryProps {
@@ -13,12 +14,7 @@ const ProjectSavedSummary: React.FC<ProjectSavedSummaryProps> = ({
   onEdit, 
   onNewProject 
 }) => {
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-ES', {
-      style: 'currency',
-      currency: 'EUR'
-    }).format(amount);
-  };
+  const { formatCurrency } = useFormatCurrency();
 
   const formatTime = (hours: number) => {
     if (hours < 1) {

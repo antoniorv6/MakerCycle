@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Package } from 'lucide-react';
+import { useFormatCurrency } from '@/hooks/useFormatCurrency';
 import type { FilamentSectionProps } from '../types';
 
 const FilamentSection: React.FC<FilamentSectionProps> = ({
@@ -10,6 +11,7 @@ const FilamentSection: React.FC<FilamentSectionProps> = ({
 }) => {
   const [weightInput, setWeightInput] = useState<string>(weight?.toString() || '');
   const [priceInput, setPriceInput] = useState<string>(price?.toString() || '');
+  const { currencySymbol } = useFormatCurrency();
 
   // Sync with props when they change externally
   React.useEffect(() => {
@@ -103,7 +105,7 @@ const FilamentSection: React.FC<FilamentSectionProps> = ({
         </div>
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-2">
-            Precio por kilogramo (€)
+            Precio por kilogramo ({currencySymbol})
           </label>
           <input
             type="number"

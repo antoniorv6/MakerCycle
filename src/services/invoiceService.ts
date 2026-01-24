@@ -2,11 +2,11 @@ import type { InvoiceFormData } from '@/types';
 import type { CompanyData } from '@/hooks/useCompanySettings';
 
 export class InvoiceService {
-  static async generatePDF(data: InvoiceFormData, companyData: CompanyData): Promise<void> {
+  static async generatePDF(data: InvoiceFormData, companyData: CompanyData, currencySymbol: string = '€'): Promise<void> {
     try {
       
       // Por ahora, vamos a crear un HTML que se pueda convertir a PDF
-      const htmlContent = this.generateInvoiceHTML(data, companyData);
+      const htmlContent = this.generateInvoiceHTML(data, companyData, currencySymbol);
       
       // Crear un elemento temporal para el HTML
       const tempDiv = document.createElement('div');
@@ -33,7 +33,7 @@ export class InvoiceService {
     }
   }
 
-  private static generateInvoiceHTML(data: InvoiceFormData, companyData: CompanyData): string {
+  private static generateInvoiceHTML(data: InvoiceFormData, companyData: CompanyData, currencySymbol: string = '€'): string {
     try {
       
       const formatCurrency = (value: number | undefined) => {
@@ -47,13 +47,13 @@ export class InvoiceService {
         }
         
         if (value === undefined || value === null || isNaN(numericValue) || typeof numericValue !== 'number') {
-          return '€0.00';
+          return `${currencySymbol}0.00`;
         }
         
         try {
-          return `€${numericValue.toFixed(2)}`;
+          return `${currencySymbol}${numericValue.toFixed(2)}`;
         } catch (error) {
-          return '€0.00';
+          return `${currencySymbol}0.00`;
         }
       };
       const formatDate = (dateString: string) => {
