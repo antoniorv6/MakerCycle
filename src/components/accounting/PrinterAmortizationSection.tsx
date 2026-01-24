@@ -28,6 +28,8 @@ export function PrinterAmortizationSection({
   const { presets: printerPresets, getAmortizationData } = usePrinterPresets();
   const { formatCurrency, currencySymbol } = useFormatCurrency();
   const [expandedPrinters, setExpandedPrinters] = useState<Set<string>>(new Set());
+  // Estado local para inputs numéricos (permite que estén vacíos)
+  const [inputValues, setInputValues] = useState<Record<string, string>>({});
 
   // Filtrar impresoras que se pueden amortizar (tienen precio y no están totalmente amortizadas)
   const availablePrinters = printerPresets.filter(printer => {
@@ -90,6 +92,22 @@ export function PrinterAmortizationSection({
 
   // Validar que la amortización total no supere el beneficio
   const isValid = totalAmortization <= profit;
+
+  // Obtener el valor del input local o el del prop
+  const getInputValue = (printerId: string, propValue: number | undefined): string => {
+    if (inputValues[printerId] !== undefined && inputValues[printerId] !== null) {
+      return inputValues[printerId];
+    }
+    return propValue?.toString() || '';
+  };
+
+  // Actualizar el valor del input local
+  const setInputValue = (printerId: string, value: string) => {
+    setInputValues(prev => ({
+      ...prev,
+      [printerId]: value
+    }));
+  };
 
   return (
     <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
@@ -177,12 +195,34 @@ export function PrinterAmortizationSection({
                           step={amortization.amortization_method === 'percentage' ? '0.1' : '0.01'}
                           min="0"
                           max={amortization.amortization_method === 'percentage' ? '100' : undefined}
-                          value={amortization.amortization_value}
-                          onChange={(e) => updateAmortization(
-                            printer.id,
-                            'amortization_value',
-                            parseFloat(e.target.value) || 0
-                          )}
+                          value={getInputValue(printer.id, amortization.amortization_value)}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            setInputValue(printer.id, value);
+                            // Only update parent if we have a valid number
+                            if (value !== '' && value !== '-' && value !== '.') {
+                              const numValue = parseFloat(value);
+                              if (!isNaN(numValue)) {
+                                updateAmortization(printer.id, 'amortization_value', numValue);
+                              }
+                            }
+                          }}
+                          onBlur={(e) => {
+                            const value = getInputValue(printer.id, amortization.amortization_value);
+                            if (value === '' || value === '-' || value === '.') {
+                              setInputValue(printer.id, '0');
+                              updateAmortization(printer.id, 'amortization_value', 0);
+                            } else {
+                              const numValue = parseFloat(value);
+                              if (!isNaN(numValue)) {
+                                setInputValue(printer.id, numValue.toString());
+                                updateAmortization(printer.id, 'amortization_value', numValue);
+                              } else {
+                                setInputValue(printer.id, '0');
+                                updateAmortization(printer.id, 'amortization_value', 0);
+                              }
+                            }
+                          }}
                           className="w-full text-sm px-2 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                         />
                       </div>

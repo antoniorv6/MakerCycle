@@ -151,8 +151,8 @@ export function SaleItemsForm({ items, onItemsChange }: SaleItemsFormProps) {
 
   // Obtener el valor del input local o el del prop
   const getInputValue = (index: number, field: 'unit_cost' | 'sale_price' | 'print_hours' | 'quantity', propValue: number | undefined): string => {
-    if (inputValues[index]?.[field] !== undefined) {
-      return inputValues[index][field] || '';
+    if (inputValues[index]?.[field] !== undefined && inputValues[index][field] !== null) {
+      return inputValues[index][field];
     }
     return propValue?.toString() || '';
   };

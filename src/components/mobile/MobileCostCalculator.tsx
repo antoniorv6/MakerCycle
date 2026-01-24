@@ -83,6 +83,14 @@ export default function MobileCostCalculator({
   const [showMaterialPresets, setShowMaterialPresets] = useState<string | null>(null)
   const [showPostprocessingPresets, setShowPostprocessingPresets] = useState(false)
   const [selectedMaterialCategory, setSelectedMaterialCategory] = useState<'filament' | 'resin'>('filament')
+  // Estado local para inputs numéricos (permite que estén vacíos)
+  const [electricityCostInput, setElectricityCostInput] = useState<string>('')
+  const [printerPowerInput, setPrinterPowerInput] = useState<string>('')
+  const [vatInput, setVatInput] = useState<string>('')
+  const [marginInput, setMarginInput] = useState<string>('')
+  const [pieceInputs, setPieceInputs] = useState<Record<string, { printHours?: string; quantity?: string }>>({})
+  const [materialInputs, setMaterialInputs] = useState<Record<string, { weight?: string; price?: string }>>({})
+  const [postprocessingInputs, setPostprocessingInputs] = useState<Record<string, { quantity?: string; cost?: string }>>({})
   
   const [pieces, setPieces] = useState<Array<{
     id: string
@@ -577,8 +585,39 @@ export default function MobileCostCalculator({
                       <label className="text-xs text-slate-500">Horas impresión</label>
                       <input
                         type="number"
-                        value={piece.printHours || ''}
-                        onChange={(e) => updatePiece(piece.id, 'printHours', parseFloat(e.target.value) || 0)}
+                        value={pieceInputs[piece.id]?.printHours !== undefined && pieceInputs[piece.id].printHours !== null ? pieceInputs[piece.id].printHours : (piece.printHours?.toString() || '')}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setPieceInputs(prev => ({
+                            ...prev,
+                            [piece.id]: { ...prev[piece.id], printHours: value }
+                          }));
+                          if (value !== '' && value !== '-' && value !== '.') {
+                            const numValue = parseFloat(value);
+                            if (!isNaN(numValue)) {
+                              updatePiece(piece.id, 'printHours', numValue);
+                            }
+                          }
+                        }}
+                        onBlur={(e) => {
+                          const value = pieceInputs[piece.id]?.printHours || piece.printHours?.toString() || '';
+                          if (value === '' || value === '-' || value === '.') {
+                            setPieceInputs(prev => ({
+                              ...prev,
+                              [piece.id]: { ...prev[piece.id], printHours: '0' }
+                            }));
+                            updatePiece(piece.id, 'printHours', 0);
+                          } else {
+                            const numValue = parseFloat(value);
+                            if (!isNaN(numValue)) {
+                              setPieceInputs(prev => ({
+                                ...prev,
+                                [piece.id]: { ...prev[piece.id], printHours: numValue.toString() }
+                              }));
+                              updatePiece(piece.id, 'printHours', numValue);
+                            }
+                          }
+                        }}
                         className="w-full mt-1 px-3 py-2 border border-slate-200 rounded-lg text-sm"
                         style={{ fontSize: '16px' }}
                         step="0.1"
@@ -588,11 +627,42 @@ export default function MobileCostCalculator({
                       <label className="text-xs text-slate-500">Cantidad</label>
                       <input
                         type="number"
-                        value={piece.quantity}
-                        onChange={(e) => updatePiece(piece.id, 'quantity', parseInt(e.target.value) || 1)}
+                        value={pieceInputs[piece.id]?.quantity !== undefined && pieceInputs[piece.id].quantity !== null ? pieceInputs[piece.id].quantity : (piece.quantity?.toString() || '')}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setPieceInputs(prev => ({
+                            ...prev,
+                            [piece.id]: { ...prev[piece.id], quantity: value }
+                          }));
+                          if (value !== '' && value !== '-') {
+                            const numValue = parseInt(value);
+                            if (!isNaN(numValue)) {
+                              updatePiece(piece.id, 'quantity', numValue);
+                            }
+                          }
+                        }}
+                        onBlur={(e) => {
+                          const value = pieceInputs[piece.id]?.quantity || piece.quantity?.toString() || '';
+                          if (value === '' || value === '-') {
+                            setPieceInputs(prev => ({
+                              ...prev,
+                              [piece.id]: { ...prev[piece.id], quantity: '0' }
+                            }));
+                            updatePiece(piece.id, 'quantity', 0);
+                          } else {
+                            const numValue = parseInt(value);
+                            if (!isNaN(numValue)) {
+                              setPieceInputs(prev => ({
+                                ...prev,
+                                [piece.id]: { ...prev[piece.id], quantity: numValue.toString() }
+                              }));
+                              updatePiece(piece.id, 'quantity', numValue);
+                            }
+                          }
+                        }}
                         className="w-full mt-1 px-3 py-2 border border-slate-200 rounded-lg text-sm"
                         style={{ fontSize: '16px' }}
-                        min="1"
+                        min="0"
                       />
                     </div>
                   </div>
@@ -729,8 +799,41 @@ export default function MobileCostCalculator({
                             </label>
                             <input
                               type="number"
-                              value={material.weight || ''}
-                              onChange={(e) => updatePieceMaterial(piece.id, material.id, 'weight', parseFloat(e.target.value) || 0)}
+                              value={materialInputs[`${piece.id}-${material.id}`]?.weight !== undefined && materialInputs[`${piece.id}-${material.id}`].weight !== null ? materialInputs[`${piece.id}-${material.id}`].weight : (material.weight?.toString() || '')}
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                const key = `${piece.id}-${material.id}`;
+                                setMaterialInputs(prev => ({
+                                  ...prev,
+                                  [key]: { ...prev[key], weight: value }
+                                }));
+                                if (value !== '' && value !== '-' && value !== '.') {
+                                  const numValue = parseFloat(value);
+                                  if (!isNaN(numValue)) {
+                                    updatePieceMaterial(piece.id, material.id, 'weight', numValue);
+                                  }
+                                }
+                              }}
+                              onBlur={(e) => {
+                                const key = `${piece.id}-${material.id}`;
+                                const value = materialInputs[key]?.weight || material.weight?.toString() || '';
+                                if (value === '' || value === '-' || value === '.') {
+                                  setMaterialInputs(prev => ({
+                                    ...prev,
+                                    [key]: { ...prev[key], weight: '0' }
+                                  }));
+                                  updatePieceMaterial(piece.id, material.id, 'weight', 0);
+                                } else {
+                                  const numValue = parseFloat(value);
+                                  if (!isNaN(numValue)) {
+                                    setMaterialInputs(prev => ({
+                                      ...prev,
+                                      [key]: { ...prev[key], weight: numValue.toString() }
+                                    }));
+                                    updatePieceMaterial(piece.id, material.id, 'weight', numValue);
+                                  }
+                                }
+                              }}
                               className="w-full px-2 py-1.5 border border-slate-200 rounded text-sm"
                               style={{ fontSize: '16px' }}
                             />
@@ -739,8 +842,41 @@ export default function MobileCostCalculator({
                             <label className="text-[10px] text-slate-500">{currencySymbol}/kg</label>
                             <input
                               type="number"
-                              value={material.pricePerKg || ''}
-                              onChange={(e) => updatePieceMaterial(piece.id, material.id, 'pricePerKg', parseFloat(e.target.value) || 0)}
+                              value={materialInputs[`${piece.id}-${material.id}`]?.price !== undefined && materialInputs[`${piece.id}-${material.id}`].price !== null ? materialInputs[`${piece.id}-${material.id}`].price : (material.pricePerKg?.toString() || '')}
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                const key = `${piece.id}-${material.id}`;
+                                setMaterialInputs(prev => ({
+                                  ...prev,
+                                  [key]: { ...prev[key], price: value }
+                                }));
+                                if (value !== '' && value !== '-' && value !== '.') {
+                                  const numValue = parseFloat(value);
+                                  if (!isNaN(numValue)) {
+                                    updatePieceMaterial(piece.id, material.id, 'pricePerKg', numValue);
+                                  }
+                                }
+                              }}
+                              onBlur={(e) => {
+                                const key = `${piece.id}-${material.id}`;
+                                const value = materialInputs[key]?.price || material.pricePerKg?.toString() || '';
+                                if (value === '' || value === '-' || value === '.') {
+                                  setMaterialInputs(prev => ({
+                                    ...prev,
+                                    [key]: { ...prev[key], price: '0' }
+                                  }));
+                                  updatePieceMaterial(piece.id, material.id, 'pricePerKg', 0);
+                                } else {
+                                  const numValue = parseFloat(value);
+                                  if (!isNaN(numValue)) {
+                                    setMaterialInputs(prev => ({
+                                      ...prev,
+                                      [key]: { ...prev[key], price: numValue.toString() }
+                                    }));
+                                    updatePieceMaterial(piece.id, material.id, 'pricePerKg', numValue);
+                                  }
+                                }
+                              }}
                               className="w-full px-2 py-1.5 border border-slate-200 rounded text-sm"
                               style={{ fontSize: '16px' }}
                             />
@@ -887,11 +1023,42 @@ export default function MobileCostCalculator({
                       <label className="text-xs text-slate-500">Cantidad</label>
                       <input
                         type="number"
-                        value={item.quantity || 1}
-                        onChange={(e) => updatePostprocessingItem(item.id, 'quantity', parseFloat(e.target.value) || 1)}
+                        value={postprocessingInputs[item.id]?.quantity !== undefined && postprocessingInputs[item.id].quantity !== null ? postprocessingInputs[item.id].quantity : (item.quantity?.toString() || '')}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setPostprocessingInputs(prev => ({
+                            ...prev,
+                            [item.id]: { ...prev[item.id], quantity: value }
+                          }));
+                          if (value !== '' && value !== '-' && value !== '.') {
+                            const numValue = parseFloat(value);
+                            if (!isNaN(numValue)) {
+                              updatePostprocessingItem(item.id, 'quantity', numValue);
+                            }
+                          }
+                        }}
+                        onBlur={(e) => {
+                          const value = postprocessingInputs[item.id]?.quantity || item.quantity?.toString() || '';
+                          if (value === '' || value === '-' || value === '.') {
+                            setPostprocessingInputs(prev => ({
+                              ...prev,
+                              [item.id]: { ...prev[item.id], quantity: '0' }
+                            }));
+                            updatePostprocessingItem(item.id, 'quantity', 0);
+                          } else {
+                            const numValue = parseFloat(value);
+                            if (!isNaN(numValue)) {
+                              setPostprocessingInputs(prev => ({
+                                ...prev,
+                                [item.id]: { ...prev[item.id], quantity: numValue.toString() }
+                              }));
+                              updatePostprocessingItem(item.id, 'quantity', numValue);
+                            }
+                          }
+                        }}
                         className="w-full mt-1 px-3 py-2 border border-slate-200 rounded-lg text-sm"
                         style={{ fontSize: '16px' }}
-                        min="0.01"
+                        min="0"
                         step="0.01"
                       />
                     </div>
@@ -911,8 +1078,39 @@ export default function MobileCostCalculator({
                       <label className="text-xs text-slate-500">Coste/unidad</label>
                       <input
                         type="number"
-                        value={item.cost_per_unit || ''}
-                        onChange={(e) => updatePostprocessingItem(item.id, 'cost_per_unit', parseFloat(e.target.value) || 0)}
+                        value={postprocessingInputs[item.id]?.cost !== undefined && postprocessingInputs[item.id].cost !== null ? postprocessingInputs[item.id].cost : (item.cost_per_unit?.toString() || '')}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setPostprocessingInputs(prev => ({
+                            ...prev,
+                            [item.id]: { ...prev[item.id], cost: value }
+                          }));
+                          if (value !== '' && value !== '-' && value !== '.') {
+                            const numValue = parseFloat(value);
+                            if (!isNaN(numValue)) {
+                              updatePostprocessingItem(item.id, 'cost_per_unit', numValue);
+                            }
+                          }
+                        }}
+                        onBlur={(e) => {
+                          const value = postprocessingInputs[item.id]?.cost || item.cost_per_unit?.toString() || '';
+                          if (value === '' || value === '-' || value === '.') {
+                            setPostprocessingInputs(prev => ({
+                              ...prev,
+                              [item.id]: { ...prev[item.id], cost: '0' }
+                            }));
+                            updatePostprocessingItem(item.id, 'cost_per_unit', 0);
+                          } else {
+                            const numValue = parseFloat(value);
+                            if (!isNaN(numValue)) {
+                              setPostprocessingInputs(prev => ({
+                                ...prev,
+                                [item.id]: { ...prev[item.id], cost: numValue.toString() }
+                              }));
+                              updatePostprocessingItem(item.id, 'cost_per_unit', numValue);
+                            }
+                          }
+                        }}
                         placeholder={`${currencySymbol}0.00`}
                         className="w-full mt-1 px-3 py-2 border border-slate-200 rounded-lg text-sm"
                         style={{ fontSize: '16px' }}
@@ -961,16 +1159,66 @@ export default function MobileCostCalculator({
             <MobileInput
               label={`Coste electricidad (${currencySymbol}/kWh)`}
               type="number"
-              value={electricityCost}
-              onChange={(e) => setElectricityCost(parseFloat(e.target.value) || 0)}
+              value={electricityCostInput !== undefined && electricityCostInput !== null ? electricityCostInput : (electricityCost?.toString() || '')}
+              onChange={(e) => {
+                const value = e.target.value;
+                setElectricityCostInput(value);
+                if (value !== '' && value !== '-' && value !== '.') {
+                  const numValue = parseFloat(value);
+                  if (!isNaN(numValue)) {
+                    setElectricityCost(numValue);
+                  }
+                }
+              }}
+              onBlur={(e) => {
+                const value = electricityCostInput;
+                if (value === '' || value === '-' || value === '.') {
+                  setElectricityCostInput('0');
+                  setElectricityCost(0);
+                } else {
+                  const numValue = parseFloat(value);
+                  if (!isNaN(numValue)) {
+                    setElectricityCostInput(numValue.toString());
+                    setElectricityCost(numValue);
+                  } else {
+                    setElectricityCostInput('0');
+                    setElectricityCost(0);
+                  }
+                }
+              }}
               step="0.01"
             />
             
             <MobileInput
               label="Potencia impresora (kW)"
               type="number"
-              value={printerPower}
-              onChange={(e) => setPrinterPower(parseFloat(e.target.value) || 0)}
+              value={printerPowerInput !== undefined && printerPowerInput !== null ? printerPowerInput : (printerPower?.toString() || '')}
+              onChange={(e) => {
+                const value = e.target.value;
+                setPrinterPowerInput(value);
+                if (value !== '' && value !== '-' && value !== '.') {
+                  const numValue = parseFloat(value);
+                  if (!isNaN(numValue)) {
+                    setPrinterPower(numValue);
+                  }
+                }
+              }}
+              onBlur={(e) => {
+                const value = printerPowerInput;
+                if (value === '' || value === '-' || value === '.') {
+                  setPrinterPowerInput('0');
+                  setPrinterPower(0);
+                } else {
+                  const numValue = parseFloat(value);
+                  if (!isNaN(numValue)) {
+                    setPrinterPowerInput(numValue.toString());
+                    setPrinterPower(numValue);
+                  } else {
+                    setPrinterPowerInput('0');
+                    setPrinterPower(0);
+                  }
+                }
+              }}
               step="0.01"
             />
 
@@ -995,15 +1243,65 @@ export default function MobileCostCalculator({
             <MobileInput
               label="IVA (%)"
               type="number"
-              value={vatPercentage}
-              onChange={(e) => setVatPercentage(parseFloat(e.target.value) || 0)}
+              value={vatInput !== undefined && vatInput !== null ? vatInput : (vatPercentage?.toString() || '')}
+              onChange={(e) => {
+                const value = e.target.value;
+                setVatInput(value);
+                if (value !== '' && value !== '-' && value !== '.') {
+                  const numValue = parseFloat(value);
+                  if (!isNaN(numValue)) {
+                    setVatPercentage(numValue);
+                  }
+                }
+              }}
+              onBlur={(e) => {
+                const value = vatInput;
+                if (value === '' || value === '-' || value === '.') {
+                  setVatInput('0');
+                  setVatPercentage(0);
+                } else {
+                  const numValue = parseFloat(value);
+                  if (!isNaN(numValue)) {
+                    setVatInput(numValue.toString());
+                    setVatPercentage(numValue);
+                  } else {
+                    setVatInput('0');
+                    setVatPercentage(0);
+                  }
+                }
+              }}
             />
             
             <MobileInput
               label="Margen de beneficio (%)"
               type="number"
-              value={profitMargin}
-              onChange={(e) => setProfitMargin(parseFloat(e.target.value) || 0)}
+              value={marginInput !== undefined && marginInput !== null ? marginInput : (profitMargin?.toString() || '')}
+              onChange={(e) => {
+                const value = e.target.value;
+                setMarginInput(value);
+                if (value !== '' && value !== '-' && value !== '.') {
+                  const numValue = parseFloat(value);
+                  if (!isNaN(numValue)) {
+                    setProfitMargin(numValue);
+                  }
+                }
+              }}
+              onBlur={(e) => {
+                const value = marginInput;
+                if (value === '' || value === '-' || value === '.') {
+                  setMarginInput('0');
+                  setProfitMargin(0);
+                } else {
+                  const numValue = parseFloat(value);
+                  if (!isNaN(numValue)) {
+                    setMarginInput(numValue.toString());
+                    setProfitMargin(numValue);
+                  } else {
+                    setMarginInput('0');
+                    setProfitMargin(0);
+                  }
+                }
+              }}
             />
 
             <div className="bg-green-50 border border-green-200 rounded-xl p-4">

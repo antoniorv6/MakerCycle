@@ -104,9 +104,7 @@ export default function DashboardHome({ stats, onNavigate }: DashboardHomeProps)
         animate={{ opacity: 1, y: 0 }}
         className="text-center"
       >
-        <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-slate-100 to-slate-200 rounded-2xl mb-6 shadow-lg">
-          <img src="/logo.webp" alt="Logo MakerCycle" className="w-16 h-16 object-contain" />
-        </div>
+        <img src="/logo.svg" alt="Logo MakerCycle" className="w-64 h-auto mx-auto mb-6 object-contain" />
         <h1 className="text-4xl font-bold text-slate-900 mb-3">Dashboard</h1>
         <p className="text-lg text-slate-600 max-w-2xl mx-auto">
           Resumen completo de tu actividad de impresión 3D. Analiza tu rendimiento, 

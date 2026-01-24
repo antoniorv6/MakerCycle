@@ -26,7 +26,7 @@ function DashboardContent() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
         <div className="flex flex-col items-center space-y-4">
-          <img src="/logo.webp" alt="MakerCycle" className="w-16 h-16 animate-pulse" />
+          <img src="/logo.svg" alt="MakerCycle" className="w-24 h-24 animate-pulse" />
           <div className="w-8 h-8 border-3 border-slate-300 border-t-slate-700 rounded-full animate-spin" />
         </div>
       </div>

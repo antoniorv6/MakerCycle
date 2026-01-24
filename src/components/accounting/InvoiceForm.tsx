@@ -133,8 +133,8 @@ export function InvoiceForm({ sale, onClose, onGeneratePDF }: InvoiceFormProps) 
 
   // Obtener el valor del input local o el del prop
   const getInputValue = (index: number, field: 'quantity' | 'unitPrice', propValue: number | undefined): string => {
-    if (inputValues[index]?.[field] !== undefined) {
-      return inputValues[index][field] || '';
+    if (inputValues[index]?.[field] !== undefined && inputValues[index][field] !== null) {
+      return inputValues[index][field];
     }
     return propValue?.toString() || '';
   };

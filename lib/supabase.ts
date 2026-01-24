@@ -4,6 +4,9 @@ import { SupabaseClient } from '@supabase/supabase-js'
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
+// Singleton para el cliente del navegador
+let browserClient: ReturnType<typeof createBrowserClient> | null = null
+
 // Validar que las variables de entorno estén disponibles
 function validateSupabaseEnv() {
   // Si las variables están disponibles, usarlas directamente
@@ -36,8 +39,28 @@ function validateSupabaseEnv() {
 }
 
 export const createClient = () => {
+  // Usar singleton para evitar múltiples instancias del cliente
+  // Esto también evita que se disparen múltiples listeners de onAuthStateChange
+  if (browserClient) {
+    return browserClient
+  }
+  
   const { url, key } = validateSupabaseEnv()
-  return createBrowserClient(url, key)
+  
+  browserClient = createBrowserClient(url, key, {
+    auth: {
+      // Deshabilitar el auto-refresh cuando la ventana recupera el foco
+      // Esto evita recargas innecesarias al cambiar de pestaña
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: true,
+      // Evitar que Supabase detecte cambios de visibilidad y refresque el token
+      // El token se refrescará automáticamente cuando expire, no cuando cambie el foco
+      flowType: 'pkce'
+    }
+  })
+  
+  return browserClient
 }
 
 export const createServerSupabaseClient = async () => {

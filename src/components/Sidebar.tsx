@@ -63,12 +63,11 @@ export default function Sidebar({ currentPage, onPageChange, isOpen, onToggle }:
         {/* Scrollable content area */}
         <div className="flex-1 overflow-y-auto">
           <div className="p-6">
-            {/* Logo arriba a la derecha */}
-            <div className="flex items-center gap-3 mb-8">
-              <img src="/logo.webp" alt="Logo MakerCycle" className="w-10 h-10 object-contain" />
-              <h1 className="text-xl font-bold text-slate-900">MakerCycle</h1>
+            {/* Logo */}
+            <div className="mb-8 flex justify-center">
+              <img src="/logo.svg" alt="Logo MakerCycle" className="w-32 h-auto object-contain" />
             </div>
-            <div>
+            <div className="text-center">
               <p className="text-sm text-slate-500">Gestión Profesional 3D</p>
             </div>
 

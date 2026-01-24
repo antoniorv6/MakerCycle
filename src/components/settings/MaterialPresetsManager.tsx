@@ -290,7 +290,7 @@ export default function MaterialPresetsManager() {
               <input
                 type="number"
                 step="0.01"
-                value={priceInput || formData.price_per_unit?.toString() || ''}
+                value={priceInput !== undefined && priceInput !== null ? priceInput : (formData.price_per_unit?.toString() || '')}
                 onChange={(e) => {
                   const value = e.target.value;
                   setPriceInput(value);

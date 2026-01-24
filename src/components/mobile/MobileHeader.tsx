@@ -32,9 +32,9 @@ export default function MobileHeader({ title = 'MakerCycle', showBack, onBack }:
           ) : (
             <div className="flex items-center space-x-2">
               <img 
-                src="/logo.webp" 
+                src="/logo.svg" 
                 alt="MakerCycle" 
-                className="w-8 h-8 object-contain"
+                className="w-12 h-12 object-contain"
               />
               <span className="font-bold text-slate-900 text-lg">{title}</span>
             </div>

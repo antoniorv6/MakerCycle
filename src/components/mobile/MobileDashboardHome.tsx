@@ -139,9 +139,9 @@ export default function MobileDashboardHome({ stats, onNavigate }: MobileDashboa
         <motion.div
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-slate-100 to-slate-200 rounded-2xl mb-3 shadow-lg"
+          className="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-slate-100 to-slate-200 rounded-2xl mb-3 shadow-lg"
         >
-          <img src="/logo.webp" alt="Logo" className="w-12 h-12 object-contain" />
+          <img src="/logo.svg" alt="Logo" className="w-20 h-20 object-contain" />
         </motion.div>
         <h1 className="text-2xl font-bold text-slate-900">Dashboard</h1>
         <p className="text-sm text-slate-500 mt-1">Resumen de tu actividad</p>

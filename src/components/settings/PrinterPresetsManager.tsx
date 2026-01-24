@@ -13,6 +13,12 @@ export default function PrinterPresetsManager() {
   const [showTemplateSelector, setShowTemplateSelector] = useState(false);
   const [templateSearchQuery, setTemplateSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<'filamento' | 'resina' | 'all'>('all');
+  // Estado local para inputs numéricos (permite que estén vacíos)
+  const [powerInput, setPowerInput] = useState<string>('');
+  const [priceInput, setPriceInput] = useState<string>('');
+  const [hoursInput, setHoursInput] = useState<string>('');
+  const [usageInput, setUsageInput] = useState<string>('');
+  const [amortizationValueInput, setAmortizationValueInput] = useState<string>('');
 
   const [formData, setFormData] = useState<Omit<DatabasePrinterPreset, 'id' | 'user_id' | 'created_at' | 'updated_at'>>({
     name: '',
@@ -31,7 +37,7 @@ export default function PrinterPresetsManager() {
   });
 
   const resetForm = () => {
-    setFormData({
+    const defaultFormData = {
       name: '',
       power_consumption: 0.35,
       purchase_price: 0,
@@ -42,10 +48,17 @@ export default function PrinterPresetsManager() {
       notes: '',
       is_default: false,
       team_id: null,
-      amortization_method: 'percentage',
+      amortization_method: 'percentage' as const,
       amortization_value: 10,
       is_being_amortized: false,
-    });
+    };
+    setFormData(defaultFormData);
+    // Inicializar estados locales con valores por defecto
+    setPowerInput(defaultFormData.power_consumption.toString());
+    setPriceInput(defaultFormData.purchase_price.toString());
+    setHoursInput(defaultFormData.amortization_hours.toString());
+    setUsageInput(defaultFormData.current_usage_hours.toString());
+    setAmortizationValueInput(defaultFormData.amortization_value.toString());
     setIsAdding(false);
     setEditingId(null);
     setShowTemplateSelector(false);
@@ -60,6 +73,12 @@ export default function PrinterPresetsManager() {
   const handleSelectTemplate = (template: PrinterTemplate) => {
     const preset = templateToPreset(template);
     setFormData(preset);
+    // Inicializar estados locales de inputs numéricos
+    setPowerInput(preset.power_consumption?.toString() || '');
+    setPriceInput(preset.purchase_price?.toString() || '');
+    setHoursInput(preset.amortization_hours?.toString() || '');
+    setUsageInput(preset.current_usage_hours?.toString() || '');
+    setAmortizationValueInput(preset.amortization_value?.toString() || '');
     setShowTemplateSelector(false);
     setIsAdding(true);
   };
@@ -115,21 +134,28 @@ export default function PrinterPresetsManager() {
   const handleEdit = (presetId: string) => {
     const preset = presets.find(p => p.id === presetId);
     if (preset) {
-      setFormData({
+      const formDataToSet = {
         name: preset.name,
-        power_consumption: preset.power_consumption,
-        purchase_price: preset.purchase_price,
-        amortization_hours: preset.amortization_hours,
-        current_usage_hours: preset.current_usage_hours,
+        power_consumption: preset.power_consumption ?? 0.35,
+        purchase_price: preset.purchase_price ?? 0,
+        amortization_hours: preset.amortization_hours ?? 2000,
+        current_usage_hours: preset.current_usage_hours ?? 0,
         brand: preset.brand || '',
         model: preset.model || '',
         notes: preset.notes || '',
-        is_default: preset.is_default,
+        is_default: preset.is_default ?? false,
         team_id: preset.team_id || null,
-        amortization_method: preset.amortization_method || 'percentage',
-        amortization_value: preset.amortization_value || 10,
-        is_being_amortized: preset.is_being_amortized || false,
-      });
+        amortization_method: (preset.amortization_method || 'percentage') as 'fixed' | 'percentage',
+        amortization_value: preset.amortization_value ?? 10,
+        is_being_amortized: preset.is_being_amortized ?? false,
+      };
+      setFormData(formDataToSet);
+      // Inicializar estados locales de inputs numéricos con todos los valores
+      setPowerInput(formDataToSet.power_consumption?.toString() || '');
+      setPriceInput(formDataToSet.purchase_price?.toString() || '');
+      setHoursInput(formDataToSet.amortization_hours?.toString() || '');
+      setUsageInput(formDataToSet.current_usage_hours?.toString() || '');
+      setAmortizationValueInput(formDataToSet.amortization_value?.toString() || '');
       setEditingId(presetId);
       setIsAdding(false);
     }
@@ -359,8 +385,34 @@ export default function PrinterPresetsManager() {
                 type="number"
                 step="0.01"
                 min="0"
-                value={formData.power_consumption}
-                onChange={(e) => setFormData({ ...formData, power_consumption: parseFloat(e.target.value) || 0 })}
+                value={powerInput !== undefined && powerInput !== null ? powerInput : (formData.power_consumption?.toString() || '')}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setPowerInput(value);
+                  // Only update parent if we have a valid number
+                  if (value !== '' && value !== '-' && value !== '.') {
+                    const numValue = parseFloat(value);
+                    if (!isNaN(numValue)) {
+                      setFormData({ ...formData, power_consumption: numValue });
+                    }
+                  }
+                }}
+                onBlur={(e) => {
+                  const value = powerInput;
+                  if (value === '' || value === '-' || value === '.') {
+                    setPowerInput('0');
+                    setFormData({ ...formData, power_consumption: 0 });
+                  } else {
+                    const numValue = parseFloat(value);
+                    if (!isNaN(numValue)) {
+                      setPowerInput(numValue.toString());
+                      setFormData({ ...formData, power_consumption: numValue });
+                    } else {
+                      setPowerInput('0');
+                      setFormData({ ...formData, power_consumption: 0 });
+                    }
+                  }
+                }}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                 placeholder="0.35"
                 required
@@ -376,8 +428,34 @@ export default function PrinterPresetsManager() {
                 type="number"
                 step="0.01"
                 min="0"
-                value={formData.purchase_price}
-                onChange={(e) => setFormData({ ...formData, purchase_price: parseFloat(e.target.value) || 0 })}
+                value={priceInput !== undefined && priceInput !== null ? priceInput : (formData.purchase_price?.toString() || '')}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setPriceInput(value);
+                  // Only update parent if we have a valid number
+                  if (value !== '' && value !== '-' && value !== '.') {
+                    const numValue = parseFloat(value);
+                    if (!isNaN(numValue)) {
+                      setFormData({ ...formData, purchase_price: numValue });
+                    }
+                  }
+                }}
+                onBlur={(e) => {
+                  const value = priceInput;
+                  if (value === '' || value === '-' || value === '.') {
+                    setPriceInput('0');
+                    setFormData({ ...formData, purchase_price: 0 });
+                  } else {
+                    const numValue = parseFloat(value);
+                    if (!isNaN(numValue)) {
+                      setPriceInput(numValue.toString());
+                      setFormData({ ...formData, purchase_price: numValue });
+                    } else {
+                      setPriceInput('0');
+                      setFormData({ ...formData, purchase_price: 0 });
+                    }
+                  }
+                }}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                 placeholder="300.00"
               />
@@ -390,9 +468,35 @@ export default function PrinterPresetsManager() {
               <input
                 type="number"
                 step="1"
-                min="1"
-                value={formData.amortization_hours}
-                onChange={(e) => setFormData({ ...formData, amortization_hours: parseFloat(e.target.value) || 2000 })}
+                min="0"
+                value={hoursInput !== undefined && hoursInput !== null ? hoursInput : (formData.amortization_hours?.toString() || '')}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setHoursInput(value);
+                  // Only update parent if we have a valid number
+                  if (value !== '' && value !== '-') {
+                    const numValue = parseInt(value);
+                    if (!isNaN(numValue)) {
+                      setFormData({ ...formData, amortization_hours: numValue });
+                    }
+                  }
+                }}
+                onBlur={(e) => {
+                  const value = hoursInput;
+                  if (value === '' || value === '-') {
+                    setHoursInput('0');
+                    setFormData({ ...formData, amortization_hours: 0 });
+                  } else {
+                    const numValue = parseInt(value);
+                    if (!isNaN(numValue)) {
+                      setHoursInput(numValue.toString());
+                      setFormData({ ...formData, amortization_hours: numValue });
+                    } else {
+                      setHoursInput('0');
+                      setFormData({ ...formData, amortization_hours: 0 });
+                    }
+                  }
+                }}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                 placeholder="2000"
               />
@@ -407,8 +511,34 @@ export default function PrinterPresetsManager() {
                 type="number"
                 step="0.1"
                 min="0"
-                value={formData.current_usage_hours}
-                onChange={(e) => setFormData({ ...formData, current_usage_hours: parseFloat(e.target.value) || 0 })}
+                value={usageInput !== undefined && usageInput !== null ? usageInput : (formData.current_usage_hours?.toString() || '')}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setUsageInput(value);
+                  // Only update parent if we have a valid number
+                  if (value !== '' && value !== '-' && value !== '.') {
+                    const numValue = parseFloat(value);
+                    if (!isNaN(numValue)) {
+                      setFormData({ ...formData, current_usage_hours: numValue });
+                    }
+                  }
+                }}
+                onBlur={(e) => {
+                  const value = usageInput;
+                  if (value === '' || value === '-' || value === '.') {
+                    setUsageInput('0');
+                    setFormData({ ...formData, current_usage_hours: 0 });
+                  } else {
+                    const numValue = parseFloat(value);
+                    if (!isNaN(numValue)) {
+                      setUsageInput(numValue.toString());
+                      setFormData({ ...formData, current_usage_hours: numValue });
+                    } else {
+                      setUsageInput('0');
+                      setFormData({ ...formData, current_usage_hours: 0 });
+                    }
+                  }
+                }}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                 placeholder="0"
               />
@@ -493,8 +623,34 @@ export default function PrinterPresetsManager() {
                     step={formData.amortization_method === 'percentage' ? '0.1' : '0.01'}
                     min="0"
                     max={formData.amortization_method === 'percentage' ? '100' : undefined}
-                    value={formData.amortization_value || 0}
-                    onChange={(e) => setFormData({ ...formData, amortization_value: parseFloat(e.target.value) || 0 })}
+                    value={amortizationValueInput !== undefined && amortizationValueInput !== null ? amortizationValueInput : (formData.amortization_value?.toString() || '')}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setAmortizationValueInput(value);
+                      // Only update parent if we have a valid number
+                      if (value !== '' && value !== '-' && value !== '.') {
+                        const numValue = parseFloat(value);
+                        if (!isNaN(numValue)) {
+                          setFormData({ ...formData, amortization_value: numValue });
+                        }
+                      }
+                    }}
+                    onBlur={(e) => {
+                      const value = amortizationValueInput;
+                      if (value === '' || value === '-' || value === '.') {
+                        setAmortizationValueInput('0');
+                        setFormData({ ...formData, amortization_value: 0 });
+                      } else {
+                        const numValue = parseFloat(value);
+                        if (!isNaN(numValue)) {
+                          setAmortizationValueInput(numValue.toString());
+                          setFormData({ ...formData, amortization_value: numValue });
+                        } else {
+                          setAmortizationValueInput('0');
+                          setFormData({ ...formData, amortization_value: 0 });
+                        }
+                      }
+                    }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                     placeholder={formData.amortization_method === 'percentage' ? '10' : '0'}
                   />

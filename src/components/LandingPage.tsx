@@ -80,7 +80,7 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-3 sm:py-4">
             <div className="flex items-center space-x-2 sm:space-x-3">
-              <img src="/logo.webp" alt="MakerCycle" className="w-8 h-8 sm:w-10 sm:h-10" />
+              <img src="/logo.svg" alt="MakerCycle" className="w-12 h-12 sm:w-16 sm:h-16" />
               <div>
                 <h1 className="text-lg sm:text-xl font-bold text-slate-900">
                   MakerCycle
@@ -354,7 +354,7 @@ export default function LandingPage() {
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
             <div className="sm:col-span-2 lg:col-span-1">
               <div className="flex items-center space-x-3 mb-4 sm:mb-6">
-                <img src="/logo.webp" alt="MakerCycle" className="w-8 h-8" />
+                <img src="/logo.svg" alt="MakerCycle" className="w-12 h-12" />
                 <span className="text-lg sm:text-xl font-bold">MakerCycle</span>
               </div>
               <p className="text-sm sm:text-base text-slate-400 mb-4 sm:mb-6">

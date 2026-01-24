@@ -26,9 +26,9 @@ export default function ForgotPasswordPage() {
           {/* Logo */}
           <div className="text-center mb-8">
             <img 
-              src="/logo.webp" 
+              src="/logo.svg" 
               alt="MakerCycle" 
-              className="w-16 h-16 mx-auto mb-4"
+              className="w-32 h-32 mx-auto mb-4"
             />
             <h1 className="text-2xl font-bold text-slate-900">Recuperar Contraseña</h1>
             <p className="text-slate-600 mt-2">Te enviaremos un enlace para restablecer tu contraseña</p>

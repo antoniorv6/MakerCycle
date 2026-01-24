@@ -107,8 +107,8 @@ const MaterialsSection: React.FC<ExtendedMaterialsSectionProps> = ({
 
   // Obtener el valor del input local o el del prop
   const getInputValue = (itemId: string, field: 'quantity' | 'cost', propValue: number | undefined): string => {
-    if (inputValues[itemId]?.[field] !== undefined) {
-      return inputValues[itemId][field] || '';
+    if (inputValues[itemId]?.[field] !== undefined && inputValues[itemId][field] !== null) {
+      return inputValues[itemId][field];
     }
     return propValue?.toString() || '';
   };

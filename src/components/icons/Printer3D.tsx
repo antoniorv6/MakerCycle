@@ -1,55 +1,75 @@
 import React from 'react';
 
 interface Printer3DIconProps {
-  className?: string;
   size?: number;
   color?: string;
+  strokeWidth?: number;
+  background?: string;
+  opacity?: number;
+  rotation?: number;
+  shadow?: number;
+  flipHorizontal?: boolean;
+  flipVertical?: boolean;
+  padding?: number;
+  className?: string;
 }
 
 /**
  * Icono de impresora 3D
- * Diseño simple y limpio que representa una impresora 3D FDM típica
+ * Diseño que representa una impresora 3D
  */
-export const Printer3D: React.FC<Printer3DIconProps> = ({ 
-  className = '', 
-  size = 24,
-  color = 'currentColor'
+const Printer3DIcon: React.FC<Printer3DIconProps> = ({
+  size = undefined,
+  color = 'currentColor',
+  strokeWidth = 2,
+  background = 'transparent',
+  opacity = 1,
+  rotation = 0,
+  shadow = 0,
+  flipHorizontal = false,
+  flipVertical = false,
+  padding = 0,
+  className = ''
 }) => {
+  const transforms = [];
+  if (rotation !== 0) transforms.push(`rotate(${rotation}deg)`);
+  if (flipHorizontal) transforms.push('scaleX(-1)');
+  if (flipVertical) transforms.push('scaleY(-1)');
+
+  const viewBoxSize = 24 + (padding * 2);
+  const viewBoxOffset = -padding;
+  const viewBox = `${viewBoxOffset} ${viewBoxOffset} ${viewBoxSize} ${viewBoxSize}`;
+
   return (
     <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox={viewBox}
       width={size}
       height={size}
-      viewBox="0 0 24 24"
       fill="none"
-      stroke={color}
-      strokeWidth="2"
+      stroke={color === 'currentColor' ? 'currentColor' : color}
+      strokeWidth={strokeWidth}
       strokeLinecap="round"
       strokeLinejoin="round"
       className={className}
-      xmlns="http://www.w3.org/2000/svg"
+      style={{
+        opacity,
+        transform: transforms.join(' ') || undefined,
+        filter: shadow > 0 ? `drop-shadow(0 ${shadow}px ${shadow * 2}px rgba(0,0,0,0.3))` : undefined,
+        backgroundColor: background !== 'transparent' ? background : undefined
+      }}
     >
-      {/* Base de la impresora */}
-      <rect x="3" y="15" width="18" height="6" rx="1" />
-      
-      {/* Estructura vertical (marco) */}
-      <rect x="5" y="5" width="14" height="10" rx="1" />
-      
-      {/* Cama de impresión (plataforma) */}
-      <rect x="6" y="12" width="12" height="2" rx="0.5" />
-      
-      {/* Extrusor/cabezal de impresión */}
-      <circle cx="12" cy="8" r="1.5" />
-      <line x1="12" y1="8" x2="12" y2="12" />
-      
-      {/* Líneas decorativas en la estructura */}
-      <line x1="7" y1="7" x2="17" y2="7" />
-      <line x1="7" y1="9" x2="17" y2="9" />
-      
-      {/* Patas/soporte */}
-      <rect x="4" y="20" width="2" height="1" />
-      <rect x="18" y="20" width="2" height="1" />
+      <path 
+        fill="none" 
+        stroke="currentColor" 
+        strokeLinecap="round" 
+        strokeLinejoin="round" 
+        strokeWidth={strokeWidth} 
+        d="M8 2H2v.5a2 2 0 0 0 2 2h4zm14 0h-6v2.5h4a2 2 0 0 0 2-2zm-6 0H8v8h8zm-2.5 11h-3L8 10h8zm0 0h-3v1.757a3 3 0 0 0 .879 2.122L12 17.5l.621-.621a3 3 0 0 0 .879-2.122zM2 22h8a2 2 0 0 0 2-2m2-15v.01m0 2.49v.01"
+      />
     </svg>
   );
 };
 
-export default Printer3D;
+export const Printer3D = Printer3DIcon;
+export default Printer3DIcon;

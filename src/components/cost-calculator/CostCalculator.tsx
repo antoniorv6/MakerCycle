@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Calculator, Zap } from 'lucide-react';
 import { createClient } from '@/lib/supabase';
 import { useAuth } from '@/components/providers/AuthProvider';
@@ -23,6 +23,7 @@ import { useCostCalculations } from './hooks/useCostCalculations';
 import ProjectSavedSummary from './ProjectSavedSummary';
 import { usePostprocessingPresets } from '@/hooks/usePostprocessingPresets';
 import { usePrinterPresets } from '@/hooks/usePrinterPresets';
+import { useProjectDraft } from './hooks/useProjectDraft';
 import type { DatabaseProject, DatabasePiece, PieceMaterial } from '@/types';
 
 // Function to process pieces (solo sistema multi-material)
@@ -79,13 +80,16 @@ interface CostCalculatorProps {
     }>;
     projectName: string;
   };
+  // Indica si se debe cargar el borrador del localStorage
+  shouldLoadDraft?: boolean;
 }
 
-const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjectSaved, onNavigateToSettings, importedData }: CostCalculatorProps) => {
+const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjectSaved, onNavigateToSettings, importedData, shouldLoadDraft = true }: CostCalculatorProps) => {
   const { user } = useAuth();
   const { getEffectiveTeam } = useTeam();
   const { presets: postprocessingPresets } = usePostprocessingPresets();
   const { presets: printerPresets, defaultPreset: defaultPrinter } = usePrinterPresets();
+  const { saveDraft, loadDraft, clearDraft, defaultDraft } = useProjectDraft();
   const [isSaving, setIsSaving] = useState(false);
   const [savedProject, setSavedProject] = useState<DatabaseProject & { pieces?: DatabasePiece[] } | null>(null);
   const supabase = createClient();
@@ -153,6 +157,121 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
   }>>([]);
   const [nextNoteId, setNextNoteId] = useState(1);
   const [showClearModal, setShowClearModal] = useState(false);
+  
+  // Ref para saber si ya se cargó el borrador inicial
+  const draftLoadedRef = useRef(false);
+  // Ref para saber si estamos en modo edición de proyecto existente
+  const isEditingExistingProject = !!loadedProject;
+
+  // Efecto para cargar el borrador guardado en localStorage
+  // Solo se ejecuta si no hay proyecto cargado ni datos importados y shouldLoadDraft es true
+  useEffect(() => {
+    // Marcar como cargado primero para evitar que el efecto de guardar 
+    // sobrescriba el borrador mientras lo estamos restaurando
+    if (draftLoadedRef.current) return;
+    
+    // Si hay proyecto cargado o datos importados, no cargar borrador
+    if (loadedProject || importedData) {
+      draftLoadedRef.current = true;
+      return;
+    }
+    
+    // Si no debemos cargar el borrador (usuario eligió empezar nuevo proyecto)
+    if (!shouldLoadDraft) {
+      draftLoadedRef.current = true;
+      return;
+    }
+    
+    draftLoadedRef.current = true;
+    
+    const savedDraft = loadDraft();
+    if (savedDraft) {
+      // Restaurar estado desde el borrador
+      setProjectName(savedDraft.projectName);
+      setProjectType(savedDraft.projectType);
+      setFilamentPrice(savedDraft.filamentPrice);
+      setPrintHours(savedDraft.printHours);
+      setElectricityCost(savedDraft.electricityCost);
+      setPrinterPower(savedDraft.printerPower);
+      setVatPercentage(savedDraft.vatPercentage);
+      setProfitMargin(savedDraft.profitMargin);
+      setSelectedPrinterId(savedDraft.selectedPrinterId);
+      setMaterials(savedDraft.materials);
+      setPostprocessingItems(savedDraft.postprocessingItems);
+      setPieces(savedDraft.pieces);
+      setIsDisasterMode(savedDraft.isDisasterMode);
+      setDisasterModeNotes(savedDraft.disasterModeNotes);
+      
+      // Calcular el siguiente ID de nota basado en las notas existentes
+      if (savedDraft.disasterModeNotes.length > 0) {
+        const maxId = savedDraft.disasterModeNotes.reduce((max, note) => {
+          const match = note.id.match(/disaster-note-(\d+)/);
+          return match ? Math.max(max, parseInt(match[1], 10)) : max;
+        }, 0);
+        setNextNoteId(maxId + 1);
+      }
+    }
+  }, [loadedProject, importedData, loadDraft, shouldLoadDraft]);
+
+  // Función auxiliar para calcular tiempo transcurrido
+  const getTimeAgo = (date: Date): string => {
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / (1000 * 60));
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    
+    if (diffMins < 1) return 'hace unos segundos';
+    if (diffMins < 60) return `hace ${diffMins} minuto${diffMins > 1 ? 's' : ''}`;
+    if (diffHours < 24) return `hace ${diffHours} hora${diffHours > 1 ? 's' : ''}`;
+    return `hace ${diffDays} día${diffDays > 1 ? 's' : ''}`;
+  };
+
+  // Efecto para guardar el borrador en localStorage cuando cambie algo
+  // Solo para proyectos nuevos, no para edición de proyectos existentes
+  useEffect(() => {
+    // No guardar borrador si:
+    // - Estamos editando un proyecto existente
+    // - Aún no hemos terminado de cargar el borrador inicial
+    // - Aún estamos cargando el proyecto
+    if (isEditingExistingProject || !draftLoadedRef.current || loading) return;
+    
+    // Guardar el estado actual como borrador
+    saveDraft({
+      projectName,
+      projectType,
+      filamentPrice,
+      printHours,
+      electricityCost,
+      printerPower,
+      vatPercentage,
+      profitMargin,
+      selectedPrinterId,
+      materials,
+      postprocessingItems,
+      pieces,
+      isDisasterMode,
+      disasterModeNotes
+    });
+  }, [
+    projectName,
+    projectType,
+    filamentPrice,
+    printHours,
+    electricityCost,
+    printerPower,
+    vatPercentage,
+    profitMargin,
+    selectedPrinterId,
+    materials,
+    postprocessingItems,
+    pieces,
+    isDisasterMode,
+    disasterModeNotes,
+    isEditingExistingProject,
+    loading,
+    saveDraft
+  ]);
 
   useEffect(() => {
     if (loadedProject) {
@@ -251,6 +370,7 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
         });
         setPieces(mappedPieces);
       }
+      draftLoadedRef.current = true; // Marcar como cargado para evitar sobrescribir
     } else if (importedData) {
       // Manejar datos importados desde archivo
       setProjectName(importedData.projectName);
@@ -261,6 +381,7 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
         const avgFilamentPrice = importedData.pieces.reduce((sum, piece) => sum + piece.filamentPrice, 0) / importedData.pieces.length;
         setFilamentPrice(avgFilamentPrice);
       }
+      draftLoadedRef.current = true; // Marcar como cargado
     }
     setLoading(false);
   }, [loadedProject, importedData]);
@@ -497,6 +618,11 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
       notes: '',
       materials: [] // Empezar sin materiales para evitar materiales vacíos
     }]);
+    // Limpiar también las notas del modo desastre
+    setIsDisasterMode(false);
+    setDisasterModeNotes([]);
+    // Limpiar el borrador del localStorage
+    clearDraft();
   };
 
   const handleEditProject = async () => {
@@ -540,6 +666,8 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
   const handleNewProject = () => {
     setSavedProject(null);
     resetForm();
+    // El borrador ya se limpia en resetForm, pero aseguramos que se limpie
+    clearDraft();
   };
 
   const colors = ['yellow', 'pink', 'blue', 'green', 'purple', 'orange'];
@@ -773,6 +901,9 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
       }
 
       if (projectData) {
+        // Limpiar el borrador del localStorage ya que el proyecto se guardó exitosamente
+        clearDraft();
+        
         // After saving, fetch the complete project data from database including materials
         try {
           const { data: pieces, error: piecesError } = await supabase

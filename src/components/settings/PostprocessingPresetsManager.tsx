@@ -30,6 +30,8 @@ export default function PostprocessingPresetsManager() {
   const { formatCurrency, currencySymbol } = useFormatCurrency();
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  // Estado local para input numérico (permite que esté vacío)
+  const [costInput, setCostInput] = useState<string>('');
 
   const [formData, setFormData] = useState<Omit<DatabasePostprocessingPreset, 'id' | 'user_id' | 'created_at' | 'updated_at'>>({
     name: '',
@@ -53,6 +55,7 @@ export default function PostprocessingPresetsManager() {
       is_default: false,
       team_id: null,
     });
+    setCostInput('');
     setIsAdding(false);
     setEditingId(null);
   };
@@ -98,6 +101,7 @@ export default function PostprocessingPresetsManager() {
         is_default: preset.is_default,
         team_id: preset.team_id || null,
       });
+      setCostInput(preset.cost_per_unit?.toString() || '');
       setEditingId(presetId);
       setIsAdding(false);
       setSelectedCategory(preset.category || null);
@@ -223,8 +227,34 @@ export default function PostprocessingPresetsManager() {
               <input
                 type="number"
                 step="0.01"
-                value={formData.cost_per_unit}
-                onChange={(e) => setFormData({ ...formData, cost_per_unit: parseFloat(e.target.value) || 0 })}
+                value={costInput !== undefined && costInput !== null ? costInput : (formData.cost_per_unit?.toString() || '')}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setCostInput(value);
+                  // Only update parent if we have a valid number
+                  if (value !== '' && value !== '-' && value !== '.') {
+                    const numValue = parseFloat(value);
+                    if (!isNaN(numValue)) {
+                      setFormData({ ...formData, cost_per_unit: numValue });
+                    }
+                  }
+                }}
+                onBlur={(e) => {
+                  const value = costInput;
+                  if (value === '' || value === '-' || value === '.') {
+                    setCostInput('0');
+                    setFormData({ ...formData, cost_per_unit: 0 });
+                  } else {
+                    const numValue = parseFloat(value);
+                    if (!isNaN(numValue)) {
+                      setCostInput(numValue.toString());
+                      setFormData({ ...formData, cost_per_unit: numValue });
+                    } else {
+                      setCostInput('0');
+                      setFormData({ ...formData, cost_per_unit: 0 });
+                    }
+                  }
+                }}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 placeholder={`${currencySymbol}0.00`}
                 required
