@@ -35,8 +35,30 @@ const MaterialsSection: React.FC<MaterialsSectionProps> = ({
             <input
               type="number"
               placeholder="Precio (€)"
-              value={material.price || ''}
-              onChange={(e) => onUpdateMaterial(material.id, 'price', parseFloat(e.target.value) || 0)}
+              value={material.price?.toString() || ''}
+              onChange={(e) => {
+                const value = e.target.value;
+                // Allow any input while typing
+                if (value !== '' && value !== '-' && value !== '.') {
+                  const numValue = parseFloat(value);
+                  if (!isNaN(numValue)) {
+                    onUpdateMaterial(material.id, 'price', numValue);
+                  }
+                }
+              }}
+              onBlur={(e) => {
+                const value = e.target.value;
+                if (value === '' || value === '-' || value === '.') {
+                  onUpdateMaterial(material.id, 'price', 0);
+                } else {
+                  const numValue = parseFloat(value);
+                  if (!isNaN(numValue)) {
+                    onUpdateMaterial(material.id, 'price', numValue);
+                  } else {
+                    onUpdateMaterial(material.id, 'price', 0);
+                  }
+                }
+              }}
               className="w-32 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
               min="0"
               step="0.01"

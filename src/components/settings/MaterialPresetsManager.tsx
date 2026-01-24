@@ -281,8 +281,30 @@ export default function MaterialPresetsManager() {
               <input
                 type="number"
                 step="0.01"
-                value={formData.price_per_unit}
-                onChange={(e) => setFormData({ ...formData, price_per_unit: parseFloat(e.target.value) || 0 })}
+                value={formData.price_per_unit?.toString() || ''}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  // Allow any input while typing
+                  if (value !== '' && value !== '-' && value !== '.') {
+                    const numValue = parseFloat(value);
+                    if (!isNaN(numValue)) {
+                      setFormData({ ...formData, price_per_unit: numValue });
+                    }
+                  }
+                }}
+                onBlur={(e) => {
+                  const value = e.target.value;
+                  if (value === '' || value === '-' || value === '.') {
+                    setFormData({ ...formData, price_per_unit: 0 });
+                  } else {
+                    const numValue = parseFloat(value);
+                    if (!isNaN(numValue)) {
+                      setFormData({ ...formData, price_per_unit: numValue });
+                    } else {
+                      setFormData({ ...formData, price_per_unit: 0 });
+                    }
+                  }
+                }}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 placeholder="25.00"
                 required

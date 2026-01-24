@@ -299,8 +299,30 @@ const PieceCard: React.FC<PieceCardProps & { onNavigateToSettings?: () => void }
           <input
             type="number"
             step="0.1"
-            value={piece.printHours}
-            onChange={(e) => onUpdate('printHours', parseFloat(e.target.value) || 0)}
+            value={piece.printHours?.toString() || ''}
+            onChange={(e) => {
+              const value = e.target.value;
+              // Allow any input while typing
+              if (value !== '' && value !== '-' && value !== '.') {
+                const numValue = parseFloat(value);
+                if (!isNaN(numValue)) {
+                  onUpdate('printHours', numValue);
+                }
+              }
+            }}
+            onBlur={(e) => {
+              const value = e.target.value;
+              if (value === '' || value === '-' || value === '.') {
+                onUpdate('printHours', 0);
+              } else {
+                const numValue = parseFloat(value);
+                if (!isNaN(numValue)) {
+                  onUpdate('printHours', numValue);
+                } else {
+                  onUpdate('printHours', 0);
+                }
+              }
+            }}
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
             placeholder="0.0"
           />
@@ -312,9 +334,31 @@ const PieceCard: React.FC<PieceCardProps & { onNavigateToSettings?: () => void }
           </label>
           <input
             type="number"
-            min="1"
-            value={piece.quantity}
-            onChange={(e) => onUpdate('quantity', parseInt(e.target.value) || 1)}
+            min="0"
+            value={piece.quantity?.toString() || ''}
+            onChange={(e) => {
+              const value = e.target.value;
+              // Allow any input while typing
+              if (value !== '' && value !== '-') {
+                const numValue = parseInt(value);
+                if (!isNaN(numValue)) {
+                  onUpdate('quantity', numValue);
+                }
+              }
+            }}
+            onBlur={(e) => {
+              const value = e.target.value;
+              if (value === '' || value === '-') {
+                onUpdate('quantity', 0);
+              } else {
+                const numValue = parseInt(value);
+                if (!isNaN(numValue)) {
+                  onUpdate('quantity', numValue);
+                } else {
+                  onUpdate('quantity', 0);
+                }
+              }
+            }}
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
             placeholder="1"
           />

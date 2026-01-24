@@ -249,13 +249,32 @@ export function SaleItemsForm({ items, onItemsChange }: SaleItemsFormProps) {
                 </label>
                 <input
                   type="number"
-                  value={item.unit_cost}
+                  value={item.unit_cost?.toString() || ''}
                   onChange={(e) => {
-                    updateItem(index, 'unit_cost', e.target.value);
-                    // Auto-calculate sale price if it's currently 0 or if user hasn't set it manually
-                    if (item.sale_price === 0) {
-                      const newCost = parseFloat(e.target.value) || 0;
-                      updateItem(index, 'sale_price', calculateDefaultSalePrice(newCost));
+                    const value = e.target.value;
+                    // Allow any input while typing
+                    if (value !== '' && value !== '-' && value !== '.') {
+                      const numValue = parseFloat(value);
+                      if (!isNaN(numValue)) {
+                        updateItem(index, 'unit_cost', numValue);
+                        // Auto-calculate sale price if it's currently 0 or if user hasn't set it manually
+                        if (item.sale_price === 0) {
+                          updateItem(index, 'sale_price', calculateDefaultSalePrice(numValue));
+                        }
+                      }
+                    }
+                  }}
+                  onBlur={(e) => {
+                    const value = e.target.value;
+                    if (value === '' || value === '-' || value === '.') {
+                      updateItem(index, 'unit_cost', 0);
+                    } else {
+                      const numValue = parseFloat(value);
+                      if (!isNaN(numValue)) {
+                        updateItem(index, 'unit_cost', numValue);
+                      } else {
+                        updateItem(index, 'unit_cost', 0);
+                      }
                     }
                   }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -270,10 +289,32 @@ export function SaleItemsForm({ items, onItemsChange }: SaleItemsFormProps) {
                 </label>
                 <input
                   type="number"
-                  value={item.quantity}
-                  onChange={(e) => updateItem(index, 'quantity', parseInt(e.target.value) || 1)}
+                  value={item.quantity?.toString() || ''}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    // Allow any input while typing
+                    if (value !== '' && value !== '-') {
+                      const numValue = parseInt(value);
+                      if (!isNaN(numValue)) {
+                        updateItem(index, 'quantity', numValue);
+                      }
+                    }
+                  }}
+                  onBlur={(e) => {
+                    const value = e.target.value;
+                    if (value === '' || value === '-') {
+                      updateItem(index, 'quantity', 0);
+                    } else {
+                      const numValue = parseInt(value);
+                      if (!isNaN(numValue)) {
+                        updateItem(index, 'quantity', numValue);
+                      } else {
+                        updateItem(index, 'quantity', 0);
+                      }
+                    }
+                  }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  min="1"
+                  min="0"
                   step="1"
                 />
               </div>
@@ -285,8 +326,30 @@ export function SaleItemsForm({ items, onItemsChange }: SaleItemsFormProps) {
                 </label>
                 <input
                   type="number"
-                  value={item.sale_price}
-                  onChange={(e) => updateItem(index, 'sale_price', e.target.value)}
+                  value={item.sale_price?.toString() || ''}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    // Allow any input while typing
+                    if (value !== '' && value !== '-' && value !== '.') {
+                      const numValue = parseFloat(value);
+                      if (!isNaN(numValue)) {
+                        updateItem(index, 'sale_price', numValue);
+                      }
+                    }
+                  }}
+                  onBlur={(e) => {
+                    const value = e.target.value;
+                    if (value === '' || value === '-' || value === '.') {
+                      updateItem(index, 'sale_price', 0);
+                    } else {
+                      const numValue = parseFloat(value);
+                      if (!isNaN(numValue)) {
+                        updateItem(index, 'sale_price', numValue);
+                      } else {
+                        updateItem(index, 'sale_price', 0);
+                      }
+                    }
+                  }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   min="0"
                   step="0.01"
@@ -299,8 +362,30 @@ export function SaleItemsForm({ items, onItemsChange }: SaleItemsFormProps) {
                 </label>
                 <input
                   type="number"
-                  value={item.print_hours}
-                  onChange={(e) => updateItem(index, 'print_hours', e.target.value)}
+                  value={item.print_hours?.toString() || ''}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    // Allow any input while typing
+                    if (value !== '' && value !== '-' && value !== '.') {
+                      const numValue = parseFloat(value);
+                      if (!isNaN(numValue)) {
+                        updateItem(index, 'print_hours', numValue);
+                      }
+                    }
+                  }}
+                  onBlur={(e) => {
+                    const value = e.target.value;
+                    if (value === '' || value === '-' || value === '.') {
+                      updateItem(index, 'print_hours', 0);
+                    } else {
+                      const numValue = parseFloat(value);
+                      if (!isNaN(numValue)) {
+                        updateItem(index, 'print_hours', numValue);
+                      } else {
+                        updateItem(index, 'print_hours', 0);
+                      }
+                    }
+                  }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   min="0"
                   step="0.1"

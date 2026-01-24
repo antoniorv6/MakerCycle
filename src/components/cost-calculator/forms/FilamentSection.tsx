@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Package } from 'lucide-react';
 import type { FilamentSectionProps } from '../types';
 
@@ -8,6 +8,78 @@ const FilamentSection: React.FC<FilamentSectionProps> = ({
   onWeightChange,
   onPriceChange
 }) => {
+  const [weightInput, setWeightInput] = useState<string>(weight?.toString() || '');
+  const [priceInput, setPriceInput] = useState<string>(price?.toString() || '');
+
+  // Sync with props when they change externally
+  React.useEffect(() => {
+    setWeightInput(weight?.toString() || '');
+  }, [weight]);
+
+  React.useEffect(() => {
+    setPriceInput(price?.toString() || '');
+  }, [price]);
+
+  const handleWeightChange = (value: string) => {
+    // Allow any input while typing - empty, decimal point, negative sign, etc.
+    setWeightInput(value);
+    // Only update parent if we have a valid number
+    if (value !== '' && value !== '-' && value !== '.') {
+      const numValue = parseFloat(value);
+      if (!isNaN(numValue)) {
+        onWeightChange(numValue);
+      }
+    }
+  };
+
+  const handleWeightBlur = () => {
+    // Normalize empty or incomplete values to 0
+    if (weightInput === '' || weightInput === '-' || weightInput === '.') {
+      setWeightInput('0');
+      onWeightChange(0);
+    } else {
+      // Normalize values like ".5" to "0.5"
+      const numValue = parseFloat(weightInput);
+      if (!isNaN(numValue)) {
+        setWeightInput(numValue.toString());
+        onWeightChange(numValue);
+      } else {
+        setWeightInput('0');
+        onWeightChange(0);
+      }
+    }
+  };
+
+  const handlePriceChange = (value: string) => {
+    // Allow any input while typing - empty, decimal point, negative sign, etc.
+    setPriceInput(value);
+    // Only update parent if we have a valid number
+    if (value !== '' && value !== '-' && value !== '.') {
+      const numValue = parseFloat(value);
+      if (!isNaN(numValue)) {
+        onPriceChange(numValue);
+      }
+    }
+  };
+
+  const handlePriceBlur = () => {
+    // Normalize empty or incomplete values to 0
+    if (priceInput === '' || priceInput === '-' || priceInput === '.') {
+      setPriceInput('0');
+      onPriceChange(0);
+    } else {
+      // Normalize values like ".5" to "0.5"
+      const numValue = parseFloat(priceInput);
+      if (!isNaN(numValue)) {
+        setPriceInput(numValue.toString());
+        onPriceChange(numValue);
+      } else {
+        setPriceInput('0');
+        onPriceChange(0);
+      }
+    }
+  };
+
   return (
     <div className="bg-white rounded-xl shadow-lg p-6 border border-slate-100 hover:shadow-xl transition-shadow duration-300">
       <div className="flex items-center mb-4">
@@ -21,8 +93,9 @@ const FilamentSection: React.FC<FilamentSectionProps> = ({
           </label>
           <input
             type="number"
-            value={weight || ''}
-            onChange={(e) => onWeightChange(Number(e.target.value) || 0)}
+            value={weightInput}
+            onChange={(e) => handleWeightChange(e.target.value)}
+            onBlur={handleWeightBlur}
             className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent transition-all duration-200"
             min="0"
             step="0.01"
@@ -34,8 +107,9 @@ const FilamentSection: React.FC<FilamentSectionProps> = ({
           </label>
           <input
             type="number"
-            value={price || ''}
-            onChange={(e) => onPriceChange(Number(e.target.value) || 0)}
+            value={priceInput}
+            onChange={(e) => handlePriceChange(e.target.value)}
+            onBlur={handlePriceBlur}
             className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent transition-all duration-200"
             min="0"
             step="0.01"

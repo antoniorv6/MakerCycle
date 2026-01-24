@@ -119,8 +119,30 @@ export function AddExpenseForm({ expense, onSave, onCancel }: AddExpenseFormProp
                   <input
                     type="number"
                     step="0.01"
-                    value={formData.amount}
-                    onChange={(e) => handleInputChange('amount', parseFloat(e.target.value) || 0)}
+                    value={formData.amount?.toString() || ''}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      // Allow any input while typing
+                      if (value !== '' && value !== '-' && value !== '.') {
+                        const numValue = parseFloat(value);
+                        if (!isNaN(numValue)) {
+                          handleInputChange('amount', numValue);
+                        }
+                      }
+                    }}
+                    onBlur={(e) => {
+                      const value = e.target.value;
+                      if (value === '' || value === '-' || value === '.') {
+                        handleInputChange('amount', 0);
+                      } else {
+                        const numValue = parseFloat(value);
+                        if (!isNaN(numValue)) {
+                          handleInputChange('amount', numValue);
+                        } else {
+                          handleInputChange('amount', 0);
+                        }
+                      }
+                    }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     required
                   />

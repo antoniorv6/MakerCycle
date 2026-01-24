@@ -383,8 +383,32 @@ const MaterialCard: React.FC<{
           <input
             type="number"
             step="0.1"
-            value={material.weight}
-            onChange={(e) => onUpdate('weight', parseFloat(e.target.value) || 0)}
+            value={material.weight?.toString() || ''}
+            onChange={(e) => {
+              if (isPresetLoaded) return;
+              const value = e.target.value;
+              // Allow any input while typing
+              if (value !== '' && value !== '-' && value !== '.') {
+                const numValue = parseFloat(value);
+                if (!isNaN(numValue)) {
+                  onUpdate('weight', numValue);
+                }
+              }
+            }}
+            onBlur={(e) => {
+              if (isPresetLoaded) return;
+              const value = e.target.value;
+              if (value === '' || value === '-' || value === '.') {
+                onUpdate('weight', 0);
+              } else {
+                const numValue = parseFloat(value);
+                if (!isNaN(numValue)) {
+                  onUpdate('weight', numValue);
+                } else {
+                  onUpdate('weight', 0);
+                }
+              }
+            }}
             className="w-full px-3 py-2 border-2 border-blue-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm font-medium"
             placeholder="0.0"
           />
@@ -400,8 +424,32 @@ const MaterialCard: React.FC<{
           <input
             type="number"
             step="0.01"
-            value={material.pricePerKg}
-            onChange={(e) => onUpdate('pricePerKg', parseFloat(e.target.value) || 0)}
+            value={material.pricePerKg?.toString() || ''}
+            onChange={(e) => {
+              if (isPresetLoaded) return;
+              const value = e.target.value;
+              // Allow any input while typing
+              if (value !== '' && value !== '-' && value !== '.') {
+                const numValue = parseFloat(value);
+                if (!isNaN(numValue)) {
+                  onUpdate('pricePerKg', numValue);
+                }
+              }
+            }}
+            onBlur={(e) => {
+              if (isPresetLoaded) return;
+              const value = e.target.value;
+              if (value === '' || value === '-' || value === '.') {
+                onUpdate('pricePerKg', 0);
+              } else {
+                const numValue = parseFloat(value);
+                if (!isNaN(numValue)) {
+                  onUpdate('pricePerKg', numValue);
+                } else {
+                  onUpdate('pricePerKg', 0);
+                }
+              }
+            }}
             disabled={isPresetLoaded}
             className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm ${
               isPresetLoaded 

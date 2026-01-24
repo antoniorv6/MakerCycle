@@ -329,9 +329,31 @@ export function InvoiceForm({ sale, onClose, onGeneratePDF }: InvoiceFormProps) 
                         <input
                           type="number"
                           required
-                          min="1"
-                          value={item.quantity}
-                          onChange={(e) => handleItemChange(index, 'quantity', parseInt(e.target.value) || 1)}
+                          min="0"
+                          value={item.quantity?.toString() || ''}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            // Allow any input while typing
+                            if (value !== '' && value !== '-') {
+                              const numValue = parseInt(value);
+                              if (!isNaN(numValue)) {
+                                handleItemChange(index, 'quantity', numValue);
+                              }
+                            }
+                          }}
+                          onBlur={(e) => {
+                            const value = e.target.value;
+                            if (value === '' || value === '-') {
+                              handleItemChange(index, 'quantity', 0);
+                            } else {
+                              const numValue = parseInt(value);
+                              if (!isNaN(numValue)) {
+                                handleItemChange(index, 'quantity', numValue);
+                              } else {
+                                handleItemChange(index, 'quantity', 0);
+                              }
+                            }
+                          }}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         />
                       </div>
@@ -345,8 +367,30 @@ export function InvoiceForm({ sale, onClose, onGeneratePDF }: InvoiceFormProps) 
                           required
                           min="0"
                           step="0.01"
-                          value={item.unitPrice}
-                          onChange={(e) => handleItemChange(index, 'unitPrice', parseFloat(e.target.value) || 0)}
+                          value={item.unitPrice?.toString() || ''}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            // Allow any input while typing
+                            if (value !== '' && value !== '-' && value !== '.') {
+                              const numValue = parseFloat(value);
+                              if (!isNaN(numValue)) {
+                                handleItemChange(index, 'unitPrice', numValue);
+                              }
+                            }
+                          }}
+                          onBlur={(e) => {
+                            const value = e.target.value;
+                            if (value === '' || value === '-' || value === '.') {
+                              handleItemChange(index, 'unitPrice', 0);
+                            } else {
+                              const numValue = parseFloat(value);
+                              if (!isNaN(numValue)) {
+                                handleItemChange(index, 'unitPrice', numValue);
+                              } else {
+                                handleItemChange(index, 'unitPrice', 0);
+                              }
+                            }
+                          }}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         />
                       </div>
