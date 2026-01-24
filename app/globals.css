@@ -1,28 +1,31 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* MakerCycle Brand Theme - Light Mode */
+    --background: 30 20% 99%;        /* cream-50 */
+    --foreground: 0 0% 9%;           /* dark-900 #161616 */
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 0 0% 9%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 222.2 84% 4.9%;
-    --muted: 210 40% 96%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96%;
-    --accent-foreground: 222.2 84% 4.9%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
+    --popover-foreground: 0 0% 9%;
+    --primary: 2 85% 53%;            /* brand-500 #ef2a1f */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 5 34% 58%;          /* coral-500 #d05f5a */
+    --secondary-foreground: 0 0% 100%;
+    --muted: 20 14% 90%;             /* cream-200 */
+    --muted-foreground: 0 0% 40%;
+    --accent: 5 34% 58%;             /* coral-500 */
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 20 14% 85%;            /* cream-300 */
+    --input: 20 14% 85%;
+    --ring: 2 85% 53%;               /* brand-500 */
     --radius: 0.5rem;
     
     /* Safe area insets for iOS/Android */
@@ -33,25 +36,26 @@
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 84% 4.9%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 94.1%;
+    /* MakerCycle Brand Theme - Dark Mode */
+    --background: 0 0% 9%;           /* dark-900 #161616 */
+    --foreground: 20 14% 95%;        /* cream-100 */
+    --card: 0 0% 12%;                /* dark-800 */
+    --card-foreground: 20 14% 95%;
+    --popover: 0 0% 12%;
+    --popover-foreground: 20 14% 95%;
+    --primary: 2 85% 53%;            /* brand-500 */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 5 34% 58%;          /* coral-500 */
+    --secondary-foreground: 0 0% 100%;
+    --muted: 0 0% 18%;
+    --muted-foreground: 0 0% 65%;
+    --accent: 2 75% 45%;             /* brand-600 */
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 20%;
+    --input: 0 0% 20%;
+    --ring: 2 85% 60%;
   }
 }
 
@@ -62,6 +66,7 @@
   body {
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
+    font-feature-settings: "rlig" 1, "calt" 1;
   }
   
   /* Prevent overscroll on iOS */
@@ -69,6 +74,52 @@
     overscroll-behavior: none;
     -webkit-overflow-scrolling: touch;
   }
+}
+
+/* ================================
+   MAKERCYCLE BRAND UTILITIES
+   ================================ */
+
+/* Brand gradient text */
+.gradient-text-brand {
+  background: linear-gradient(135deg, #ef2a1f 0%, #d05f5a 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Brand dark gradient text */
+.gradient-text-dark {
+  background: linear-gradient(135deg, #161616 0%, #434343 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Brand gradient backgrounds */
+.bg-brand-gradient {
+  background: linear-gradient(135deg, #ef2a1f 0%, #d05f5a 100%);
+}
+
+.bg-brand-gradient-subtle {
+  background: linear-gradient(135deg, rgba(239, 42, 31, 0.1) 0%, rgba(208, 95, 90, 0.1) 100%);
+}
+
+.bg-dark-gradient {
+  background: linear-gradient(135deg, #161616 0%, #2d2d2d 100%);
+}
+
+.bg-cream-gradient {
+  background: linear-gradient(135deg, #fdfcfb 0%, #f3ede9 100%);
+}
+
+/* Brand glow effect */
+.brand-glow {
+  box-shadow: 0 0 40px rgba(239, 42, 31, 0.15);
+}
+
+.brand-glow-strong {
+  box-shadow: 0 0 60px rgba(239, 42, 31, 0.25);
 }
 
 /* ================================
@@ -212,6 +263,15 @@ body.keyboard-open .fixed.bottom-0 {
   animation: pulse-soft 2s ease-in-out infinite;
 }
 
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
 /* ================================
    VISUAL EFFECTS
    ================================ */
@@ -219,8 +279,13 @@ body.keyboard-open .fixed.bottom-0 {
 /* Pattern backgrounds */
 .bg-grid-pattern {
   background-image: 
-    linear-gradient(rgba(71, 85, 105, 0.1) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(71, 85, 105, 0.1) 1px, transparent 1px);
+    linear-gradient(rgba(22, 22, 22, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(22, 22, 22, 0.03) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.bg-dots-pattern {
+  background-image: radial-gradient(rgba(239, 42, 31, 0.1) 1px, transparent 1px);
   background-size: 20px 20px;
 }
 
@@ -232,41 +297,37 @@ body.keyboard-open .fixed.bottom-0 {
   
   .hover-lift:hover {
     transform: translateY(-8px);
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    box-shadow: 0 20px 40px -10px rgba(22, 22, 22, 0.15);
   }
   
   .card-hover:hover {
     transform: translateY(-4px) scale(1.02);
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 25px 50px -12px rgba(22, 22, 22, 0.2);
   }
-}
-
-/* Gradient text */
-.gradient-text {
-  background: linear-gradient(135deg, #475569 0%, #334155 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  
+  .brand-hover:hover {
+    box-shadow: 0 20px 40px -10px rgba(239, 42, 31, 0.25);
+  }
 }
 
 /* Glassmorphism */
 .glass {
-  background: rgba(255, 255, 255, 0.25);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .glass-dark {
-  background: rgba(0, 0, 0, 0.25);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background: rgba(22, 22, 22, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* Button gradients */
+/* Button gradients - MakerCycle Brand */
 .btn-gradient {
-  background: linear-gradient(135deg, #475569 0%, #334155 100%);
+  background: linear-gradient(135deg, #ef2a1f 0%, #d05f5a 100%);
   transition: all 0.3s ease;
 }
 
@@ -276,20 +337,37 @@ body.keyboard-open .fixed.bottom-0 {
 
 @media (hover: hover) {
   .btn-gradient:hover {
-    background: linear-gradient(135deg, #334155 0%, #1e293b 100%);
+    background: linear-gradient(135deg, #dc2626 0%, #bc4a45 100%);
     transform: translateY(-2px);
-    box-shadow: 0 10px 20px rgba(71, 85, 105, 0.3);
+    box-shadow: 0 10px 30px rgba(239, 42, 31, 0.3);
+  }
+}
+
+.btn-dark-gradient {
+  background: linear-gradient(135deg, #161616 0%, #383838 100%);
+  transition: all 0.3s ease;
+}
+
+.btn-dark-gradient:active {
+  transform: scale(0.98);
+}
+
+@media (hover: hover) {
+  .btn-dark-gradient:hover {
+    background: linear-gradient(135deg, #010101 0%, #2d2d2d 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 30px rgba(22, 22, 22, 0.4);
   }
 }
 
 /* Icon glow */
 .icon-glow {
-  filter: drop-shadow(0 0 8px rgba(71, 85, 105, 0.5));
+  filter: drop-shadow(0 0 8px rgba(239, 42, 31, 0.4));
 }
 
 /* Text shadow */
 .text-shadow {
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  text-shadow: 0 2px 4px rgba(22, 22, 22, 0.1);
 }
 
 /* ================================
@@ -315,16 +393,16 @@ html {
   }
 
   ::-webkit-scrollbar-track {
-    background: #f1f5f9;
+    background: #f3ede9;
   }
 
   ::-webkit-scrollbar-thumb {
-    background: linear-gradient(135deg, #475569 0%, #334155 100%);
+    background: linear-gradient(135deg, #d05f5a 0%, #ef2a1f 100%);
     border-radius: 4px;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(135deg, #334155 0%, #1e293b 100%);
+    background: linear-gradient(135deg, #ef2a1f 0%, #b91c1c 100%);
   }
 }
 
@@ -340,35 +418,47 @@ html {
 }
 
 /* ================================
-   COMPONENT STYLES
+   COMPONENT STYLES - MakerCycle Brand
    ================================ */
 
 .btn-primary {
-  @apply bg-gradient-to-r from-slate-600 to-slate-700 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-300 shadow-lg active:scale-95;
+  @apply bg-brand-gradient text-white font-semibold py-3 px-4 rounded-xl transition-all duration-300 shadow-lg active:scale-95;
 }
 
 @media (hover: hover) {
   .btn-primary:hover {
-    @apply from-slate-700 to-slate-800 shadow-xl;
+    @apply shadow-xl;
+    background: linear-gradient(135deg, #dc2626 0%, #bc4a45 100%);
   }
 }
 
 .btn-secondary {
-  @apply bg-slate-100 text-slate-700 font-semibold py-3 px-4 rounded-xl transition-all duration-300 border border-slate-200 active:scale-95;
+  @apply bg-cream-100 text-dark-900 font-semibold py-3 px-4 rounded-xl transition-all duration-300 border border-cream-300 active:scale-95;
 }
 
 @media (hover: hover) {
   .btn-secondary:hover {
-    @apply bg-slate-200 border-slate-300;
+    @apply bg-cream-200 border-cream-400;
+  }
+}
+
+.btn-dark {
+  @apply bg-dark-gradient text-white font-semibold py-3 px-4 rounded-xl transition-all duration-300 shadow-lg active:scale-95;
+}
+
+@media (hover: hover) {
+  .btn-dark:hover {
+    @apply shadow-xl;
+    background: linear-gradient(135deg, #010101 0%, #2d2d2d 100%);
   }
 }
 
 .card {
-  @apply bg-white rounded-2xl shadow-lg border border-slate-200 transition-all duration-300;
+  @apply bg-white rounded-2xl shadow-lg border border-cream-200 transition-all duration-300;
 }
 
 .input-field {
-  @apply w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-slate-500 focus:border-slate-500 transition-colors duration-200 text-base;
+  @apply w-full px-4 py-3 border border-cream-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors duration-200 text-base bg-white;
 }
 
 /* Increase input size on mobile for better touch */
@@ -384,19 +474,19 @@ html {
 }
 
 .badge-primary {
-  @apply bg-slate-100 text-slate-800;
+  @apply bg-brand-100 text-brand-700;
 }
 
 .badge-success {
-  @apply bg-emerald-100 text-emerald-800;
+  @apply bg-success-100 text-success-800;
 }
 
 .badge-warning {
-  @apply bg-amber-100 text-amber-800;
+  @apply bg-warning-100 text-warning-800;
 }
 
 .badge-error {
-  @apply bg-red-100 text-red-800;
+  @apply bg-error-100 text-error-800;
 }
 
 /* ================================
@@ -437,19 +527,25 @@ html {
    ================================ */
 
 .skeleton {
-  @apply animate-pulse bg-slate-200 rounded;
+  @apply animate-pulse bg-cream-200 rounded;
 }
 
 .skeleton-text {
-  @apply h-4 bg-slate-200 rounded animate-pulse;
+  @apply h-4 bg-cream-200 rounded animate-pulse;
 }
 
 .skeleton-title {
-  @apply h-6 bg-slate-200 rounded animate-pulse;
+  @apply h-6 bg-cream-200 rounded animate-pulse;
 }
 
 .skeleton-avatar {
-  @apply w-10 h-10 bg-slate-200 rounded-full animate-pulse;
+  @apply w-10 h-10 bg-cream-200 rounded-full animate-pulse;
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(90deg, #f3ede9 25%, #e3d7d5 50%, #f3ede9 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
 }
 
 /* ================================
@@ -480,7 +576,7 @@ html {
     content: '';
     position: absolute;
     inset: 0;
-    background: radial-gradient(circle, rgba(0,0,0,0.1) 10%, transparent 10.01%);
+    background: radial-gradient(circle, rgba(239, 42, 31, 0.15) 10%, transparent 10.01%);
     transform: scale(10);
     opacity: 0;
     transition: transform 0.3s, opacity 0.3s;
@@ -567,7 +663,7 @@ html {
   }
 }
 
-/* Floating action button */
+/* Floating action button - MakerCycle Brand */
 .fab {
   position: fixed;
   bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
@@ -575,8 +671,8 @@ html {
   width: 3.5rem;
   height: 3.5rem;
   border-radius: 50%;
-  background: linear-gradient(135deg, #475569 0%, #334155 100%);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  background: linear-gradient(135deg, #ef2a1f 0%, #d05f5a 100%);
+  box-shadow: 0 4px 20px rgba(239, 42, 31, 0.3);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -589,7 +685,14 @@ html {
   transform: scale(0.95);
 }
 
-/* Step wizard indicator */
+@media (hover: hover) {
+  .fab:hover {
+    box-shadow: 0 6px 30px rgba(239, 42, 31, 0.4);
+    transform: translateY(-2px);
+  }
+}
+
+/* Step wizard indicator - MakerCycle Brand */
 .step-indicator {
   display: flex;
   align-items: center;
@@ -600,14 +703,14 @@ html {
   width: 0.5rem;
   height: 0.5rem;
   border-radius: 50%;
-  background: #e2e8f0;
+  background: #e3d7d5;
   transition: all 0.3s;
 }
 
 .step-dot.active {
   width: 1.5rem;
   border-radius: 0.25rem;
-  background: #334155;
+  background: #ef2a1f;
 }
 
 .step-dot.completed {
@@ -618,7 +721,7 @@ html {
 .bottom-sheet-handle {
   width: 3rem;
   height: 0.25rem;
-  background: #cbd5e1;
+  background: #d4c4c1;
   border-radius: 9999px;
   margin: 0 auto;
 }
@@ -688,19 +791,27 @@ html {
   padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
 }
 
-/* Improved focus states for mobile */
+/* Improved focus states for mobile - MakerCycle Brand */
 @media (hover: none) {
   input:focus,
   select:focus,
   textarea:focus {
     outline: none;
-    box-shadow: 0 0 0 2px rgba(71, 85, 105, 0.2);
+    box-shadow: 0 0 0 3px rgba(239, 42, 31, 0.2);
   }
 }
 
-/* Gradient card backgrounds */
-.gradient-card-blue {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+/* Gradient card backgrounds - MakerCycle Brand */
+.gradient-card-brand {
+  background: linear-gradient(135deg, #ef2a1f 0%, #d05f5a 100%);
+}
+
+.gradient-card-dark {
+  background: linear-gradient(135deg, #161616 0%, #383838 100%);
+}
+
+.gradient-card-cream {
+  background: linear-gradient(135deg, #fdfcfb 0%, #e3d7d5 100%);
 }
 
 .gradient-card-green {
@@ -715,18 +826,3 @@ html {
   background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
 }
 
-/* Skeleton loading shimmer effect */
-@keyframes shimmer {
-  0% {
-    background-position: -200% 0;
-  }
-  100% {
-    background-position: 200% 0;
-  }
-}
-
-.skeleton-shimmer {
-  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
-}

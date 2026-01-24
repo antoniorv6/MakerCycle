@@ -24,10 +24,10 @@ export default function AuthPage() {
 
   if (!mounted || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
+      <div className="min-h-screen flex items-center justify-center bg-cream-gradient">
         <div className="flex flex-col items-center space-y-4">
-          <div className="w-12 h-12 border-4 border-slate-300 border-t-slate-700 rounded-full animate-spin" />
-          <p className="text-slate-600 font-medium">Cargando...</p>
+          <div className="w-12 h-12 border-4 border-brand-200 border-t-brand-500 rounded-full animate-spin" />
+          <p className="text-dark-600 font-medium">Cargando...</p>
         </div>
       </div>
     )
@@ -35,23 +35,28 @@ export default function AuthPage() {
 
   if (user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
+      <div className="min-h-screen flex items-center justify-center bg-cream-gradient">
         <div className="flex flex-col items-center space-y-4">
-          <div className="w-12 h-12 border-4 border-slate-300 border-t-slate-700 rounded-full animate-spin" />
-          <p className="text-slate-600 font-medium">Redirigiendo...</p>
+          <div className="w-12 h-12 border-4 border-brand-200 border-t-brand-500 rounded-full animate-spin" />
+          <p className="text-dark-600 font-medium">Redirigiendo...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen-safe bg-gradient-to-br from-slate-50 to-slate-100 safe-area-inset">
+    <div className="min-h-screen-safe bg-cream-gradient safe-area-inset relative overflow-hidden">
+      {/* Decorative elements */}
+      <div className="absolute top-20 -left-20 w-64 h-64 bg-brand-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob"></div>
+      <div className="absolute top-40 -right-20 w-64 h-64 bg-coral-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob animation-delay-2000"></div>
+      <div className="absolute -bottom-20 left-1/3 w-80 h-80 bg-brand-400 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob animation-delay-4000"></div>
+
       {/* Back button */}
       <div className="fixed top-0 left-0 right-0 z-10 safe-area-top">
         <div className="p-4">
           <Link
             href="/"
-            className="inline-flex items-center text-slate-600 hover:text-slate-900 transition-colors"
+            className="inline-flex items-center text-dark-600 hover:text-brand-500 transition-colors bg-white/80 backdrop-blur-sm px-4 py-2 rounded-xl border border-cream-200"
           >
             <ArrowLeft className="w-5 h-5 mr-2" />
             <span className="font-medium">Volver</span>
@@ -60,20 +65,20 @@ export default function AuthPage() {
       </div>
 
       {/* Auth form */}
-      <div className="flex items-center justify-center min-h-screen-safe px-4 py-20">
+      <div className="relative flex items-center justify-center min-h-screen-safe px-4 py-20">
         <div className="w-full max-w-md">
           {/* Logo */}
           <div className="text-center mb-8">
             <img 
               src="/logo.svg" 
               alt="MakerCycle" 
-              className="w-32 h-32 mx-auto mb-4"
+              className="w-36 h-36 mx-auto mb-4"
             />
-            <h1 className="text-2xl font-bold text-slate-900">MakerCycle</h1>
-            <p className="text-slate-600 mt-2">Gestión profesional de impresión 3D</p>
+            <h1 className="text-3xl font-bold text-dark-900 font-display">MakerCycle</h1>
+            <p className="text-dark-500 mt-2">Gestión profesional de impresión 3D</p>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-xl p-6 border border-slate-200">
+          <div className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl p-8 border border-cream-200">
             <AuthForm />
           </div>
         </div>

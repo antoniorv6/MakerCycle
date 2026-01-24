@@ -33,9 +33,9 @@ export default function DashboardHome({ stats, onNavigate }: DashboardHomeProps)
       title: 'Nuevo Proyecto',
       description: 'Crear un nuevo proyecto de impresión 3D',
       icon: Calculator,
-      color: 'from-blue-500 to-blue-600',
-      bgColor: 'bg-blue-50',
-      iconColor: 'text-blue-600',
+      color: 'from-brand-500 to-coral-500',
+      bgColor: 'bg-brand-50',
+      iconColor: 'text-brand-600',
       onClick: () => onNavigate('calculator')
     },
     {
@@ -43,9 +43,9 @@ export default function DashboardHome({ stats, onNavigate }: DashboardHomeProps)
       title: 'Contabilidad',
       description: 'Gestionar ventas y gastos',
       icon: Euro,
-      color: 'from-green-500 to-green-600',
-      bgColor: 'bg-green-50',
-      iconColor: 'text-green-600',
+      color: 'from-success-500 to-success-600',
+      bgColor: 'bg-success-50',
+      iconColor: 'text-success-600',
       onClick: () => onNavigate('accounting')
     },
     {
@@ -66,8 +66,8 @@ export default function DashboardHome({ stats, onNavigate }: DashboardHomeProps)
       value: formatCurrency(efficiencyRatio),
       subtitle: `${currencySymbol}/hora de impresión`,
       icon: Zap,
-      color: 'from-yellow-500 to-orange-500',
-      bgColor: 'bg-yellow-50',
+      color: 'from-warning-500 to-warning-600',
+      bgColor: 'bg-warning-50',
       trend: null,
       trendUp: true
     },
@@ -76,8 +76,8 @@ export default function DashboardHome({ stats, onNavigate }: DashboardHomeProps)
       value: formatPercentage(profitMargin),
       subtitle: 'Porcentaje sobre ventas',
       icon: Target,
-      color: 'from-emerald-500 to-teal-500',
-      bgColor: 'bg-emerald-50',
+      color: 'from-success-500 to-success-600',
+      bgColor: 'bg-success-50',
       trend: null,
       trendUp: true
     },
@@ -86,8 +86,8 @@ export default function DashboardHome({ stats, onNavigate }: DashboardHomeProps)
       value: formatCurrency(avgRevenuePerProject),
       subtitle: 'Por proyecto',
       icon: Award,
-      color: 'from-indigo-500 to-purple-500',
-      bgColor: 'bg-indigo-50',
+      color: 'from-purple-500 to-purple-600',
+      bgColor: 'bg-purple-50',
       trend: null,
       trendUp: true
     }
@@ -105,8 +105,8 @@ export default function DashboardHome({ stats, onNavigate }: DashboardHomeProps)
         className="text-center"
       >
         <img src="/logo.svg" alt="Logo MakerCycle" className="w-64 h-auto mx-auto mb-6 object-contain" />
-        <h1 className="text-4xl font-bold text-slate-900 mb-3">Dashboard</h1>
-        <p className="text-lg text-slate-600 max-w-2xl mx-auto">
+        <h1 className="text-4xl font-bold text-dark-900 mb-3 font-display">Dashboard</h1>
+        <p className="text-lg text-dark-500 max-w-2xl mx-auto">
           Resumen completo de tu actividad de impresión 3D. Analiza tu rendimiento, 
           optimiza tus procesos y maximiza tu rentabilidad.
         </p>
@@ -119,33 +119,33 @@ export default function DashboardHome({ stats, onNavigate }: DashboardHomeProps)
         transition={{ delay: 0.1 }}
         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
       >
-        <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-6 border border-blue-200 shadow-sm hover:shadow-md transition-all duration-300">
+        <div className="bg-gradient-to-br from-brand-50 to-brand-100 rounded-2xl p-6 border border-brand-200 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1">
           <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center">
+            <div className="w-12 h-12 bg-brand-gradient rounded-xl flex items-center justify-center shadow-md">
               <FileText className="w-6 h-6 text-white" />
             </div>
           </div>
           <div>
-            <p className="text-sm font-medium text-blue-600 mb-1">Proyectos Totales</p>
-            <p className="text-3xl font-bold text-blue-900">{stats.totalProjects}</p>
+            <p className="text-sm font-medium text-brand-600 mb-1">Proyectos Totales</p>
+            <p className="text-3xl font-bold text-brand-900">{stats.totalProjects}</p>
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-2xl p-6 border border-green-200 shadow-sm hover:shadow-md transition-all duration-300">
+        <div className="bg-gradient-to-br from-success-50 to-success-100 rounded-2xl p-6 border border-success-200 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1">
           <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center">
+            <div className="w-12 h-12 bg-success-500 rounded-xl flex items-center justify-center shadow-md">
               <Euro className="w-6 h-6 text-white" />
             </div>
           </div>
           <div>
-            <p className="text-sm font-medium text-green-600 mb-1">Ventas Totales</p>
-            <p className="text-3xl font-bold text-green-900">{stats.totalSales}</p>
+            <p className="text-sm font-medium text-success-600 mb-1">Ventas Totales</p>
+            <p className="text-3xl font-bold text-success-900">{stats.totalSales}</p>
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-2xl p-6 border border-purple-200 shadow-sm hover:shadow-md transition-all duration-300">
+        <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-2xl p-6 border border-purple-200 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1">
           <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 bg-purple-500 rounded-xl flex items-center justify-center">
+            <div className="w-12 h-12 bg-purple-500 rounded-xl flex items-center justify-center shadow-md">
               <DollarSign className="w-6 h-6 text-white" />
             </div>
           </div>
@@ -155,15 +155,15 @@ export default function DashboardHome({ stats, onNavigate }: DashboardHomeProps)
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-2xl p-6 border border-orange-200 shadow-sm hover:shadow-md transition-all duration-300">
+        <div className="bg-gradient-to-br from-coral-50 to-coral-100 rounded-2xl p-6 border border-coral-200 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1">
           <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 bg-orange-500 rounded-xl flex items-center justify-center">
+            <div className="w-12 h-12 bg-coral-500 rounded-xl flex items-center justify-center shadow-md">
               <Clock className="w-6 h-6 text-white" />
             </div>
           </div>
           <div>
-            <p className="text-sm font-medium text-orange-600 mb-1">Horas de Impresión</p>
-            <p className="text-3xl font-bold text-orange-900">{stats.totalPrintHours}h</p>
+            <p className="text-sm font-medium text-coral-600 mb-1">Horas de Impresión</p>
+            <p className="text-3xl font-bold text-coral-900">{stats.totalPrintHours}h</p>
           </div>
         </div>
       </motion.div>
@@ -178,28 +178,28 @@ export default function DashboardHome({ stats, onNavigate }: DashboardHomeProps)
         {performanceMetrics.map((metric, index) => {
           const Icon = metric.icon;
           return (
-            <div key={metric.title} className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300">
+            <div key={metric.title} className="bg-white rounded-2xl p-6 border border-cream-200 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1">
               <div className="flex items-center justify-between mb-4">
-                <div className={`w-12 h-12 bg-gradient-to-br ${metric.color} rounded-xl flex items-center justify-center`}>
+                <div className={`w-12 h-12 bg-gradient-to-br ${metric.color} rounded-xl flex items-center justify-center shadow-md`}>
                   <Icon className="w-6 h-6 text-white" />
                 </div>
                 {metric.trend && (
                   <div className="flex items-center space-x-1">
                     {metric.trendUp ? (
-                      <ArrowUpRight className="w-4 h-4 text-green-600" />
+                      <ArrowUpRight className="w-4 h-4 text-success-600" />
                     ) : (
-                      <ArrowDownRight className="w-4 h-4 text-red-600" />
+                      <ArrowDownRight className="w-4 h-4 text-error-600" />
                     )}
-                    <span className={`text-xs font-medium ${metric.trendUp ? 'text-green-600' : 'text-red-600'}`}>
+                    <span className={`text-xs font-medium ${metric.trendUp ? 'text-success-600' : 'text-error-600'}`}>
                       {metric.trend}
                     </span>
                   </div>
                 )}
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-600 mb-1">{metric.title}</p>
-                <p className="text-2xl font-bold text-gray-900">{metric.value}</p>
-                <p className="text-xs text-gray-500 mt-2">{metric.subtitle}</p>
+                <p className="text-sm font-medium text-dark-500 mb-1">{metric.title}</p>
+                <p className="text-2xl font-bold text-dark-900">{metric.value}</p>
+                <p className="text-xs text-dark-400 mt-2">{metric.subtitle}</p>
               </div>
             </div>
           );
@@ -213,54 +213,54 @@ export default function DashboardHome({ stats, onNavigate }: DashboardHomeProps)
         transition={{ delay: 0.3 }}
         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
       >
-        <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
+        <div className="bg-white rounded-2xl p-6 border border-cream-200 shadow-sm hover:shadow-md transition-all duration-300">
           <div className="flex items-center space-x-4">
-            <div className="w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center">
-              <Package className="w-6 h-6 text-yellow-600" />
+            <div className="w-12 h-12 bg-warning-100 rounded-xl flex items-center justify-center">
+              <Package className="w-6 h-6 text-warning-600" />
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-600">Productos Vendidos</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.totalProducts}</p>
-              <p className="text-xs text-gray-500">Unidades totales</p>
+              <p className="text-sm font-medium text-dark-500">Productos Vendidos</p>
+              <p className="text-2xl font-bold text-dark-900">{stats.totalProducts}</p>
+              <p className="text-xs text-dark-400">Unidades totales</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
+        <div className="bg-white rounded-2xl p-6 border border-cream-200 shadow-sm hover:shadow-md transition-all duration-300">
           <div className="flex items-center space-x-4">
-            <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
-              <TrendingUp className="w-6 h-6 text-green-600" />
+            <div className="w-12 h-12 bg-success-100 rounded-xl flex items-center justify-center">
+              <TrendingUp className="w-6 h-6 text-success-600" />
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-600">Beneficio Total</p>
-              <p className="text-2xl font-bold text-gray-900">{formatCurrency(stats.totalProfit)}</p>
-              <p className="text-xs text-gray-500">Bruto</p>
+              <p className="text-sm font-medium text-dark-500">Beneficio Total</p>
+              <p className="text-2xl font-bold text-dark-900">{formatCurrency(stats.totalProfit)}</p>
+              <p className="text-xs text-dark-400">Bruto</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
+        <div className="bg-white rounded-2xl p-6 border border-cream-200 shadow-sm hover:shadow-md transition-all duration-300">
           <div className="flex items-center space-x-4">
-            <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-              <Users className="w-6 h-6 text-blue-600" />
+            <div className="w-12 h-12 bg-brand-100 rounded-xl flex items-center justify-center">
+              <Users className="w-6 h-6 text-brand-600" />
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-600">Margen Promedio</p>
-              <p className="text-2xl font-bold text-gray-900">{formatPercentage(stats.averageMargin)}</p>
-              <p className="text-xs text-gray-500">Por venta</p>
+              <p className="text-sm font-medium text-dark-500">Margen Promedio</p>
+              <p className="text-2xl font-bold text-dark-900">{formatPercentage(stats.averageMargin)}</p>
+              <p className="text-xs text-dark-400">Por venta</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
+        <div className="bg-white rounded-2xl p-6 border border-cream-200 shadow-sm hover:shadow-md transition-all duration-300">
           <div className="flex items-center space-x-4">
             <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
               <Star className="w-6 h-6 text-purple-600" />
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-600">Beneficio Neto</p>
-              <p className="text-2xl font-bold text-gray-900">{formatCurrency(stats.netProfit)}</p>
-              <p className="text-xs text-gray-500">Después de gastos</p>
+              <p className="text-sm font-medium text-dark-500">Beneficio Neto</p>
+              <p className="text-2xl font-bold text-dark-900">{formatCurrency(stats.netProfit)}</p>
+              <p className="text-xs text-dark-400">Después de gastos</p>
             </div>
           </div>
         </div>
@@ -274,8 +274,8 @@ export default function DashboardHome({ stats, onNavigate }: DashboardHomeProps)
         className="space-y-6"
       >
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-gray-900">Acciones Rápidas</h2>
-          <div className="flex items-center space-x-2 text-sm text-gray-500">
+          <h2 className="text-2xl font-bold text-dark-900 font-display">Acciones Rápidas</h2>
+          <div className="flex items-center space-x-2 text-sm text-dark-500">
             <Calendar className="w-4 h-4" />
             <span>Acceso directo a funciones principales</span>
           </div>
@@ -293,8 +293,8 @@ export default function DashboardHome({ stats, onNavigate }: DashboardHomeProps)
                 className={`bg-gradient-to-br ${action.color} text-white rounded-2xl p-8 text-left transition-all duration-300 shadow-lg hover:shadow-xl group`}
               >
                 <div className="flex items-center justify-between mb-4">
-                  <div className={`w-14 h-14 ${action.bgColor} rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
-                    <Icon className={`w-7 h-7 ${action.iconColor}`} />
+                  <div className={`w-14 h-14 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
+                    <Icon className="w-7 h-7 text-white" />
                   </div>
                   <ArrowUpRight className="w-5 h-5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 </div>
@@ -311,38 +311,38 @@ export default function DashboardHome({ stats, onNavigate }: DashboardHomeProps)
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5 }}
-        className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-2xl p-8 border border-slate-200"
+        className="bg-gradient-to-br from-cream-50 to-cream-100 rounded-2xl p-8 border border-cream-200"
       >
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h3 className="text-xl font-bold text-slate-900 mb-2">Resumen de Rendimiento</h3>
-            <p className="text-slate-600">Métricas clave para optimizar tu negocio</p>
+            <h3 className="text-xl font-bold text-dark-900 mb-2 font-display">Resumen de Rendimiento</h3>
+            <p className="text-dark-500">Métricas clave para optimizar tu negocio</p>
           </div>
           <div className="flex items-center space-x-2">
-            <BarChart3 className="w-5 h-5 text-slate-600" />
-            <span className="text-sm text-slate-600">Análisis</span>
+            <BarChart3 className="w-5 h-5 text-brand-500" />
+            <span className="text-sm text-dark-500">Análisis</span>
           </div>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="text-center">
-            <p className="text-2xl font-bold text-slate-900">{formatCurrency(avgProfitPerSale)}</p>
-            <p className="text-sm text-slate-600">Beneficio promedio por venta</p>
+          <div className="text-center p-4 bg-white/60 rounded-xl">
+            <p className="text-2xl font-bold text-dark-900">{formatCurrency(avgProfitPerSale)}</p>
+            <p className="text-sm text-dark-500">Beneficio promedio por venta</p>
           </div>
-          <div className="text-center">
-            <p className="text-2xl font-bold text-slate-900">{formatPercentage(netProfitMargin)}</p>
-            <p className="text-sm text-slate-600">Margen neto</p>
+          <div className="text-center p-4 bg-white/60 rounded-xl">
+            <p className="text-2xl font-bold text-dark-900">{formatPercentage(netProfitMargin)}</p>
+            <p className="text-sm text-dark-500">Margen neto</p>
           </div>
-          <div className="text-center">
-            <p className="text-2xl font-bold text-slate-900">{formatCurrency(stats.averageEurosPerHour)}</p>
-            <p className="text-sm text-slate-600">{currencySymbol}/hora promedio</p>
+          <div className="text-center p-4 bg-white/60 rounded-xl">
+            <p className="text-2xl font-bold text-dark-900">{formatCurrency(stats.averageEurosPerHour)}</p>
+            <p className="text-sm text-dark-500">{currencySymbol}/hora promedio</p>
           </div>
-          <div className="text-center">
-            <p className="text-2xl font-bold text-slate-900">{stats.totalExpenses}</p>
-            <p className="text-sm text-slate-600">Gastos registrados</p>
+          <div className="text-center p-4 bg-white/60 rounded-xl">
+            <p className="text-2xl font-bold text-dark-900">{stats.totalExpenses}</p>
+            <p className="text-sm text-dark-500">Gastos registrados</p>
           </div>
         </div>
       </motion.div>
     </div>
   );
-} 
+}

@@ -16,7 +16,7 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   viewportFit: 'cover',
-  themeColor: '#1e293b',
+  themeColor: '#ef2a1f', // MakerCycle brand red
 }
 
 export const metadata: Metadata = {
