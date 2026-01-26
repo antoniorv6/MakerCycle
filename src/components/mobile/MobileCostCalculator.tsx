@@ -22,6 +22,7 @@ import type { DatabaseProject, DatabasePiece, PostprocessingItem } from '@/types
 interface MobileCostCalculatorProps {
   loadedProject?: DatabaseProject & { pieces?: DatabasePiece[] }
   onProjectSaved?: (project: DatabaseProject) => void
+  onEditingComplete?: () => void
   onNavigateToSettings?: () => void
 }
 
@@ -43,8 +44,11 @@ const POSTPROCESSING_UNITS = [
 export default function MobileCostCalculator({ 
   loadedProject, 
   onProjectSaved, 
+  onEditingComplete,
   onNavigateToSettings 
 }: MobileCostCalculatorProps) {
+  // Indica si estamos editando un proyecto existente
+  const isEditingExistingProject = !!loadedProject
   const { user } = useAuth()
   const { getEffectiveTeam } = useTeam()
   const { formatCurrency, currencySymbol } = useFormatCurrency()
@@ -460,8 +464,18 @@ export default function MobileCostCalculator({
         }
       }
 
-      toast.success('Proyecto guardado')
-      onProjectSaved?.(projectData)
+      // Mostrar mensaje apropiado y limpiar estado si estábamos editando
+      if (isEditingExistingProject) {
+        toast.success('Proyecto editado correctamente')
+        onProjectSaved?.(projectData)
+        // Limpiar el estado después de editar
+        onEditingComplete?.()
+        resetForm()
+      } else {
+        toast.success('Proyecto guardado')
+        onProjectSaved?.(projectData)
+        resetForm()
+      }
     } catch (error) {
       toast.error('Error al guardar')
     } finally {

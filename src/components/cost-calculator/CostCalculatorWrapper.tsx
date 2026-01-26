@@ -10,18 +10,18 @@ import type { DatabaseProject, DatabasePiece, Piece } from '@/types';
 interface CostCalculatorWrapperProps {
   loadedProject?: DatabaseProject & { pieces?: DatabasePiece[] };
   onProjectSaved?: (project: DatabaseProject) => void;
+  onEditingComplete?: () => void;
   onNavigateToSettings?: () => void;
 }
 
 const CostCalculatorWrapper: React.FC<CostCalculatorWrapperProps> = ({
   loadedProject,
   onProjectSaved,
+  onEditingComplete,
   onNavigateToSettings
 }) => {
-  const { loadDraft, clearDraft, hasDraft, getDraftTimestamp } = useProjectDraft();
-  const [currentView, setCurrentView] = useState<ViewMode | null>(
-    loadedProject ? 'manual-entry' : null
-  );
+  const { loadDraft, clearDraft, hasDraft } = useProjectDraft();
+  const [currentView, setCurrentView] = useState<ViewMode | null>(null);
   const [showPendingProjectModal, setShowPendingProjectModal] = useState(false);
   const [pendingDraft, setPendingDraft] = useState<ProjectDraft | null>(null);
   const [shouldLoadDraft, setShouldLoadDraft] = useState(false);
@@ -49,8 +49,8 @@ const CostCalculatorWrapper: React.FC<CostCalculatorWrapperProps> = ({
   const [importedProjectName, setImportedProjectName] = useState('');
 
   // Verificar si hay un proyecto pendiente en localStorage al montar
+  // SOLO si no hay proyecto cargado para editar
   useEffect(() => {
-    // Solo verificar si no hay proyecto cargado y no estamos en una vista específica
     if (!loadedProject && !currentView) {
       const draft = loadDraft();
       if (draft && hasDraft()) {
@@ -74,14 +74,14 @@ const CostCalculatorWrapper: React.FC<CostCalculatorWrapperProps> = ({
     return `hace ${diffDays} día${diffDays > 1 ? 's' : ''}`;
   };
 
-  // Continuar con el proyecto pendiente
+  // Continuar con el proyecto pendiente (borrador de localStorage)
   const handleContinuePendingProject = () => {
     setShowPendingProjectModal(false);
     setShouldLoadDraft(true);
     setCurrentView('manual-entry');
   };
 
-  // Empezar un proyecto nuevo (descarta el pendiente)
+  // Empezar un proyecto nuevo (descarta el borrador pendiente)
   const handleStartNewProject = () => {
     clearDraft();
     setPendingDraft(null);
@@ -127,18 +127,20 @@ const CostCalculatorWrapper: React.FC<CostCalculatorWrapperProps> = ({
     setCurrentView('manual-entry');
   };
 
-  // Si hay un proyecto cargado, mostrar directamente el calculador
+  // CASO 1: Si hay un proyecto cargado para editar, ir DIRECTAMENTE a la calculadora
+  // Sin modal de confirmación - el usuario ya hizo clic en "Editar"
   if (loadedProject) {
     return (
       <CostCalculator
         loadedProject={loadedProject}
         onProjectSaved={onProjectSaved}
+        onEditingComplete={onEditingComplete}
         onNavigateToSettings={onNavigateToSettings}
       />
     );
   }
 
-  // Modal de proyecto pendiente
+  // CASO 2: Modal de proyecto pendiente (borrador de localStorage para proyectos NUEVOS)
   if (showPendingProjectModal && pendingDraft) {
     const savedDate = new Date(pendingDraft.savedAt);
     const timeAgo = getTimeAgo(savedDate);
@@ -215,12 +217,12 @@ const CostCalculatorWrapper: React.FC<CostCalculatorWrapperProps> = ({
     );
   }
 
-  // Mostrar selección de modo si no hay vista actual
+  // CASO 3: Mostrar selección de modo si no hay vista actual
   if (!currentView) {
     return <ModeSelection onModeSelect={handleModeSelect} />;
   }
 
-  // Mostrar vista de importación de archivos
+  // CASO 4: Mostrar vista de importación de archivos
   if (currentView === 'file-import') {
     return (
       <FileImportView
@@ -230,12 +232,13 @@ const CostCalculatorWrapper: React.FC<CostCalculatorWrapperProps> = ({
     );
   }
 
-  // Mostrar calculador manual con datos importados si los hay
+  // CASO 5: Mostrar calculador manual (proyecto nuevo)
   if (currentView === 'manual-entry') {
     return (
       <CostCalculator
         loadedProject={undefined}
         onProjectSaved={onProjectSaved}
+        onEditingComplete={onEditingComplete}
         onNavigateToSettings={onNavigateToSettings}
         importedData={importedPieces.length > 0 ? {
           pieces: importedPieces,

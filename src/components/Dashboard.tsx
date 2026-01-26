@@ -113,17 +113,29 @@ export default function Dashboard({ initialPage }: { initialPage?: string } = {}
     };
   }
 
-  // New: go to project-info view first
+  // Go to project-info view to see details
   const handleLoadProject = (dbProject: DatabaseProject & { pieces?: DatabasePiece[] }) => {
     const project = dbProjectToProject(dbProject);
     setLoadedProject(project)
     setCurrentPage('project-info')
   }
 
+  // Go directly to calculator to edit
+  const handleEditProject = (dbProject: DatabaseProject & { pieces?: DatabasePiece[] }) => {
+    const project = dbProjectToProject(dbProject);
+    setLoadedProject(project)
+    setCurrentPage('calculator')
+  }
+
   const handleProjectSaved = (savedProject: DatabaseProject) => {
     // Convert the saved project back to AppProject format and update loadedProject
     const updatedProject = dbProjectToProject(savedProject);
     setLoadedProject(updatedProject);
+  }
+
+  // Callback cuando se termina de editar un proyecto
+  const handleEditingComplete = () => {
+    setLoadedProject(null);
   }
 
   const handlePageChange = (page: string, tab?: string) => {
@@ -156,6 +168,7 @@ export default function Dashboard({ initialPage }: { initialPage?: string } = {}
             <LazyCostCalculator 
               loadedProject={loadedProject ? projectToDbProject(loadedProject) : undefined} 
               onProjectSaved={handleProjectSaved}
+              onEditingComplete={handleEditingComplete}
               onNavigateToSettings={() => handlePageChange('settings', 'materials')}
             />
           </Suspense>
@@ -169,7 +182,10 @@ export default function Dashboard({ initialPage }: { initialPage?: string } = {}
       case 'projects':
         return (
           <Suspense fallback={<DashboardSkeleton />}>
-            <LazyProjectManager onLoadProject={handleLoadProject} />
+            <LazyProjectManager 
+              onLoadProject={handleLoadProject} 
+              onEditProject={handleEditProject}
+            />
           </Suspense>
         )
       case 'settings':
@@ -190,6 +206,7 @@ export default function Dashboard({ initialPage }: { initialPage?: string } = {}
             <LazyCostCalculator 
               loadedProject={loadedProject ? projectToDbProject(loadedProject) : undefined} 
               onProjectSaved={handleProjectSaved}
+              onEditingComplete={handleEditingComplete}
               onNavigateToSettings={() => handlePageChange('settings', 'materials')}
             />
           </Suspense>

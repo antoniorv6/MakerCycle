@@ -145,7 +145,7 @@ export default function LandingPage() {
                   Comenzar Gratis
                   <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
                 </Link>
-                <button className="group border-2 border-dark-200 text-dark-700 px-8 sm:px-10 py-4 rounded-2xl text-base sm:text-lg font-semibold transition-all duration-300 inline-flex items-center justify-center bg-white/80 backdrop-blur-sm active:scale-95 hover:border-brand-300 hover:bg-white">
+                <button className="group border-2 border-cream-300 text-dark-700 px-8 sm:px-10 py-4 rounded-2xl text-base sm:text-lg font-semibold transition-all duration-300 inline-flex items-center justify-center bg-white shadow-md active:scale-95 hover:border-brand-300 hover:bg-cream-50 hover:shadow-lg">
                   <Play className="w-5 h-5 mr-2 text-brand-500" />
                   Ver Demo
                 </button>
@@ -368,7 +368,7 @@ export default function LandingPage() {
             </Link>
             <a
               href="https://github.com/antoniorv6/MakerCycle"
-              className="group border-2 border-white/30 text-white px-8 sm:px-10 py-4 rounded-2xl text-base sm:text-lg font-semibold transition-all duration-300 inline-flex items-center justify-center active:scale-95 hover:bg-white/10 hover:border-white/50"
+              className="group border-2 border-white/80 text-white px-8 sm:px-10 py-4 rounded-2xl text-base sm:text-lg font-semibold transition-all duration-300 inline-flex items-center justify-center active:scale-95 hover:bg-white/20 hover:border-white shadow-lg hover:shadow-xl"
             >
               <Github className="w-5 h-5 mr-2" />
               Ver en GitHub

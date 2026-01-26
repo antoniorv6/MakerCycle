@@ -45,9 +45,9 @@ export default function MobileButton({
       disabled:bg-slate-50 disabled:text-slate-400
     `,
     ghost: `
-      bg-transparent text-slate-700
+      bg-slate-50 text-slate-700 border border-slate-200
       active:bg-slate-100
-      disabled:text-slate-400
+      disabled:bg-slate-50 disabled:text-slate-400 disabled:border-slate-100
     `,
     danger: `
       bg-red-500 text-white

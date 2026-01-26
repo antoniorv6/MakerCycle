@@ -56,6 +56,7 @@ interface CostCalculatorProps {
   loadedProject?: DatabaseProject & { pieces?: DatabasePiece[] };
   onProjectSaved?: (project: DatabaseProject) => void;
   onNavigateToSettings?: () => void;
+  onEditingComplete?: () => void; // Callback cuando se termina de editar un proyecto
   importedData?: {
     pieces: Array<{
       id: string;
@@ -84,7 +85,7 @@ interface CostCalculatorProps {
   shouldLoadDraft?: boolean;
 }
 
-const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjectSaved, onNavigateToSettings, importedData, shouldLoadDraft = true }: CostCalculatorProps) => {
+const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjectSaved, onNavigateToSettings, onEditingComplete, importedData, shouldLoadDraft = true }: CostCalculatorProps) => {
   const { user } = useAuth();
   const { getEffectiveTeam } = useTeam();
   const { presets: postprocessingPresets } = usePostprocessingPresets();
@@ -664,6 +665,10 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
   };
 
   const handleNewProject = () => {
+    // Si estábamos editando un proyecto existente, notificar al padre para que limpie el estado
+    if (isEditingExistingProject) {
+      onEditingComplete?.();
+    }
     setSavedProject(null);
     resetForm();
     // El borrador ya se limpia en resetForm, pero aseguramos que se limpie
@@ -931,6 +936,13 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
           // Show project summary with complete data
           setSavedProject(projectWithPieces);
           onProjectSaved?.(projectWithPieces);
+          
+          // Si estábamos editando un proyecto existente, notificar que la edición ha terminado
+          // Esto limpia loadedProject en el Dashboard para que si el usuario navega fuera y vuelve,
+          // no vea el modal de "¿Quieres seguir editando?"
+          if (isEditingExistingProject) {
+            onEditingComplete?.();
+          }
         } catch (error) {
           console.error('Error loading project data for summary:', error);
           // Fallback to basic project data without materials
@@ -952,6 +964,11 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
           };
           setSavedProject(basicProject);
           onProjectSaved?.(basicProject);
+          
+          // Si estábamos editando un proyecto existente, notificar que la edición ha terminado
+          if (isEditingExistingProject) {
+            onEditingComplete?.();
+          }
         }
       }
     } catch (error: any) {
@@ -975,6 +992,7 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
         project={savedProject}
         onEdit={handleEditProject}
         onNewProject={handleNewProject}
+        isEditing={isEditingExistingProject}
       />
     );
   }

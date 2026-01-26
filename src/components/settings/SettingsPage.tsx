@@ -96,7 +96,7 @@ export default function SettingsPage({ initialTab = 'company' }: SettingsPagePro
                     className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-colors ${
                       activeTab === tab.id
                         ? 'bg-slate-100 text-slate-700 border border-slate-200'
-                        : 'text-slate-600 hover:bg-slate-100'
+                        : 'text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 hover:border-slate-300'
                     }`}
                   >
                     <Icon className="w-5 h-5" />

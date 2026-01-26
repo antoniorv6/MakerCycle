@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, Suspense, useCallback } from 'react'
+import React, { useState, Suspense } from 'react'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { useDashboardData } from '@/hooks/useDashboardData'
 import BottomNavigation from './BottomNavigation'
@@ -114,9 +114,20 @@ export default function MobileLayout({ initialPage }: MobileLayoutProps) {
     setCurrentPage('project-info')
   }
 
+  const handleEditProject = (dbProject: DatabaseProject & { pieces?: DatabasePiece[] }) => {
+    const project = dbProjectToProject(dbProject)
+    setLoadedProject(project)
+    setCurrentPage('calculator')
+  }
+
   const handleProjectSaved = (savedProject: DatabaseProject) => {
     const updatedProject = dbProjectToProject(savedProject)
     setLoadedProject(updatedProject)
+  }
+
+  // Callback cuando se termina de editar un proyecto
+  const handleEditingComplete = () => {
+    setLoadedProject(null)
   }
 
   const handlePageChange = (page: string, tab?: string) => {
@@ -167,10 +178,12 @@ export default function MobileLayout({ initialPage }: MobileLayoutProps) {
           />
         ) : null
       case 'calculator':
+        // Ir directamente a la calculadora con el proyecto cargado (si hay)
         return (
           <MobileCostCalculator 
             loadedProject={loadedProject ? projectToDbProject(loadedProject) : undefined} 
             onProjectSaved={handleProjectSaved}
+            onEditingComplete={handleEditingComplete}
             onNavigateToSettings={() => handlePageChange('settings', 'materials')}
           />
         )
@@ -182,7 +195,10 @@ export default function MobileLayout({ initialPage }: MobileLayoutProps) {
         )
       case 'projects':
         return (
-          <MobileProjectManager onLoadProject={handleLoadProject} />
+          <MobileProjectManager 
+            onLoadProject={handleLoadProject} 
+            onEditProject={handleEditProject}
+          />
         )
       case 'settings':
         return <SettingsPage initialTab={settingsTab} />
@@ -201,6 +217,7 @@ export default function MobileLayout({ initialPage }: MobileLayoutProps) {
           <MobileCostCalculator 
             loadedProject={loadedProject ? projectToDbProject(loadedProject) : undefined} 
             onProjectSaved={handleProjectSaved}
+            onEditingComplete={handleEditingComplete}
             onNavigateToSettings={() => handlePageChange('settings', 'materials')}
           />
         )

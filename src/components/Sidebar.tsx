@@ -148,7 +148,7 @@ export default function Sidebar({ currentPage, onPageChange, isOpen, onToggle }:
                 console.error('Error during logout:', error)
               }
             }}
-            className="w-full flex items-center space-x-3 px-4 py-3 text-dark-600 hover:bg-white hover:text-brand-600 rounded-xl transition-all duration-200 border border-transparent hover:border-brand-200"
+            className="w-full flex items-center space-x-3 px-4 py-3 text-dark-600 hover:bg-white hover:text-brand-600 rounded-xl transition-all duration-200 border border-cream-200 hover:border-brand-300 bg-white"
           >
             <LogOut className="w-5 h-5 text-dark-400" />
             <span className="font-medium">Cerrar Sesión</span>

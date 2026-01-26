@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Search, Filter, Calendar, Euro, FileText, Clock, Package, Layers, Zap } from 'lucide-react';
+import { Plus, Search, Filter, Calendar, Euro, FileText, Clock, Package, Layers, Zap, Eye, Pencil } from 'lucide-react';
 import { createClient } from '@/lib/supabase';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useTeam } from '@/components/providers/TeamProvider';
@@ -13,6 +13,7 @@ import ConfirmModal from './cost-calculator/ConfirmModal';
 
 interface ProjectManagerProps {
   onLoadProject: (project: DatabaseProject & { pieces?: DatabasePiece[] }) => void;
+  onEditProject?: (project: DatabaseProject & { pieces?: DatabasePiece[] }) => void;
 }
 
 // Function to process pieces (solo sistema multi-material)
@@ -43,7 +44,7 @@ async function processPieces(
   return processedPieces;
 }
 
-export default function ProjectManager({ onLoadProject }: ProjectManagerProps) {
+export default function ProjectManager({ onLoadProject, onEditProject }: ProjectManagerProps) {
   const { user } = useAuth();
   const { currentTeam } = useTeam();
   const { formatCurrency, currencySymbol } = useFormatCurrency();
@@ -127,9 +128,39 @@ export default function ProjectManager({ onLoadProject }: ProjectManagerProps) {
         `)
         .eq('project_id', project.id);
 
-      if (pieces && pieces.length > 0) {
-      } else {
+      if (error) {
+        console.error('Error fetching pieces:', error);
+        toast.error('No se pudieron cargar las piezas del proyecto. Intenta de nuevo.');
+        return;
       }
+
+      // Process pieces (handle both new system and legacy)
+      const piecesWithMaterials = await processPieces(pieces || [], supabase);
+
+      const projectWithPieces = { ...project, pieces: piecesWithMaterials };
+      onLoadProject(projectWithPieces);
+    } catch (error) {
+      console.error('Error loading project:', error);
+      toast.error('No se pudo cargar el proyecto. Intenta de nuevo.');
+    }
+  };
+
+  const handleEditProject = async (project: DatabaseProject) => {
+    if (!onEditProject) {
+      // Fallback: si no hay onEditProject, usar el flujo normal
+      handleLoadProject(project);
+      return;
+    }
+
+    try {
+      // Fetch pieces for the project with their materials
+      const { data: pieces, error } = await supabase
+        .from('pieces')
+        .select(`
+          *,
+          piece_materials (*)
+        `)
+        .eq('project_id', project.id);
 
       if (error) {
         console.error('Error fetching pieces:', error);
@@ -139,13 +170,12 @@ export default function ProjectManager({ onLoadProject }: ProjectManagerProps) {
 
       // Process pieces (handle both new system and legacy)
       const piecesWithMaterials = await processPieces(pieces || [], supabase);
-      
 
       const projectWithPieces = { ...project, pieces: piecesWithMaterials };
-      onLoadProject(projectWithPieces);
+      onEditProject(projectWithPieces);
     } catch (error) {
-      console.error('Error loading project:', error);
-      toast.error('No se pudo cargar el proyecto. Intenta de nuevo.');
+      console.error('Error loading project for edit:', error);
+      toast.error('No se pudo cargar el proyecto para editar. Intenta de nuevo.');
     }
   };
 
@@ -359,13 +389,21 @@ export default function ProjectManager({ onLoadProject }: ProjectManagerProps) {
                 <div className="flex space-x-2">
                   <button
                     onClick={() => handleLoadProject(project)}
-                    className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors duration-200 text-sm font-medium"
+                    className="flex items-center space-x-1.5 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors duration-200 text-sm font-medium"
                   >
-                    Cargar
+                    <Eye className="w-4 h-4" />
+                    <span>Ver detalles</span>
+                  </button>
+                  <button
+                    onClick={() => handleEditProject(project)}
+                    className="flex items-center space-x-1.5 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 text-sm font-medium shadow-sm hover:shadow-md"
+                  >
+                    <Pencil className="w-4 h-4" />
+                    <span>Editar</span>
                   </button>
                   <button
                     onClick={() => handleDeleteProject(project.id)}
-                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-200 text-sm font-medium"
+                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-200 text-sm font-medium shadow-sm hover:shadow-md"
                   >
                     Eliminar
                   </button>

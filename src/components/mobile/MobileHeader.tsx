@@ -23,7 +23,7 @@ export default function MobileHeader({ title = 'MakerCycle', showBack, onBack }:
           {showBack && onBack ? (
             <button
               onClick={onBack}
-              className="p-2 -ml-2 rounded-full hover:bg-slate-100 transition-colors"
+              className="p-2 -ml-2 rounded-full bg-slate-50 hover:bg-slate-200 active:bg-slate-300 border border-slate-200 transition-colors"
             >
               <svg className="w-6 h-6 text-slate-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />

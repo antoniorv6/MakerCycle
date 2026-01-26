@@ -30,7 +30,7 @@ export default function MobileCard({
   const variantClasses = {
     default: 'bg-white border border-slate-200 shadow-sm',
     elevated: 'bg-white shadow-lg',
-    outlined: 'bg-transparent border-2 border-slate-200',
+    outlined: 'bg-slate-50 border-2 border-slate-300',
   }
 
   const Component = onClick ? motion.button : motion.div

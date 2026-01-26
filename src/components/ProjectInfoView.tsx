@@ -65,9 +65,9 @@ const ProjectInfoView: React.FC<ProjectInfoViewProps> = ({ project, onEdit, onBa
             {onBack && (
               <button
                 onClick={onBack}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors group"
+                className="p-2 bg-gray-50 hover:bg-gray-200 active:bg-gray-300 border border-gray-200 rounded-lg transition-colors group"
               >
-                <ArrowLeft className="w-5 h-5 text-gray-600 group-hover:text-gray-900" />
+                <ArrowLeft className="w-5 h-5 text-gray-700 group-hover:text-gray-900" />
               </button>
             )}
             <div className="flex-1">

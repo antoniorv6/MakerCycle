@@ -122,7 +122,7 @@ Puedo ayudarte con:
         className={`fixed bottom-6 right-6 z-50 flex items-center justify-center rounded-full shadow-lg transition-all duration-300 hover:scale-110 active:scale-95 ${
           isOpen
             ? 'w-14 h-14 md:w-16 md:h-16 bg-red-600 hover:bg-red-700'
-            : 'w-20 h-20 md:w-24 md:h-24 bg-transparent'
+            : 'w-20 h-20 md:w-24 md:h-24 bg-white border-2 border-cream-300 hover:border-brand-300 hover:bg-cream-50'
         }`}
         aria-label="Abrir chat"
       >
@@ -152,7 +152,7 @@ Puedo ayudarte con:
             </div>
             <button
               onClick={() => setIsOpen(false)}
-              className="p-1 hover:bg-white/20 rounded-full transition-colors"
+              className="p-1.5 hover:bg-white/30 rounded-full transition-colors active:bg-white/40"
               aria-label="Cerrar chat"
             >
               <X className="w-5 h-5" />

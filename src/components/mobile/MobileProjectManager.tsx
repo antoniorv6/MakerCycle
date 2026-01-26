@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence, PanInfo } from 'framer-motion'
 import { 
   Plus, Search, Calendar, Euro, FileText, Clock, Package, 
-  Trash2, ChevronRight, Filter, X, Layers, AlertCircle
+  Trash2, ChevronRight, Filter, X, Layers, AlertCircle, Eye, Pencil
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import { useAuth } from '@/components/providers/AuthProvider'
@@ -17,6 +17,7 @@ import MobileCard from './MobileCard'
 
 interface MobileProjectManagerProps {
   onLoadProject: (project: DatabaseProject & { pieces?: DatabasePiece[] }) => void
+  onEditProject?: (project: DatabaseProject & { pieces?: DatabasePiece[] }) => void
 }
 
 // Process pieces helper
@@ -30,7 +31,7 @@ async function processPieces(
   }))
 }
 
-export default function MobileProjectManager({ onLoadProject }: MobileProjectManagerProps) {
+export default function MobileProjectManager({ onLoadProject, onEditProject }: MobileProjectManagerProps) {
   const { user } = useAuth()
   const { currentTeam } = useTeam()
   const { formatCurrency } = useFormatCurrency()
@@ -104,6 +105,27 @@ export default function MobileProjectManager({ onLoadProject }: MobileProjectMan
       onLoadProject({ ...project, pieces: processedPieces })
     } catch (error) {
       toast.error('Error al cargar proyecto')
+    }
+  }
+
+  const handleEditProject = async (project: DatabaseProject) => {
+    if (!onEditProject) {
+      // Fallback: si no hay onEditProject, usar el flujo normal
+      handleLoadProject(project)
+      return
+    }
+
+    triggerHaptic('light')
+    try {
+      const { data: pieces } = await supabase
+        .from('pieces')
+        .select('*, piece_materials (*)')
+        .eq('project_id', project.id)
+
+      const processedPieces = await processPieces(pieces || [], supabase)
+      onEditProject({ ...project, pieces: processedPieces })
+    } catch (error) {
+      toast.error('Error al cargar proyecto para editar')
     }
   }
 
@@ -278,8 +300,7 @@ export default function MobileProjectManager({ onLoadProject }: MobileProjectMan
                     dragElastic={0.1}
                     onDragEnd={(_, info) => handleSwipe(project.id, info)}
                     animate={{ x: isSwiped ? -80 : 0 }}
-                    className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm relative cursor-grab active:cursor-grabbing"
-                    onClick={() => !isSwiped && handleLoadProject(project)}
+                    className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm relative"
                   >
                     {/* Header */}
                     <div className="flex items-start justify-between mb-3">
@@ -292,16 +313,13 @@ export default function MobileProjectManager({ onLoadProject }: MobileProjectMan
                           </span>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusBadge.bg} ${statusBadge.text}`}>
-                          {statusBadge.label}
-                        </span>
-                        <ChevronRight className="w-5 h-5 text-slate-300" />
-                      </div>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusBadge.bg} ${statusBadge.text}`}>
+                        {statusBadge.label}
+                      </span>
                     </div>
 
                     {/* Stats */}
-                    <div className="grid grid-cols-4 gap-2">
+                    <div className="grid grid-cols-4 gap-2 mb-3">
                       <div className="bg-slate-50 rounded-lg p-2 text-center">
                         <Package className="w-4 h-4 text-blue-500 mx-auto mb-1" />
                         <p className="text-xs font-semibold text-slate-700">
@@ -320,6 +338,30 @@ export default function MobileProjectManager({ onLoadProject }: MobileProjectMan
                         <Euro className="w-4 h-4 text-orange-500 mx-auto mb-1" />
                         <p className="text-xs font-semibold text-slate-700">{formatCurrency(project.total_cost)}</p>
                       </div>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex gap-2">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleLoadProject(project)
+                        }}
+                        className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-slate-100 text-slate-700 rounded-xl text-sm font-medium active:bg-slate-200 transition-colors"
+                      >
+                        <Eye className="w-4 h-4" />
+                        <span>Ver detalles</span>
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleEditProject(project)
+                        }}
+                        className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium active:bg-blue-700 transition-colors shadow-sm"
+                      >
+                        <Pencil className="w-4 h-4" />
+                        <span>Editar</span>
+                      </button>
                     </div>
 
                     {/* Swipe hint */}
