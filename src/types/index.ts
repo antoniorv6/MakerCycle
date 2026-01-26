@@ -483,6 +483,9 @@ export interface PieceCardProps {
 
 export interface ModeSelectionProps {
   onModeSelect: (mode: ViewMode) => void;
+  drafts?: import('@/components/cost-calculator/hooks/useProjectDraft').ProjectDraft[];
+  onLoadDraft?: (draft: import('@/components/cost-calculator/hooks/useProjectDraft').ProjectDraft) => void;
+  onDeleteDraft?: (draftId: string) => void;
 }
 
 // Material preset types

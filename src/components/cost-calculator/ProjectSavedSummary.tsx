@@ -32,15 +32,15 @@ const ProjectSavedSummary: React.FC<ProjectSavedSummaryProps> = ({
     <div className="max-w-4xl mx-auto p-6">
       {/* Success Header */}
       <div className="text-center mb-8">
-        <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
+        <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4 animate-pulse">
           <CheckCircle className="w-8 h-8 text-green-600" />
         </div>
         <h1 className="text-3xl font-bold text-slate-900 mb-2">
-          {isEditing ? '¡Proyecto Editado!' : '¡Proyecto Guardado!'}
+          {isEditing ? '¡Proyecto Editado con Éxito!' : '¡Proyecto Guardado!'}
         </h1>
-        <p className="text-slate-600">
+        <p className="text-slate-600 text-lg">
           {isEditing 
-            ? 'Los cambios en tu proyecto se han guardado correctamente' 
+            ? 'Los cambios en tu proyecto se han guardado correctamente. Puedes continuar editando o crear un nuevo proyecto.' 
             : 'Tu proyecto se ha guardado correctamente en la base de datos'}
         </p>
       </div>
@@ -191,20 +191,30 @@ const ProjectSavedSummary: React.FC<ProjectSavedSummaryProps> = ({
       {/* Action Buttons */}
       <div className="flex flex-col sm:flex-row gap-4 justify-center">
         {isEditing ? (
-          // Cuando se edita un proyecto, solo mostrar botón para nuevo proyecto
-          <button
-            onClick={onNewProject}
-            className="flex items-center justify-center space-x-2 px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors duration-200 font-medium"
-          >
-            <Plus className="w-5 h-5" />
-            <span>Nuevo Proyecto</span>
-          </button>
+          // Cuando se edita un proyecto, mostrar opciones para editar de nuevo o crear nuevo proyecto
+          <>
+            <button
+              onClick={onEdit}
+              className="flex items-center justify-center space-x-2 px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors duration-200 font-medium shadow-md hover:shadow-lg"
+            >
+              <Edit3 className="w-5 h-5" />
+              <span>Continuar Editando</span>
+            </button>
+            
+            <button
+              onClick={onNewProject}
+              className="flex items-center justify-center space-x-2 px-6 py-3 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors duration-200 font-medium shadow-md hover:shadow-lg"
+            >
+              <Plus className="w-5 h-5" />
+              <span>Nuevo Proyecto</span>
+            </button>
+          </>
         ) : (
           // Cuando se crea un proyecto nuevo, mostrar ambas opciones
           <>
             <button
               onClick={onEdit}
-              className="flex items-center justify-center space-x-2 px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors duration-200 font-medium"
+              className="flex items-center justify-center space-x-2 px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors duration-200 font-medium shadow-md hover:shadow-lg"
             >
               <Edit3 className="w-5 h-5" />
               <span>Editar Proyecto</span>
@@ -212,7 +222,7 @@ const ProjectSavedSummary: React.FC<ProjectSavedSummaryProps> = ({
             
             <button
               onClick={onNewProject}
-              className="flex items-center justify-center space-x-2 px-6 py-3 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors duration-200 font-medium"
+              className="flex items-center justify-center space-x-2 px-6 py-3 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors duration-200 font-medium shadow-md hover:shadow-lg"
             >
               <Plus className="w-5 h-5" />
               <span>Añadir Nuevo Proyecto</span>

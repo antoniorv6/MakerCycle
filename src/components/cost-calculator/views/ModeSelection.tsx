@@ -1,8 +1,14 @@
 import React from 'react';
 import { Calculator, Edit3, Upload, FileText } from 'lucide-react';
 import type { ModeSelectionProps} from '@/types';
+import PendingDraftsPanel from '../PendingDraftsPanel';
 
-const ModeSelection: React.FC<ModeSelectionProps> = ({ onModeSelect }) => {
+const ModeSelection: React.FC<ModeSelectionProps> = ({
+  onModeSelect,
+  drafts,
+  onLoadDraft,
+  onDeleteDraft
+}) => {
   return (
     <div className="max-w-7xl mx-auto p-6">
       <div className="text-center mb-8">
@@ -12,6 +18,18 @@ const ModeSelection: React.FC<ModeSelectionProps> = ({ onModeSelect }) => {
         <h1 className="text-3xl font-bold text-slate-900 mb-2">Calculadora de Costes 3D</h1>
         <p className="text-slate-600">Calcula el coste total de tus proyectos de impresión 3D</p>
       </div>
+
+      {/* Pending Drafts Panel */}
+      {drafts && drafts.length > 0 && onLoadDraft && onDeleteDraft && (
+        <div className="max-w-4xl mx-auto mb-8">
+          <PendingDraftsPanel
+            drafts={drafts}
+            onLoadDraft={onLoadDraft}
+            onDeleteDraft={onDeleteDraft}
+            currentDraftId={null}
+          />
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-6xl mx-auto">
         {/* Modo Manual */}

@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 
-const STORAGE_KEY = 'makercycle_project_draft';
+const STORAGE_KEY = 'makercycle_project_drafts';
 
 // Define the shape of the project draft
 export interface ProjectDraft {
+  draftId: string; // Unique identifier for this draft
   projectName: string;
   projectType: 'filament' | 'resin';
   filamentPrice: number;
@@ -56,10 +57,17 @@ export interface ProjectDraft {
     size: 'small' | 'medium' | 'large';
   }>;
   savedAt: number; // timestamp
+  // Track if this draft is editing an existing project (null for new projects)
+  editingProjectId: string | null;
 }
 
-// Default values for a new project
-const DEFAULT_DRAFT: Omit<ProjectDraft, 'savedAt'> = {
+// Storage structure for multiple drafts
+interface DraftStorage {
+  [draftId: string]: ProjectDraft;
+}
+
+// Default values for a new project (without draftId and savedAt)
+export const DEFAULT_DRAFT_VALUES: Omit<ProjectDraft, 'savedAt' | 'draftId'> = {
   projectName: '',
   projectType: 'filament',
   filamentPrice: 25,
@@ -82,133 +90,234 @@ const DEFAULT_DRAFT: Omit<ProjectDraft, 'savedAt'> = {
     materials: []
   }],
   isDisasterMode: false,
-  disasterModeNotes: []
+  disasterModeNotes: [],
+  editingProjectId: null
 };
 
 /**
- * Hook to manage project draft persistence in localStorage.
- * 
+ * Generate a unique draft ID
+ */
+export function generateDraftId(): string {
+  return `draft-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+}
+
+/**
+ * Format a date as relative time (e.g., "hace 5 minutos")
+ */
+export function getTimeAgo(date: Date): string {
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / (1000 * 60));
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffMins < 1) return 'hace unos segundos';
+  if (diffMins < 60) return `hace ${diffMins} minuto${diffMins > 1 ? 's' : ''}`;
+  if (diffHours < 24) return `hace ${diffHours} hora${diffHours > 1 ? 's' : ''}`;
+  return `hace ${diffDays} día${diffDays > 1 ? 's' : ''}`;
+}
+
+/**
+ * Check if a draft has meaningful content (not just default values)
+ */
+export function hasMeaningfulContent(draft: Partial<ProjectDraft>): boolean {
+  // Check if project name is set
+  if (draft.projectName && draft.projectName.trim().length > 0) return true;
+
+  // Check if pieces have content beyond defaults
+  if (draft.pieces && draft.pieces.length > 0) {
+    const hasModifiedPiece = draft.pieces.some(piece =>
+      piece.name !== 'Pieza principal' ||
+      piece.filamentWeight > 0 ||
+      piece.printHours > 0 ||
+      piece.quantity > 1 ||
+      (piece.notes && piece.notes.trim().length > 0) ||
+      (piece.materials && piece.materials.length > 0 && piece.materials.some(m => m.weight > 0))
+    );
+    if (hasModifiedPiece) return true;
+  }
+
+  // Check if there are materials or postprocessing items
+  if (draft.materials && draft.materials.length > 0) return true;
+  if (draft.postprocessingItems && draft.postprocessingItems.length > 0) return true;
+
+  // Check for disaster mode notes
+  if (draft.disasterModeNotes && draft.disasterModeNotes.length > 0) return true;
+
+  return false;
+}
+
+/**
+ * Hook to manage multiple project drafts in localStorage.
+ *
  * Features:
- * - Saves project state to localStorage on every change
- * - Restores saved state when the component mounts
- * - Clears localStorage when the project is saved successfully
- * - Only persists if there's actual content (not empty project)
+ * - Stores multiple drafts indexed by draftId
+ * - Auto-saves project state to localStorage on changes
+ * - Removes drafts when projects are saved
+ * - Auto-expires drafts older than 7 days
+ * - Provides list of all pending drafts
  */
 export function useProjectDraft() {
-  const isInitializedRef = useRef(false);
+  const [drafts, setDrafts] = useState<ProjectDraft[]>([]);
 
   /**
-   * Check if a draft has meaningful content (not just default values)
+   * Load all drafts from localStorage
    */
-  const hasMeaningfulContent = useCallback((draft: Partial<ProjectDraft>): boolean => {
-    // Check if project name is set
-    if (draft.projectName && draft.projectName.trim().length > 0) return true;
-    
-    // Check if pieces have content beyond defaults
-    if (draft.pieces && draft.pieces.length > 0) {
-      const hasModifiedPiece = draft.pieces.some(piece => 
-        piece.name !== 'Pieza principal' ||
-        piece.filamentWeight > 0 ||
-        piece.printHours > 0 ||
-        piece.quantity > 1 ||
-        (piece.notes && piece.notes.trim().length > 0) ||
-        (piece.materials && piece.materials.length > 0 && piece.materials.some(m => m.weight > 0))
-      );
-      if (hasModifiedPiece) return true;
+  const loadAllDrafts = useCallback((): DraftStorage => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (!saved) return {};
+
+      const storage: DraftStorage = JSON.parse(saved);
+      const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
+
+      // Filter out expired drafts
+      const validDrafts: DraftStorage = {};
+      let hasExpired = false;
+
+      Object.entries(storage).forEach(([id, draft]) => {
+        if (draft.savedAt >= sevenDaysAgo) {
+          validDrafts[id] = draft;
+        } else {
+          hasExpired = true;
+        }
+      });
+
+      // If some drafts expired, update storage
+      if (hasExpired) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(validDrafts));
+      }
+
+      return validDrafts;
+    } catch (error) {
+      console.error('Error loading project drafts from localStorage:', error);
+      return {};
     }
-    
-    // Check if there are materials or postprocessing items
-    if (draft.materials && draft.materials.length > 0) return true;
-    if (draft.postprocessingItems && draft.postprocessingItems.length > 0) return true;
-    
-    // Check for disaster mode notes
-    if (draft.disasterModeNotes && draft.disasterModeNotes.length > 0) return true;
-    
-    return false;
   }, []);
 
   /**
-   * Save the current project state to localStorage
+   * Refresh the drafts state from localStorage
    */
-  const saveDraft = useCallback((draft: Omit<ProjectDraft, 'savedAt'>) => {
+  const refreshDrafts = useCallback(() => {
+    const allDrafts = loadAllDrafts();
+    const draftList = Object.values(allDrafts)
+      .filter(draft => hasMeaningfulContent(draft))
+      .sort((a, b) => b.savedAt - a.savedAt); // Most recent first
+    setDrafts(draftList);
+  }, [loadAllDrafts]);
+
+  // Load drafts on mount
+  useEffect(() => {
+    refreshDrafts();
+  }, [refreshDrafts]);
+
+  /**
+   * Save a draft to localStorage
+   */
+  const saveDraft = useCallback((draftId: string, draft: Omit<ProjectDraft, 'savedAt' | 'draftId'>) => {
     try {
       // Only save if there's meaningful content
       if (!hasMeaningfulContent(draft)) {
-        // If no meaningful content, clear any existing draft
-        localStorage.removeItem(STORAGE_KEY);
+        // If no meaningful content, remove this draft if it exists
+        const allDrafts = loadAllDrafts();
+        if (allDrafts[draftId]) {
+          delete allDrafts[draftId];
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(allDrafts));
+          refreshDrafts();
+        }
         return;
       }
 
-      const draftWithTimestamp: ProjectDraft = {
+      const allDrafts = loadAllDrafts();
+      allDrafts[draftId] = {
         ...draft,
+        draftId,
         savedAt: Date.now()
       };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(draftWithTimestamp));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(allDrafts));
+      refreshDrafts();
     } catch (error) {
       console.error('Error saving project draft to localStorage:', error);
     }
-  }, [hasMeaningfulContent]);
+  }, [loadAllDrafts, refreshDrafts]);
 
   /**
-   * Load the saved draft from localStorage
-   * Returns null if no draft exists or if it's expired (older than 7 days)
+   * Load a specific draft by ID
    */
-  const loadDraft = useCallback((): ProjectDraft | null => {
+  const loadDraft = useCallback((draftId: string): ProjectDraft | null => {
+    const allDrafts = loadAllDrafts();
+    return allDrafts[draftId] || null;
+  }, [loadAllDrafts]);
+
+  /**
+   * Delete a specific draft by ID
+   */
+  const deleteDraft = useCallback((draftId: string) => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (!saved) return null;
-
-      const draft: ProjectDraft = JSON.parse(saved);
-      
-      // Check if draft is older than 7 days
-      const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
-      if (draft.savedAt < sevenDaysAgo) {
-        localStorage.removeItem(STORAGE_KEY);
-        return null;
+      const allDrafts = loadAllDrafts();
+      if (allDrafts[draftId]) {
+        delete allDrafts[draftId];
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(allDrafts));
+        refreshDrafts();
       }
-
-      return draft;
     } catch (error) {
-      console.error('Error loading project draft from localStorage:', error);
-      return null;
+      console.error('Error deleting project draft from localStorage:', error);
     }
-  }, []);
+  }, [loadAllDrafts, refreshDrafts]);
 
   /**
-   * Clear the saved draft from localStorage
-   * Call this when the project is successfully saved
+   * Delete a draft by editing project ID (when a project is saved)
    */
-  const clearDraft = useCallback(() => {
+  const deleteDraftByProjectId = useCallback((projectId: string) => {
+    try {
+      const allDrafts = loadAllDrafts();
+      let modified = false;
+
+      Object.entries(allDrafts).forEach(([draftId, draft]) => {
+        if (draft.editingProjectId === projectId) {
+          delete allDrafts[draftId];
+          modified = true;
+        }
+      });
+
+      if (modified) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(allDrafts));
+        refreshDrafts();
+      }
+    } catch (error) {
+      console.error('Error deleting draft by project ID:', error);
+    }
+  }, [loadAllDrafts, refreshDrafts]);
+
+  /**
+   * Clear all drafts from localStorage
+   */
+  const clearAllDrafts = useCallback(() => {
     try {
       localStorage.removeItem(STORAGE_KEY);
+      setDrafts([]);
     } catch (error) {
-      console.error('Error clearing project draft from localStorage:', error);
+      console.error('Error clearing project drafts from localStorage:', error);
     }
   }, []);
 
   /**
-   * Check if there's a saved draft available
+   * Check if there are any pending drafts
    */
-  const hasDraft = useCallback((): boolean => {
-    const draft = loadDraft();
-    return draft !== null && hasMeaningfulContent(draft);
-  }, [loadDraft, hasMeaningfulContent]);
-
-  /**
-   * Get the timestamp of when the draft was last saved
-   */
-  const getDraftTimestamp = useCallback((): Date | null => {
-    const draft = loadDraft();
-    return draft ? new Date(draft.savedAt) : null;
-  }, [loadDraft]);
+  const hasDrafts = useCallback((): boolean => {
+    return drafts.length > 0;
+  }, [drafts]);
 
   return {
+    drafts,
     saveDraft,
     loadDraft,
-    clearDraft,
-    hasDraft,
-    getDraftTimestamp,
-    defaultDraft: DEFAULT_DRAFT
+    deleteDraft,
+    deleteDraftByProjectId,
+    clearAllDrafts,
+    hasDrafts,
+    refreshDrafts,
+    defaultDraftValues: DEFAULT_DRAFT_VALUES
   };
 }
 

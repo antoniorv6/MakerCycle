@@ -139,6 +139,12 @@ export default function Dashboard({ initialPage }: { initialPage?: string } = {}
   }
 
   const handlePageChange = (page: string, tab?: string) => {
+    // Clear loadedProject when navigating away from calculator
+    // The draft system will preserve unsaved changes
+    if (currentPage === 'calculator' && page !== 'calculator') {
+      setLoadedProject(null);
+    }
+
     setCurrentPage(page)
     if (page === 'settings' && tab) {
       setSettingsTab(tab)
