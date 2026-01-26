@@ -1,7 +1,7 @@
 'use client'
 
 import React, { createContext, useContext, ReactNode } from 'react';
-import { useUserCurrency } from '@/hooks/useUserCurrency';
+import { useUserCurrency, CURRENCIES } from '@/hooks/useUserCurrency';
 import type { CurrencyCode } from '@/hooks/useUserCurrency';
 
 interface CurrencyContextType {
@@ -9,6 +9,8 @@ interface CurrencyContextType {
   currencySymbol: string;
   currencyInfo: { code: string; symbol: string; name: string };
   loading: boolean;
+  saveUserCurrency: (newCurrency: CurrencyCode) => Promise<void>;
+  currencies: typeof CURRENCIES;
 }
 
 const CurrencyContext = createContext<CurrencyContextType | undefined>(undefined);
@@ -26,10 +28,17 @@ interface CurrencyProviderProps {
 }
 
 export function CurrencyProvider({ children }: CurrencyProviderProps) {
-  const { currency, currencySymbol, currencyInfo, loading } = useUserCurrency();
+  const { currency, currencySymbol, currencyInfo, loading, saveUserCurrency } = useUserCurrency();
 
   return (
-    <CurrencyContext.Provider value={{ currency, currencySymbol, currencyInfo, loading }}>
+    <CurrencyContext.Provider value={{ 
+      currency, 
+      currencySymbol, 
+      currencyInfo, 
+      loading,
+      saveUserCurrency,
+      currencies: CURRENCIES
+    }}>
       {children}
     </CurrencyContext.Provider>
   );

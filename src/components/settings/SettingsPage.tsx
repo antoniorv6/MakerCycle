@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { Save, Building2, User, Shield, Bell, Palette, Settings, Package, DollarSign, Paintbrush } from 'lucide-react'
 import { Printer3D } from '@/components/icons/Printer3D'
 import { useCompanySettings } from '@/hooks/useCompanySettings'
-import { useUserCurrency } from '@/hooks/useUserCurrency'
+import { useCurrency } from '@/components/providers/CurrencyProvider'
 import MaterialPresetsManager from './MaterialPresetsManager'
 import PostprocessingPresetsManager from './PostprocessingPresetsManager'
 import PrinterPresetsManager from './PrinterPresetsManager'
@@ -16,7 +16,7 @@ interface SettingsPageProps {
 export default function SettingsPage({ initialTab = 'company' }: SettingsPageProps) {
   const [activeTab, setActiveTab] = useState(initialTab)
   const { companyData, saveCompanyData, isLoading } = useCompanySettings()
-  const { currency, currencySymbol, saveUserCurrency, currencies, loading: currencyLoading } = useUserCurrency()
+  const { currency, currencySymbol, saveUserCurrency, currencies, loading: currencyLoading } = useCurrency()
   const [formData, setFormData] = useState(companyData)
   const [isSaving, setIsSaving] = useState(false)
   const [saveMessage, setSaveMessage] = useState('')
@@ -304,8 +304,22 @@ export default function SettingsPage({ initialTab = 'company' }: SettingsPagePro
                     Moneda actual: <span className="font-medium">{currencySymbol} ({currency})</span>
                   </p>
                 </div>
+              </div>
+            )}
 
-                <div className="pt-4 border-t border-gray-200">
+            {/* Save Button for Currency */}
+            {activeTab === 'currency' && (
+              <div className="mt-8 pt-6 border-t border-gray-200">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    {currencySaveMessage && (
+                      <span className={`text-sm ${
+                        currencySaveMessage.includes('Error') ? 'text-red-600' : 'text-green-600'
+                      }`}>
+                        {currencySaveMessage}
+                      </span>
+                    )}
+                  </div>
                   <button
                     onClick={async () => {
                       if (selectedCurrency === currency) return;
@@ -325,18 +339,11 @@ export default function SettingsPage({ initialTab = 'company' }: SettingsPagePro
                       }
                     }}
                     disabled={isSavingCurrency || currencyLoading || selectedCurrency === currency}
-                    className="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-2"
+                    className="px-6 py-3 bg-brand-600 text-white rounded-lg hover:bg-brand-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-2 shadow-md hover:shadow-lg"
                   >
                     <Save className="w-4 h-4" />
                     <span>{isSavingCurrency ? 'Guardando...' : 'Guardar Moneda'}</span>
                   </button>
-                  {currencySaveMessage && (
-                    <p className={`mt-2 text-sm ${
-                      currencySaveMessage.includes('Error') ? 'text-red-600' : 'text-green-600'
-                    }`}>
-                      {currencySaveMessage}
-                    </p>
-                  )}
                 </div>
               </div>
             )}
@@ -402,7 +409,7 @@ export default function SettingsPage({ initialTab = 'company' }: SettingsPagePro
                   <button
                     onClick={handleSave}
                     disabled={isSaving || isLoading}
-                    className="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-2"
+                    className="px-6 py-3 bg-brand-600 text-white rounded-lg hover:bg-brand-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-2 shadow-md hover:shadow-lg"
                   >
                     <Save className="w-4 h-4" />
                     <span>{isSaving ? 'Guardando...' : 'Guardar Configuración'}</span>

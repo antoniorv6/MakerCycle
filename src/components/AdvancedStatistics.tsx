@@ -372,6 +372,8 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
     };
   }, [filteredSales, filteredExpenses, sales, expenses, timeRange]);
 
+  const { formatCurrency, currencySymbol } = useFormatCurrency();
+
   // Análisis de insights
   const insights = useMemo(() => {
     const insights = [];
@@ -424,11 +426,10 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
     }
     
     return insights;
-  }, [stats, projectDistribution]);
+  }, [stats, projectDistribution, currencySymbol]);
 
   const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
 
-  const { formatCurrency, currencySymbol } = useFormatCurrency();
   const formatPercentage = (value: number) => `${value.toFixed(1)}%`;
 
   // Utilidad para mensajes vacíos
