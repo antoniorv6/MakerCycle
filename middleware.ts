@@ -6,6 +6,20 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string
 
 export async function middleware(req: NextRequest) {
+  // Verificar si el modo mantenimiento está activo
+  const maintenanceMode = process.env.MAINTENANCE_MODE === 'true'
+  
+  // Si el modo mantenimiento está activo y no estamos ya en la página de mantenimiento,
+  // redirigir a la página de mantenimiento
+  if (maintenanceMode && req.nextUrl.pathname !== '/maintenance') {
+    return NextResponse.redirect(new URL('/maintenance', req.url))
+  }
+
+  // Si estamos en modo mantenimiento y ya estamos en /maintenance, permitir el acceso
+  if (maintenanceMode && req.nextUrl.pathname === '/maintenance') {
+    return NextResponse.next()
+  }
+
   const res = NextResponse.next()
   const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
     cookies: {

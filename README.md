@@ -224,6 +224,7 @@ MakerCycle/
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Clave anónima de Supabase | ✅ | - |
 | `SUPABASE_SERVICE_ROLE_KEY` | Clave de servicio de Supabase | ✅ | - |
 | `NEXT_PUBLIC_GA_ID` | Google Analytics ID | ❌ | - |
+| `MAINTENANCE_MODE` | Activa el modo mantenimiento (bloquea acceso excepto /maintenance) | ❌ | `false` |
 
 ### Scripts Disponibles
 
