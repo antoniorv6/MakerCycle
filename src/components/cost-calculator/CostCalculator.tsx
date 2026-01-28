@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Calculator, Zap } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { Calculator } from 'lucide-react';
 import { createClient } from '@/lib/supabase';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useTeam } from '@/components/providers/TeamProvider';
@@ -7,7 +7,6 @@ import { toast } from 'react-hot-toast';
 import CalculatorSkeleton from '@/components/skeletons/CalculatorSkeleton';
 import TeamContextBanner from '@/components/TeamContextBanner';
 import ProjectInfo from './forms/ProjectInfo';
-import FilamentSection from './forms/FilamentSection';
 import PiecesSection from './forms/PiecesSection';
 import ElectricitySection from './forms/ElectricitySection';
 import MaterialsSection from './forms/MaterialsSection';
@@ -15,37 +14,35 @@ import PricingConfig from './forms/PricingConfig';
 import ProjectSummaryPanel from './panels/ProjectSummaryPanel';
 import CostBreakdownPanel from './panels/CostBreakdownPanel';
 import SalePricePanel from './panels/SalePricePanel';
-import StickyNotesManager from './StickyNotesManager';
 import DisasterModeButton from './DisasterModeButton';
 import StickyNote from './StickyNote';
 import ConfirmModal from './ConfirmModal';
 import { useCostCalculations } from './hooks/useCostCalculations';
 import ProjectSavedSummary from './ProjectSavedSummary';
+import { usePostprocessingPresets } from '@/hooks/usePostprocessingPresets';
+import { usePrinterPresets } from '@/hooks/usePrinterPresets';
+import { useProjectDraft, generateDraftId, type ProjectDraft } from './hooks/useProjectDraft';
 import type { DatabaseProject, DatabasePiece, PieceMaterial } from '@/types';
 
 // Function to process pieces (solo sistema multi-material)
 async function processPieces(
-  pieces: (DatabasePiece & { piece_materials?: PieceMaterial[] })[], 
+  pieces: (DatabasePiece & { piece_materials?: PieceMaterial[] })[],
   supabase: any
 ): Promise<DatabasePiece[]> {
   const processedPieces = await Promise.all(
     pieces.map(async (piece) => {
-      // Solo usar materiales del sistema multi-material
       if (piece.piece_materials && piece.piece_materials.length > 0) {
         return {
           ...piece,
           materials: piece.piece_materials
         };
       }
-      
-      // Si no tiene materiales, devolver la pieza sin materiales
       return {
         ...piece,
         materials: []
       };
     })
   );
-  
   return processedPieces;
 }
 
@@ -53,6 +50,7 @@ interface CostCalculatorProps {
   loadedProject?: DatabaseProject & { pieces?: DatabasePiece[] };
   onProjectSaved?: (project: DatabaseProject) => void;
   onNavigateToSettings?: () => void;
+  onEditingComplete?: () => void;
   importedData?: {
     pieces: Array<{
       id: string;
@@ -77,23 +75,53 @@ interface CostCalculatorProps {
     }>;
     projectName: string;
   };
+  loadedDraft?: ProjectDraft | null;
 }
 
-const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjectSaved, onNavigateToSettings, importedData }: CostCalculatorProps) => {
+const CostCalculator: React.FC<CostCalculatorProps> = ({
+  loadedProject,
+  onProjectSaved,
+  onNavigateToSettings,
+  onEditingComplete,
+  importedData,
+  loadedDraft
+}) => {
   const { user } = useAuth();
   const { getEffectiveTeam } = useTeam();
+  const { presets: postprocessingPresets } = usePostprocessingPresets();
+  const { presets: printerPresets, defaultPreset: defaultPrinter } = usePrinterPresets();
+  const { saveDraft, deleteDraft, deleteDraftByProjectId } = useProjectDraft();
+
   const [isSaving, setIsSaving] = useState(false);
   const [savedProject, setSavedProject] = useState<DatabaseProject & { pieces?: DatabasePiece[] } | null>(null);
   const supabase = createClient();
   const [loading, setLoading] = useState(true);
+
+  // Current draft ID - generated when creating new project or set when editing/loading draft
+  const [currentDraftId, setCurrentDraftId] = useState<string | null>(null);
+
+  // Form state
   const [projectName, setProjectName] = useState('');
+  const [projectType, setProjectType] = useState<'filament' | 'resin'>('filament');
   const [filamentPrice, setFilamentPrice] = useState(25);
   const [printHours, setPrintHours] = useState(0);
   const [electricityCost, setElectricityCost] = useState(0.12);
   const [printerPower, setPrinterPower] = useState(0.35);
   const [vatPercentage, setVatPercentage] = useState(21);
   const [profitMargin, setProfitMargin] = useState(15);
+  const [selectedPrinterId, setSelectedPrinterId] = useState<string | null>(null);
   const [materials, setMaterials] = useState<Array<{ id: string; name: string; price: number }>>([]);
+  const [postprocessingItems, setPostprocessingItems] = useState<Array<{
+    id: string;
+    name: string;
+    cost_per_unit: number;
+    quantity: number;
+    unit: string;
+    preset_id?: string | null;
+    is_from_preset: boolean;
+    description?: string;
+    category?: string;
+  }>>([]);
   const [pieces, setPieces] = useState<Array<{
     id: string;
     name: string;
@@ -122,7 +150,7 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
     printHours: 0,
     quantity: 1,
     notes: '',
-    materials: [] // Empezar sin materiales para evitar materiales vacíos
+    materials: []
   }]);
   const [isDisasterMode, setIsDisasterMode] = useState(false);
   const [disasterModeNotes, setDisasterModeNotes] = useState<Array<{
@@ -136,109 +164,221 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
   const [nextNoteId, setNextNoteId] = useState(1);
   const [showClearModal, setShowClearModal] = useState(false);
 
-  useEffect(() => {
-    if (loadedProject) {
-      setProjectName(loadedProject.name);
-      setFilamentPrice(loadedProject.filament_price);
-      setPrintHours(loadedProject.print_hours);
-      setElectricityCost(loadedProject.electricity_cost);
-      setVatPercentage(loadedProject.vat_percentage);
-      setProfitMargin(loadedProject.profit_margin);
-      setMaterials(loadedProject.materials || []);
-      
-      // Para proyectos existentes, usar valor por defecto de potencia
-      // La potencia no se guarda en la base de datos, por lo que usamos el valor por defecto
-      setPrinterPower(0.35);
+  // Ref to track if initial setup is complete
+  const initializedRef = useRef(false);
 
-      if (loadedProject.pieces && loadedProject.pieces.length > 0) {
-        const mappedPieces = loadedProject.pieces.map(piece => {
-          
-          // Si la pieza tiene materiales del sistema multi-material, usarlos
-          let materials: Array<{
-            id: string;
-            materialName: string;
-            materialType: string;
-            weight: number;
-            pricePerKg: number;
-            unit: string;
-            category: 'filament' | 'resin';
-            color?: string;
-            brand?: string;
-            notes?: string;
-          }> = [];
-          if (piece.materials && piece.materials.length > 0) {
-            materials = piece.materials.filter(material => material.weight > 0).map(material => {
-              return {
-                id: material.id,
-                materialName: material.material_name || 'Material sin nombre',
-                materialType: material.material_type || 'PLA',
-                weight: material.weight,
-                pricePerKg: material.price_per_kg || 25,
-                unit: material.unit || 'g',
-                category: material.category || 'filament',
-                color: material.color || '#808080',
-                brand: material.brand || '',
-                notes: material.notes || ''
-              };
-            });
-          } 
-          // Si no tiene materiales pero tiene datos legacy, migrarlos
-          else if (piece.filament_weight > 0 && piece.filament_price > 0) {
-            materials = [{
-              id: `legacy-${piece.id}-${Date.now()}`,
-              materialName: 'Filamento Principal',
-              materialType: 'PLA',
-              weight: piece.filament_weight,
-              pricePerKg: piece.filament_price,
-              unit: 'g',
-              category: 'filament' as const,
-              color: '#808080',
-              brand: 'Sistema Legacy',
-              notes: 'Migrado automáticamente desde el sistema anterior'
-            }];
-          }
-          
-          const mappedPiece = {
-            id: piece.id,
-            name: piece.name,
-            filamentWeight: piece.filament_weight,
-            filamentPrice: piece.filament_price,
-            printHours: piece.print_hours,
-            quantity: piece.quantity,
-            notes: piece.notes || '',
-            materials: materials
-          };
-          
-          
-          return mappedPiece;
-        });
-        setPieces(mappedPieces);
+  // Track editing project ID (from loadedProject or loaded draft)
+  const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
+
+  // Derive if editing existing project
+  const isEditingExistingProject = !!(loadedProject || editingProjectId);
+
+  // Initialize component - set up draft ID and load data
+  useEffect(() => {
+    if (initializedRef.current) return;
+    initializedRef.current = true;
+
+    if (loadedProject) {
+      // Editing existing project - use project ID as draft ID prefix
+      const draftId = `edit-${loadedProject.id}`;
+      setCurrentDraftId(draftId);
+      setEditingProjectId(loadedProject.id);
+      loadProjectData(loadedProject);
+    } else if (loadedDraft) {
+      // Loading from a draft passed from ModeSelection
+      setCurrentDraftId(loadedDraft.draftId);
+      setEditingProjectId(loadedDraft.editingProjectId || null);
+
+      // Restore all state from the draft
+      setProjectName(loadedDraft.projectName);
+      setProjectType(loadedDraft.projectType);
+      setFilamentPrice(loadedDraft.filamentPrice);
+      setPrintHours(loadedDraft.printHours);
+      setElectricityCost(loadedDraft.electricityCost);
+      setPrinterPower(loadedDraft.printerPower);
+      setVatPercentage(loadedDraft.vatPercentage);
+      setProfitMargin(loadedDraft.profitMargin);
+      setSelectedPrinterId(loadedDraft.selectedPrinterId);
+      setMaterials(loadedDraft.materials);
+      setPostprocessingItems(loadedDraft.postprocessingItems);
+      setPieces(loadedDraft.pieces);
+      setIsDisasterMode(loadedDraft.isDisasterMode);
+      setDisasterModeNotes(loadedDraft.disasterModeNotes);
+
+      if (loadedDraft.disasterModeNotes.length > 0) {
+        const maxId = loadedDraft.disasterModeNotes.reduce((max, note) => {
+          const match = note.id.match(/disaster-note-(\d+)/);
+          return match ? Math.max(max, parseInt(match[1], 10)) : max;
+        }, 0);
+        setNextNoteId(maxId + 1);
       }
     } else if (importedData) {
-      // Manejar datos importados desde archivo
+      // Imported data - generate new draft ID
+      const draftId = generateDraftId();
+      setCurrentDraftId(draftId);
       setProjectName(importedData.projectName);
       setPieces(importedData.pieces);
-      
-      // Calcular precio promedio del filamento de las piezas importadas
       if (importedData.pieces.length > 0) {
         const avgFilamentPrice = importedData.pieces.reduce((sum, piece) => sum + piece.filamentPrice, 0) / importedData.pieces.length;
         setFilamentPrice(avgFilamentPrice);
       }
+    } else {
+      // New project - generate new draft ID
+      const draftId = generateDraftId();
+      setCurrentDraftId(draftId);
     }
+
     setLoading(false);
-  }, [loadedProject, importedData]);
+  }, [loadedProject, importedData, loadedDraft]);
+
+  // Load project data from loadedProject
+  const loadProjectData = (project: DatabaseProject & { pieces?: DatabasePiece[] }) => {
+    setProjectName(project.name);
+    setProjectType(project.project_type || 'filament');
+    setFilamentPrice(project.filament_price);
+    setPrintHours(project.print_hours);
+    setElectricityCost(project.electricity_cost);
+    setVatPercentage(project.vat_percentage);
+    setProfitMargin(project.profit_margin);
+    setMaterials(project.materials || []);
+
+    if (project.postprocessing_items && Array.isArray(project.postprocessing_items) && project.postprocessing_items.length > 0) {
+      setPostprocessingItems(project.postprocessing_items);
+    } else if (project.materials && project.materials.length > 0) {
+      const migratedItems = project.materials.map((m: any) => ({
+        id: m.id || `migrated-${Date.now()}-${Math.random()}`,
+        name: m.name,
+        cost_per_unit: m.price,
+        quantity: 1,
+        unit: 'unidad',
+        preset_id: null,
+        is_from_preset: false
+      }));
+      setPostprocessingItems(migratedItems);
+    } else {
+      setPostprocessingItems([]);
+    }
+
+    setPrinterPower(0.35);
+
+    if (project.pieces && project.pieces.length > 0) {
+      const mappedPieces = project.pieces.map(piece => {
+        let materials: Array<{
+          id: string;
+          materialName: string;
+          materialType: string;
+          weight: number;
+          pricePerKg: number;
+          unit: string;
+          category: 'filament' | 'resin';
+          color?: string;
+          brand?: string;
+          notes?: string;
+        }> = [];
+
+        if (piece.materials && piece.materials.length > 0) {
+          materials = piece.materials.filter(material => material.weight > 0).map(material => ({
+            id: material.id,
+            materialName: material.material_name || 'Material sin nombre',
+            materialType: material.material_type || 'PLA',
+            weight: material.weight,
+            pricePerKg: material.price_per_kg || 25,
+            unit: material.unit || 'g',
+            category: material.category || 'filament',
+            color: material.color || '#808080',
+            brand: material.brand || '',
+            notes: material.notes || ''
+          }));
+        } else if (piece.filament_weight > 0 && piece.filament_price > 0) {
+          materials = [{
+            id: `legacy-${piece.id}-${Date.now()}`,
+            materialName: 'Filamento Principal',
+            materialType: 'PLA',
+            weight: piece.filament_weight,
+            pricePerKg: piece.filament_price,
+            unit: 'g',
+            category: 'filament' as const,
+            color: '#808080',
+            brand: 'Sistema Legacy',
+            notes: 'Migrado automáticamente desde el sistema anterior'
+          }];
+        }
+
+        return {
+          id: piece.id,
+          name: piece.name,
+          filamentWeight: piece.filament_weight,
+          filamentPrice: piece.filament_price,
+          printHours: piece.print_hours,
+          quantity: piece.quantity,
+          notes: piece.notes || '',
+          materials: materials
+        };
+      });
+      setPieces(mappedPieces);
+    }
+  };
+
+  // Auto-save draft when state changes
+  useEffect(() => {
+    if (!currentDraftId || loading) return;
+
+    saveDraft(currentDraftId, {
+      projectName,
+      projectType,
+      filamentPrice,
+      printHours,
+      electricityCost,
+      printerPower,
+      vatPercentage,
+      profitMargin,
+      selectedPrinterId,
+      materials,
+      postprocessingItems,
+      pieces,
+      isDisasterMode,
+      disasterModeNotes,
+      editingProjectId: loadedProject?.id || editingProjectId || null
+    });
+  }, [
+    currentDraftId,
+    projectName,
+    projectType,
+    filamentPrice,
+    printHours,
+    electricityCost,
+    printerPower,
+    vatPercentage,
+    profitMargin,
+    selectedPrinterId,
+    materials,
+    postprocessingItems,
+    pieces,
+    isDisasterMode,
+    disasterModeNotes,
+    loadedProject?.id,
+    editingProjectId,
+    loading,
+    saveDraft
+  ]);
+
+  // Set default printer when loaded
+  useEffect(() => {
+    if (defaultPrinter && !selectedPrinterId && !loadedProject) {
+      setSelectedPrinterId(defaultPrinter.id);
+      setPrinterPower(defaultPrinter.power_consumption);
+    }
+  }, [defaultPrinter, selectedPrinterId, loadedProject]);
 
   const calculateTotalFilamentWeight = () => {
     return pieces.reduce((sum, piece) => {
       if (piece.materials && piece.materials.length > 0) {
-        // Usar la nueva estructura de materiales
         const pieceWeight = piece.materials.reduce((materialSum, material) => {
           const weightInGrams = material.unit === 'kg' ? material.weight * 1000 : material.weight;
           return materialSum + weightInGrams;
         }, 0);
         return sum + (pieceWeight * piece.quantity);
       } else {
-        // Fallback a la estructura antigua para compatibilidad
         return sum + (piece.filamentWeight * piece.quantity);
       }
     }, 0);
@@ -259,10 +399,12 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
     electricityCost,
     printerPower,
     materials,
+    postprocessingItems,
     vatPercentage,
     profitMargin
   });
 
+  // Material handlers
   const addMaterial = () => {
     setMaterials([...materials, {
       id: Date.now().toString(),
@@ -281,6 +423,56 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
     setMaterials(materials.filter(material => material.id !== id));
   };
 
+  // Postprocessing handlers
+  const addPostprocessingItem = () => {
+    setPostprocessingItems([...postprocessingItems, {
+      id: Date.now().toString(),
+      name: '',
+      cost_per_unit: 0,
+      quantity: 1,
+      unit: 'unidad',
+      preset_id: null,
+      is_from_preset: false
+    }]);
+  };
+
+  const updatePostprocessingItem = (id: string, field: 'name' | 'cost_per_unit' | 'quantity' | 'unit' | 'description' | 'category', value: string | number) => {
+    setPostprocessingItems(postprocessingItems.map(item =>
+      item.id === id ? { ...item, [field]: value } : item
+    ));
+  };
+
+  const removePostprocessingItem = (id: string) => {
+    setPostprocessingItems(postprocessingItems.filter(item => item.id !== id));
+  };
+
+  const loadPostprocessingPreset = (presetId: string) => {
+    const preset = postprocessingPresets.find(p => p.id === presetId);
+    if (preset) {
+      setPostprocessingItems([...postprocessingItems, {
+        id: Date.now().toString(),
+        name: preset.name,
+        cost_per_unit: preset.cost_per_unit,
+        quantity: 1,
+        unit: preset.unit,
+        preset_id: preset.id,
+        is_from_preset: true,
+        description: preset.description || undefined,
+        category: preset.category || undefined
+      }]);
+      toast.success(`Preset "${preset.name}" cargado`);
+    }
+  };
+
+  const savePostprocessingItemAsPreset = async (item: typeof postprocessingItems[0]) => {
+    if (!user) {
+      toast.error('Debes iniciar sesión para guardar presets');
+      return;
+    }
+    toast.success('Funcionalidad de guardar preset próximamente');
+  };
+
+  // Piece handlers
   const addPiece = useCallback(() => {
     const newPiece = {
       id: Date.now().toString(),
@@ -290,7 +482,7 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
       printHours: 0,
       quantity: 1,
       notes: '',
-      materials: [] // Empezar sin materiales para evitar materiales vacíos
+      materials: []
     };
     setPieces(prevPieces => [...prevPieces, newPiece]);
   }, [pieces.length, filamentPrice]);
@@ -323,38 +515,42 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
     }
   }, [pieces]);
 
-  // Funciones para manejar materiales de piezas (memoizadas)
+  // Piece material handlers
   const addMaterialToPiece = useCallback((pieceId: string) => {
+    const defaultUnit = projectType === 'resin' ? 'ml' : 'g';
+    const defaultCategory = projectType;
+    const defaultMaterialType = projectType === 'resin' ? 'Resina' : 'PLA';
+
     const newMaterial = {
       id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
       materialName: 'Nuevo material',
-      materialType: 'PLA',
-      weight: 1, // Empezar con peso 1g en lugar de 0
+      materialType: defaultMaterialType,
+      weight: 1,
       pricePerKg: 25,
-      unit: 'g',
-      category: 'filament' as const,
+      unit: defaultUnit,
+      category: defaultCategory as 'filament' | 'resin',
       color: '#808080',
       brand: '',
       notes: ''
     };
 
-    setPieces(prevPieces => prevPieces.map(piece => 
-      piece.id === pieceId 
-        ? { 
-            ...piece, 
-            materials: [...(piece.materials || []), newMaterial] 
+    setPieces(prevPieces => prevPieces.map(piece =>
+      piece.id === pieceId
+        ? {
+            ...piece,
+            materials: [...(piece.materials || []), newMaterial]
           }
         : piece
     ));
-  }, []);
+  }, [projectType]);
 
   const updatePieceMaterial = useCallback((pieceId: string, materialId: string, field: string, value: string | number) => {
-    setPieces(prevPieces => prevPieces.map(piece => 
-      piece.id === pieceId 
+    setPieces(prevPieces => prevPieces.map(piece =>
+      piece.id === pieceId
         ? {
             ...piece,
             materials: piece.materials?.map(material =>
-              material.id === materialId 
+              material.id === materialId
                 ? { ...material, [field]: value }
                 : material
             ) || []
@@ -364,8 +560,8 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
   }, []);
 
   const removePieceMaterial = useCallback((pieceId: string, materialId: string) => {
-    setPieces(prevPieces => prevPieces.map(piece => 
-      piece.id === pieceId 
+    setPieces(prevPieces => prevPieces.map(piece =>
+      piece.id === pieceId
         ? {
             ...piece,
             materials: piece.materials?.filter(material => material.id !== materialId) || []
@@ -374,17 +570,30 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
     ));
   }, []);
 
+  // Reset form to defaults
   const resetForm = () => {
-    if (isSaving) {
-      return; // Prevent reset while saving
+    if (isSaving) return;
+
+    // Delete the current draft
+    if (currentDraftId) {
+      deleteDraft(currentDraftId);
     }
+
+    // Generate new draft ID
+    const newDraftId = generateDraftId();
+    setCurrentDraftId(newDraftId);
+    setEditingProjectId(null);
+
+    // Reset all state to defaults
     setProjectName('');
+    setProjectType('filament');
     setFilamentPrice(25);
     setPrintHours(0);
     setElectricityCost(0.12);
     setVatPercentage(21);
     setProfitMargin(15);
     setMaterials([]);
+    setPostprocessingItems([]);
     setPieces([{
       id: '1',
       name: 'Pieza principal',
@@ -393,14 +602,15 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
       printHours: 0,
       quantity: 1,
       notes: '',
-      materials: [] // Empezar sin materiales para evitar materiales vacíos
+      materials: []
     }]);
+    setIsDisasterMode(false);
+    setDisasterModeNotes([]);
   };
 
   const handleEditProject = async () => {
     if (savedProject) {
       try {
-        // Fetch pieces for the project with their materials from the database
         const { data: pieces, error } = await supabase
           .from('pieces')
           .select(`
@@ -415,31 +625,65 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
           return;
         }
 
-        // Process pieces to include materials
         const processedPieces = await processPieces(pieces || [], supabase);
-        
-        // Create the project with processed pieces
-        const projectWithPieces = { 
-          ...savedProject, 
-          pieces: processedPieces 
+
+        const projectWithPieces = {
+          ...savedProject,
+          pieces: processedPieces
         };
 
-        // Update the loadedProject by calling onProjectSaved with the complete project
+        setSavedProject(null);
         onProjectSaved?.(projectWithPieces);
       } catch (error) {
         console.error('Error loading project for editing:', error);
         toast.error('No se pudo cargar el proyecto para editar. Intenta de nuevo.');
       }
+    } else {
+      setSavedProject(null);
     }
-    
-    setSavedProject(null);
   };
 
   const handleNewProject = () => {
     setSavedProject(null);
-    resetForm();
+
+    if (isEditingExistingProject) {
+      onEditingComplete?.();
+    }
+
+    // Delete the current draft since the project was saved
+    if (currentDraftId) {
+      deleteDraft(currentDraftId);
+    }
+
+    // Generate new draft ID and reset form
+    const newDraftId = generateDraftId();
+    setCurrentDraftId(newDraftId);
+    setEditingProjectId(null);
+
+    setProjectName('');
+    setProjectType('filament');
+    setFilamentPrice(25);
+    setPrintHours(0);
+    setElectricityCost(0.12);
+    setVatPercentage(21);
+    setProfitMargin(15);
+    setMaterials([]);
+    setPostprocessingItems([]);
+    setPieces([{
+      id: '1',
+      name: 'Pieza principal',
+      filamentWeight: 0,
+      filamentPrice: 25,
+      printHours: 0,
+      quantity: 1,
+      notes: '',
+      materials: []
+    }]);
+    setIsDisasterMode(false);
+    setDisasterModeNotes([]);
   };
 
+  // Disaster mode handlers
   const colors = ['yellow', 'pink', 'blue', 'green', 'purple', 'orange'];
 
   const addDisasterNote = () => {
@@ -454,13 +698,13 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
       color: colors[Math.floor(Math.random() * colors.length)],
       size: 'medium' as const
     };
-    
+
     setDisasterModeNotes(prev => [...prev, newNote]);
     setNextNoteId(prev => prev + 1);
   };
 
   const updateDisasterNote = (id: string, field: 'title' | 'content', value: string) => {
-    setDisasterModeNotes(prev => prev.map(note => 
+    setDisasterModeNotes(prev => prev.map(note =>
       note.id === id ? { ...note, [field]: value } : note
     ));
   };
@@ -470,22 +714,22 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
   };
 
   const moveDisasterNote = (id: string, position: { x: number; y: number }) => {
-    setDisasterModeNotes(prev => prev.map(note => 
+    setDisasterModeNotes(prev => prev.map(note =>
       note.id === id ? { ...note, position } : note
     ));
   };
 
   const changeDisasterNoteColor = (id: string) => {
-    setDisasterModeNotes(prev => prev.map(note => 
-      note.id === id 
+    setDisasterModeNotes(prev => prev.map(note =>
+      note.id === id
         ? { ...note, color: colors[(colors.indexOf(note.color) + 1) % colors.length] }
         : note
     ));
   };
 
   const changeDisasterNoteSize = (id: string) => {
-    setDisasterModeNotes(prev => prev.map(note => 
-      note.id === id 
+    setDisasterModeNotes(prev => prev.map(note =>
+      note.id === id
         ? { ...note, size: note.size === 'small' ? 'medium' : note.size === 'medium' ? 'large' : 'small' }
         : note
     ));
@@ -502,10 +746,9 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
     setShowClearModal(false);
   };
 
+  // Save project
   const saveProject = async () => {
-    if (isSaving) {
-      return; // Prevent multiple simultaneous saves
-    }
+    if (isSaving) return;
 
     if (!user) {
       toast.error('Debes iniciar sesión para guardar proyectos.');
@@ -520,7 +763,6 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
     setIsSaving(true);
 
     try {
-      // Ensure user profile exists
       const { data: existingProfile } = await supabase
         .from('profiles')
         .select('id')
@@ -530,13 +772,11 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
       if (!existingProfile) {
         const { error: profileError } = await supabase
           .from('profiles')
-          .insert([
-            {
-              id: user.id,
-              email: user.email,
-              full_name: user.user_metadata?.full_name || user.email,
-            }
-          ]);
+          .insert([{
+            id: user.id,
+            email: user.email,
+            full_name: user.user_metadata?.full_name || user.email,
+          }]);
 
         if (profileError) {
           console.error('Error creating profile:', profileError);
@@ -546,15 +786,16 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
         }
       }
 
-      // Prepare project object
       const project = {
         user_id: user.id,
         name: projectName,
+        project_type: projectType,
         filament_weight: totalFilamentWeight,
         filament_price: filamentPrice,
-        print_hours: totalPrintHours, // This is the total from all pieces
+        print_hours: totalPrintHours,
         electricity_cost: electricityCost,
         materials,
+        postprocessing_items: postprocessingItems.length > 0 ? postprocessingItems : null,
         total_cost: costs.total,
         vat_percentage: vatPercentage,
         profit_margin: profitMargin,
@@ -563,23 +804,22 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
         team_id: getEffectiveTeam()?.id || null,
       };
 
-      let projectId = loadedProject?.id;
+      const existingProjectId = loadedProject?.id || editingProjectId;
+      let projectId = existingProjectId;
       let projectData;
       let projectError;
 
-      if (loadedProject?.id) {
-        // Update existing project
+      if (existingProjectId) {
         const { data, error } = await supabase
           .from('projects')
           .update(project)
-          .eq('id', loadedProject.id)
+          .eq('id', existingProjectId)
           .select()
           .single();
         projectData = data;
         projectError = error;
-        projectId = loadedProject.id;
+        projectId = existingProjectId;
       } else {
-        // Insert new project
         const { data, error } = await supabase
           .from('projects')
           .insert([project])
@@ -596,20 +836,15 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
         return;
       }
 
-      // Handle pieces
       if (projectId) {
-        // Always delete all pieces and their materials for this project
-        await supabase.from('piece_materials').delete().in('piece_id', 
-          (await supabase.from('pieces').select('id').eq('project_id', projectId)).data?.map(p => p.id) || []
+        await supabase.from('piece_materials').delete().in('piece_id',
+          (await supabase.from('pieces').select('id').eq('project_id', projectId)).data?.map((p: { id: string }) => p.id) || []
         );
         await supabase.from('pieces').delete().eq('project_id', projectId);
 
-        // Guardar siempre todas las piezas, incluso si solo hay una y tiene el nombre por defecto
         const piecesToSave = pieces.map(piece => ({
           project_id: projectId,
           name: piece.name,
-          // Si la pieza tiene materiales multi-material, guardar filament_weight y filament_price como 0
-          // para que no se active la lógica de migración legacy
           filament_weight: (piece.materials && piece.materials.length > 0) ? 0 : piece.filamentWeight,
           filament_price: (piece.materials && piece.materials.length > 0) ? 0 : piece.filamentPrice,
           print_hours: piece.printHours,
@@ -627,15 +862,13 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
             console.error('Error saving pieces:', piecesError);
             toast.error('El proyecto se guardó, pero hubo un error al guardar las piezas.');
           } else if (savedPieces) {
-            // Save piece materials for each piece (only materials with weight > 0)
             const materialsToSave = [];
             for (let i = 0; i < pieces.length; i++) {
               const piece = pieces[i];
               const savedPiece = savedPieces[i];
-              
+
               if (piece.materials && piece.materials.length > 0) {
                 for (const material of piece.materials) {
-                  // Solo guardar materiales con peso > 0 para evitar materiales vacíos
                   if (material.weight > 0) {
                     materialsToSave.push({
                       piece_id: savedPiece.id,
@@ -669,9 +902,18 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
       }
 
       if (projectData) {
-        // After saving, fetch the complete project data from database including materials
+        // Delete the draft since project is now saved
+        if (currentDraftId) {
+          deleteDraft(currentDraftId);
+          setCurrentDraftId(null); // Prevent auto-save from re-creating the draft
+        }
+        // Also delete any drafts that were editing this project
+        if (projectId) {
+          deleteDraftByProjectId(projectId);
+        }
+
         try {
-          const { data: pieces, error: piecesError } = await supabase
+          const { data: fetchedPieces, error: piecesError } = await supabase
             .from('pieces')
             .select(`
               *,
@@ -681,75 +923,71 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
 
           if (piecesError) {
             console.error('Error fetching pieces after save:', piecesError);
-            toast.error('Proyecto guardado, pero no se pudieron cargar los materiales para el resumen.');
           }
 
-          // Process pieces to include materials
-          const processedPieces = pieces ? await processPieces(pieces, supabase) : [];
-          
-          // Create complete project with materials from database
+          const processedPieces = fetchedPieces ? await processPieces(fetchedPieces, supabase) : [];
+
           const projectWithPieces = {
             ...projectData,
             pieces: processedPieces
           };
-          
-          // Show project summary with complete data
+
           setSavedProject(projectWithPieces);
-          onProjectSaved?.(projectWithPieces);
+
+          setTimeout(() => {
+            onProjectSaved?.(projectWithPieces);
+          }, 0);
         } catch (error) {
           console.error('Error loading project data for summary:', error);
-          // Fallback to basic project data without materials
           const basicProject = {
             ...projectData,
-            pieces: pieces.map(piece => ({
+            pieces: (pieces || []).map((piece: any) => ({
               id: piece.id,
               name: piece.name,
-              filament_weight: (piece.materials && piece.materials.length > 0) ? 0 : piece.filamentWeight,
-              filament_price: (piece.materials && piece.materials.length > 0) ? 0 : piece.filamentPrice,
-              print_hours: piece.printHours,
-              quantity: piece.quantity,
+              filament_weight: (piece.materials && piece.materials.length > 0) ? 0 : (piece.filament_weight || 0),
+              filament_price: (piece.materials && piece.materials.length > 0) ? 0 : (piece.filament_price || 0),
+              print_hours: piece.print_hours || 0,
+              quantity: piece.quantity || 1,
               notes: piece.notes || '',
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
+              created_at: piece.created_at || new Date().toISOString(),
+              updated_at: piece.updated_at || new Date().toISOString(),
               project_id: projectId || '',
               materials: piece.materials || []
             }))
           };
           setSavedProject(basicProject);
-          onProjectSaved?.(basicProject);
+
+          setTimeout(() => {
+            onProjectSaved?.(basicProject);
+          }, 0);
         }
       }
     } catch (error: any) {
-      toast.error(
-        error.message || 'Ha ocurrido un error al guardar el proyecto.'
-      );
+      toast.error(error.message || 'Ha ocurrido un error al guardar el proyecto.');
     } finally {
       setIsSaving(false);
     }
   };
 
-
   if (loading) {
     return <CalculatorSkeleton />;
   }
 
-  // Show project summary if a project was just saved
   if (savedProject) {
     return (
       <ProjectSavedSummary
         project={savedProject}
         onEdit={handleEditProject}
         onNewProject={handleNewProject}
+        isEditing={isEditingExistingProject}
       />
     );
   }
 
-  // Render del formulario manual (viewMode === 'manual-entry')
   return (
     <div className="max-w-7xl mx-auto p-6 space-y-8">
-      {/* Team Context Banner */}
       <TeamContextBanner />
-      
+
       {/* Header */}
       <div className="text-center mb-8">
         <div className="inline-flex items-center justify-center w-16 h-16 bg-slate-100 rounded-full mb-4">
@@ -765,7 +1003,9 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
         <div className="lg:col-span-2 space-y-6">
           <ProjectInfo
             projectName={projectName}
+            projectType={projectType}
             onProjectNameChange={setProjectName}
+            onProjectTypeChange={setProjectType}
             onReset={resetForm}
             onSave={saveProject}
             isSaving={isSaving}
@@ -780,6 +1020,7 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
           )}
           <PiecesSection
             pieces={pieces}
+            projectType={projectType}
             onAddPiece={addPiece}
             onUpdatePiece={updatePiece}
             onRemovePiece={removePiece}
@@ -796,6 +1037,10 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
             printerPower={printerPower}
             onElectricityCostChange={setElectricityCost}
             onPrinterPowerChange={setPrinterPower}
+            selectedPrinterId={selectedPrinterId}
+            onPrinterSelect={setSelectedPrinterId}
+            printerPresets={printerPresets}
+            onNavigateToSettings={onNavigateToSettings}
           />
 
           <PricingConfig
@@ -810,6 +1055,13 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
             onAddMaterial={addMaterial}
             onUpdateMaterial={updateMaterial}
             onRemoveMaterial={removeMaterial}
+            postprocessingItems={postprocessingItems}
+            onAddPostprocessingItem={addPostprocessingItem}
+            onUpdatePostprocessingItem={updatePostprocessingItem}
+            onRemovePostprocessingItem={removePostprocessingItem}
+            onLoadPreset={loadPostprocessingPreset}
+            onNavigateToSettings={onNavigateToSettings}
+            onSaveAsPreset={savePostprocessingItemAsPreset}
           />
         </div>
 
@@ -821,12 +1073,14 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
             totalPrintHours={totalPrintHours}
             totalFilamentCost={totalFilamentCost}
             totalElectricityCost={totalElectricityCost}
+            totalPostprocessingCost={postprocessingItems.reduce((sum, item) => sum + (item.cost_per_unit * (item.quantity || 1)), 0)}
+            projectType={projectType}
           />
-          
+
           <CostBreakdownPanel costs={costs} />
-          
-          <SalePricePanel 
-            salePrice={salePrice} 
+
+          <SalePricePanel
+            salePrice={salePrice}
             costs={costs}
             vatPercentage={vatPercentage}
             profitMargin={profitMargin}
@@ -834,7 +1088,7 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
         </div>
       </div>
 
-      {/* Botón sticky de modo desastre */}
+      {/* Disaster mode button */}
       <DisasterModeButton
         isActive={isDisasterMode}
         onToggle={() => setIsDisasterMode(!isDisasterMode)}
@@ -843,7 +1097,7 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
         noteCount={disasterModeNotes.length}
       />
 
-      {/* Notas del modo desastre */}
+      {/* Disaster mode notes */}
       {isDisasterMode && disasterModeNotes.map(note => (
         <StickyNote
           key={note.id}
@@ -861,7 +1115,7 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ loadedProject, onProjec
         />
       ))}
 
-      {/* Modal de confirmación para limpiar notas */}
+      {/* Clear notes confirmation modal */}
       <ConfirmModal
         isOpen={showClearModal}
         onClose={() => setShowClearModal(false)}

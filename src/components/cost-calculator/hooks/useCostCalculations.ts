@@ -24,6 +24,14 @@ interface UseCostCalculationsProps {
   electricityCost: number;
   printerPower: number;
   materials: Material[];
+  postprocessingItems?: Array<{
+    id: string;
+    name: string;
+    cost?: number; // Alias para cost_per_unit
+    cost_per_unit?: number;
+    quantity: number;
+    unit: string;
+  }>;
   vatPercentage: number;
   profitMargin: number;
   // Nuevos campos para piezas
@@ -46,6 +54,7 @@ export const useCostCalculations = ({
   electricityCost,
   printerPower,
   materials,
+  postprocessingItems = [],
   vatPercentage,
   profitMargin,
   pieces = []
@@ -84,12 +93,27 @@ export const useCostCalculations = ({
       if (piece.materials && piece.materials.length > 0) {
         // Usar la nueva estructura de materiales
         const pieceWeight = piece.materials.reduce((sum, material) => {
-          const weightInGrams = material.unit === 'kg' ? material.weight * 1000 : material.weight;
-          return sum + weightInGrams;
+          if (material.category === 'resin') {
+            // Para resina, convertir a ml (unidad base)
+            const volumeInMl = material.unit === 'L' ? material.weight * 1000 : material.weight;
+            return sum + volumeInMl;
+          } else {
+            // Para filamento, convertir a gramos (unidad base)
+            const weightInGrams = material.unit === 'kg' ? material.weight * 1000 : material.weight;
+            return sum + weightInGrams;
+          }
         }, 0);
         
         const pieceCost = piece.materials.reduce((sum, material) => {
-          const weightInKg = material.unit === 'g' ? material.weight / 1000 : material.weight;
+          let weightInKg;
+          if (material.category === 'resin') {
+            // Para resina, convertir volumen a "kg equivalente" para cálculo de precio
+            // Asumimos que 1L de resina ≈ 1kg para cálculo de precio
+            weightInKg = material.unit === 'L' ? material.weight : material.weight / 1000;
+          } else {
+            // Para filamento, convertir a kg
+            weightInKg = material.unit === 'g' ? material.weight / 1000 : material.weight;
+          }
           return sum + (weightInKg * material.pricePerKg);
         }, 0);
         
@@ -115,12 +139,16 @@ export const useCostCalculations = ({
     // Calcular costes
     const electricityCostTotal = totalPrintHours * printerPower * electricityCost;
     const materialsCost = materials.reduce((sum, material) => sum + (material.price || 0), 0);
-    const totalCost = totalFilamentCost + electricityCostTotal + materialsCost;
+    const postprocessingCost = postprocessingItems.reduce((sum, item) => {
+      const unitCost = item.cost_per_unit ?? item.cost ?? 0;
+      return sum + (unitCost * (item.quantity || 1));
+    }, 0);
+    const totalCost = totalFilamentCost + electricityCostTotal + materialsCost + postprocessingCost;
 
     setCosts({
       filament: totalFilamentCost,
       electricity: electricityCostTotal,
-      materials: materialsCost,
+      materials: materialsCost + postprocessingCost,
       total: totalCost
     });
 
@@ -136,7 +164,7 @@ export const useCostCalculations = ({
       priceWithTax,
       recommendedPrice
     });
-  }, [filamentWeight, filamentPrice, printHours, electricityCost, printerPower, materials, vatPercentage, profitMargin, pieces]);
+  }, [filamentWeight, filamentPrice, printHours, electricityCost, printerPower, materials, postprocessingItems, vatPercentage, profitMargin, pieces]);
 
   const { totalFilamentWeight, totalPrintHours, totalFilamentCost } = calculateTotalsFromPieces();
 

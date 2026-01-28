@@ -19,7 +19,7 @@ export default function Footer() {
   }
 
   return (
-    <footer className="bg-slate-900 text-slate-300 py-8 mt-auto">
+    <footer className="bg-dark-900 text-cream-300 py-8 mt-auto border-t border-dark-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
           <div className="text-sm">
@@ -29,37 +29,37 @@ export default function Footer() {
           <nav className="flex flex-wrap justify-center md:justify-end space-x-6 text-sm">
             <Link 
               href="/legal/aviso-legal" 
-              className="hover:text-white transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 focus:ring-offset-slate-900 rounded"
+              className="hover:text-brand-400 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 focus:ring-offset-dark-900 rounded"
             >
               Aviso legal
             </Link>
             <Link 
               href="/legal/privacidad" 
-              className="hover:text-white transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 focus:ring-offset-slate-900 rounded"
+              className="hover:text-brand-400 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 focus:ring-offset-dark-900 rounded"
             >
               Privacidad
             </Link>
             <Link 
               href="/legal/cookies" 
-              className="hover:text-white transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 focus:ring-offset-slate-900 rounded"
+              className="hover:text-brand-400 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 focus:ring-offset-dark-900 rounded"
             >
               Cookies
             </Link>
             <Link 
               href="/legal/terminos" 
-              className="hover:text-white transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 focus:ring-offset-slate-900 rounded"
+              className="hover:text-brand-400 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 focus:ring-offset-dark-900 rounded"
             >
               Términos
             </Link>
             <Link 
               href="/legal/seguridad" 
-              className="hover:text-white transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 focus:ring-offset-slate-900 rounded"
+              className="hover:text-brand-400 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 focus:ring-offset-dark-900 rounded"
             >
               Seguridad
             </Link>
             <button 
               onClick={handleCookieSettings}
-              className="hover:text-white transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 focus:ring-offset-slate-900 rounded"
+              className="hover:text-brand-400 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 focus:ring-offset-dark-900 rounded"
             >
               Configurar cookies
             </button>

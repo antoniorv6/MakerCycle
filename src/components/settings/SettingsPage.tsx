@@ -1,9 +1,13 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { Save, Building2, User, Shield, Bell, Palette, Settings, Package } from 'lucide-react'
+import { Save, Building2, User, Shield, Bell, Palette, Settings, Package, DollarSign, Paintbrush } from 'lucide-react'
+import { Printer3D } from '@/components/icons/Printer3D'
 import { useCompanySettings } from '@/hooks/useCompanySettings'
+import { useCurrency } from '@/components/providers/CurrencyProvider'
 import MaterialPresetsManager from './MaterialPresetsManager'
+import PostprocessingPresetsManager from './PostprocessingPresetsManager'
+import PrinterPresetsManager from './PrinterPresetsManager'
 
 interface SettingsPageProps {
   initialTab?: string;
@@ -12,13 +16,21 @@ interface SettingsPageProps {
 export default function SettingsPage({ initialTab = 'company' }: SettingsPageProps) {
   const [activeTab, setActiveTab] = useState(initialTab)
   const { companyData, saveCompanyData, isLoading } = useCompanySettings()
+  const { currency, currencySymbol, saveUserCurrency, currencies, loading: currencyLoading } = useCurrency()
   const [formData, setFormData] = useState(companyData)
   const [isSaving, setIsSaving] = useState(false)
   const [saveMessage, setSaveMessage] = useState('')
+  const [selectedCurrency, setSelectedCurrency] = useState(currency)
+  const [isSavingCurrency, setIsSavingCurrency] = useState(false)
+  const [currencySaveMessage, setCurrencySaveMessage] = useState('')
 
   useEffect(() => {
     setFormData(companyData)
   }, [companyData])
+
+  useEffect(() => {
+    setSelectedCurrency(currency)
+  }, [currency])
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({
@@ -46,7 +58,10 @@ export default function SettingsPage({ initialTab = 'company' }: SettingsPagePro
   const tabs = [
     { id: 'company', label: 'Empresa', icon: Building2 },
     { id: 'materials', label: 'Perfiles Materiales', icon: Package },
+    { id: 'printers', label: 'Impresoras', icon: Printer3D },
+    { id: 'postprocessing', label: 'Postproducción', icon: Paintbrush },
     { id: 'profile', label: 'Perfil', icon: User },
+    { id: 'currency', label: 'Moneda', icon: DollarSign },
     { id: 'security', label: 'Seguridad', icon: Shield },
     { id: 'notifications', label: 'Notificaciones', icon: Bell },
     { id: 'appearance', label: 'Apariencia', icon: Palette }
@@ -81,7 +96,7 @@ export default function SettingsPage({ initialTab = 'company' }: SettingsPagePro
                     className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-colors ${
                       activeTab === tab.id
                         ? 'bg-slate-100 text-slate-700 border border-slate-200'
-                        : 'text-slate-600 hover:bg-slate-100'
+                        : 'text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 hover:border-slate-300'
                     }`}
                   >
                     <Icon className="w-5 h-5" />
@@ -96,6 +111,14 @@ export default function SettingsPage({ initialTab = 'company' }: SettingsPagePro
           <div className="flex-1 p-8">
             {activeTab === 'materials' && (
               <MaterialPresetsManager />
+            )}
+
+            {activeTab === 'postprocessing' && (
+              <PostprocessingPresetsManager />
+            )}
+
+            {activeTab === 'printers' && (
+              <PrinterPresetsManager />
             )}
 
             {activeTab === 'company' && (
@@ -254,6 +277,77 @@ export default function SettingsPage({ initialTab = 'company' }: SettingsPagePro
               </div>
             )}
 
+            {activeTab === 'currency' && (
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">Configuración de Moneda</h3>
+                  <p className="text-gray-600 mb-6">Selecciona la moneda que deseas usar en toda la aplicación. Los precios se mostrarán con el símbolo de la moneda seleccionada.</p>
+                </div>
+
+                <div className="max-w-md">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Moneda preferida
+                  </label>
+                  <select
+                    value={selectedCurrency}
+                    onChange={(e) => setSelectedCurrency(e.target.value as any)}
+                    disabled={currencyLoading || isSavingCurrency}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {currencies.map((curr) => (
+                      <option key={curr.code} value={curr.code}>
+                        {curr.symbol} - {curr.name} ({curr.code})
+                      </option>
+                    ))}
+                  </select>
+                  <p className="mt-2 text-sm text-gray-500">
+                    Moneda actual: <span className="font-medium">{currencySymbol} ({currency})</span>
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Save Button for Currency */}
+            {activeTab === 'currency' && (
+              <div className="mt-8 pt-6 border-t border-gray-200">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    {currencySaveMessage && (
+                      <span className={`text-sm ${
+                        currencySaveMessage.includes('Error') ? 'text-red-600' : 'text-green-600'
+                      }`}>
+                        {currencySaveMessage}
+                      </span>
+                    )}
+                  </div>
+                  <button
+                    onClick={async () => {
+                      if (selectedCurrency === currency) return;
+                      
+                      setIsSavingCurrency(true)
+                      setCurrencySaveMessage('Guardando...')
+                      
+                      try {
+                        await saveUserCurrency(selectedCurrency)
+                        setCurrencySaveMessage('¡Moneda guardada correctamente!')
+                        setTimeout(() => setCurrencySaveMessage(''), 3000)
+                      } catch (error) {
+                        setCurrencySaveMessage('Error al guardar la moneda')
+                        setTimeout(() => setCurrencySaveMessage(''), 3000)
+                      } finally {
+                        setIsSavingCurrency(false)
+                      }
+                    }}
+                    disabled={isSavingCurrency || currencyLoading || selectedCurrency === currency}
+                    className="px-6 py-3 bg-brand-600 text-white rounded-lg hover:bg-brand-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-2 shadow-md hover:shadow-lg"
+                  >
+                    <Save className="w-4 h-4" />
+                    <span>{isSavingCurrency ? 'Guardando...' : 'Guardar Moneda'}</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
             {activeTab === 'security' && (
               <div className="space-y-6">
                 <div>
@@ -315,7 +409,7 @@ export default function SettingsPage({ initialTab = 'company' }: SettingsPagePro
                   <button
                     onClick={handleSave}
                     disabled={isSaving || isLoading}
-                    className="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-2"
+                    className="px-6 py-3 bg-brand-600 text-white rounded-lg hover:bg-brand-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-2 shadow-md hover:shadow-lg"
                   >
                     <Save className="w-4 h-4" />
                     <span>{isSaving ? 'Guardando...' : 'Guardar Configuración'}</span>

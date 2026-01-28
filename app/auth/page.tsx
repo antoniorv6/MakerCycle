@@ -1,29 +1,86 @@
+'use client'
+
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { useAuth } from '@/components/providers/AuthProvider'
 import AuthForm from '@/components/auth/AuthForm'
+import { ArrowLeft } from 'lucide-react'
+import Link from 'next/link'
 
 export default function AuthPage() {
+  const { user, loading } = useAuth()
+  const router = useRouter()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  useEffect(() => {
+    if (mounted && !loading && user) {
+      router.push('/dashboard/')
+    }
+  }, [user, loading, router, mounted])
+
+  if (!mounted || loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-cream-gradient">
+        <div className="flex flex-col items-center space-y-4">
+          <div className="w-12 h-12 border-4 border-brand-200 border-t-brand-500 rounded-full animate-spin" />
+          <p className="text-dark-600 font-medium">Cargando...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-cream-gradient">
+        <div className="flex flex-col items-center space-y-4">
+          <div className="w-12 h-12 border-4 border-brand-200 border-t-brand-500 rounded-full animate-spin" />
+          <p className="text-dark-600 font-medium">Redirigiendo...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="text-center">
-          <div className="flex justify-center mb-6">
-            <div className="w-16 h-16 bg-gradient-to-br from-slate-700 to-slate-800 rounded-xl flex items-center justify-center shadow-lg">
-              <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-              </svg>
-            </div>
-          </div>
-          <h2 className="mt-6 text-3xl font-bold tracking-tight text-slate-900">
-            Accede a tu cuenta
-          </h2>
-          <p className="mt-2 text-sm text-slate-600">
-            O crea una nueva cuenta para empezar
-          </p>
+    <div className="min-h-screen-safe bg-cream-gradient safe-area-inset relative overflow-hidden">
+      {/* Decorative elements */}
+      <div className="absolute top-20 -left-20 w-64 h-64 bg-brand-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob"></div>
+      <div className="absolute top-40 -right-20 w-64 h-64 bg-coral-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob animation-delay-2000"></div>
+      <div className="absolute -bottom-20 left-1/3 w-80 h-80 bg-brand-400 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob animation-delay-4000"></div>
+
+      {/* Back button */}
+      <div className="fixed top-0 left-0 right-0 z-10 safe-area-top">
+        <div className="p-4">
+          <Link
+            href="/"
+            className="inline-flex items-center text-dark-600 hover:text-brand-500 transition-colors bg-white/80 backdrop-blur-sm px-4 py-2 rounded-xl border border-cream-200"
+          >
+            <ArrowLeft className="w-5 h-5 mr-2" />
+            <span className="font-medium">Volver</span>
+          </Link>
         </div>
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow-xl rounded-2xl border border-slate-200 sm:px-10">
-          <AuthForm />
+      {/* Auth form */}
+      <div className="relative flex items-center justify-center min-h-screen-safe px-4 py-20">
+        <div className="w-full max-w-md">
+          {/* Logo */}
+          <div className="text-center mb-8">
+            <img 
+              src="/logo.svg" 
+              alt="MakerCycle" 
+              className="w-36 h-36 mx-auto mb-4"
+            />
+            <h1 className="text-3xl font-bold text-dark-900 font-display">MakerCycle</h1>
+            <p className="text-dark-500 mt-2">Gestión profesional de impresión 3D</p>
+          </div>
+
+          <div className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl p-8 border border-cream-200">
+            <AuthForm />
+          </div>
         </div>
       </div>
     </div>

@@ -17,7 +17,7 @@ interface MemberProfile {
 
 const TeamManager: React.FC = () => {
   const { user } = useAuth();
-  const { currentTeam, userTeams, setCurrentTeam, loading, isEditingMode, editingTeam, getEffectiveTeam } = useTeam();
+  const { currentTeam, userTeams, setCurrentTeam, refreshTeams, loading, isEditingMode, editingTeam, getEffectiveTeam } = useTeam();
   const supabase = createClient();
   const [teams, setTeams] = useState<Team[]>([]);
   const [teamName, setTeamName] = useState('');
@@ -78,36 +78,29 @@ const TeamManager: React.FC = () => {
     setLoadingTeams(true);
     
     try {
-      // Create the team
-      const { data: teamData, error: teamError } = await supabase
-        .from('teams')
-        .insert([{ name: teamName, created_by: user.id }])
-        .select()
-        .single();
+      // Usar la función RPC atómica para crear equipo + miembro
+      const { data, error } = await supabase
+        .rpc('create_team_with_owner', {
+          p_team_name: teamName.trim(),
+          p_user_id: user.id
+        });
       
-      if (teamError) {
-        console.error('Error creating team:', teamError);
+      if (error) {
+        console.error('Error creating team:', error);
+        toast.error(error.message || 'Error al crear el equipo');
         return;
       }
 
-      // Add the creator as an admin member
-      const { error: memberError } = await supabase
-        .from('team_members')
-        .insert([{ 
-          team_id: teamData.id, 
-          user_id: user.id, 
-          role: 'admin' 
-        }]);
-
-      if (memberError) {
-        console.error('Error adding team member:', memberError);
-        return;
+      if (data) {
+        setTeams([...teams, data]);
+        setTeamName('');
+        toast.success('Equipo creado correctamente');
+        // Refrescar la lista de equipos en el contexto global
+        await refreshTeams();
       }
-
-      setTeams([...teams, teamData]);
-      setTeamName('');
     } catch (error) {
       console.error('Error creating team:', error);
+      toast.error('Error inesperado al crear el equipo');
     } finally {
       setLoadingTeams(false);
     }
@@ -115,28 +108,48 @@ const TeamManager: React.FC = () => {
 
   const handleSelectTeam = async (team: Team) => {
     setSelectedTeam(team);
-    // Fetch members
-    const { data, error } = await supabase
-      .from('team_members')
-      .select('*')
-      .eq('team_id', team.id);
-    if (!error && data) {
-      setMembers(data);
-      // Fetch member profiles in batch
-      const userIds = data.map((m: TeamMember) => m.user_id);
-      if (userIds.length > 0) {
-        const { data: profiles, error: profilesError } = await supabase
-          .from('profiles')
-          .select('id, full_name, email')
-          .in('id', userIds);
-        if (!profilesError && profiles) {
-          const profileMap: Record<string, MemberProfile> = {};
-          profiles.forEach((p: MemberProfile) => { profileMap[p.id] = p; });
-          setMemberProfiles(profileMap);
-        }
+    
+    try {
+      // Usar la función RPC para obtener miembros con perfiles
+      const { data, error } = await supabase
+        .rpc('get_team_members_with_profiles', {
+          p_team_id: team.id
+        });
+      
+      if (error) {
+        console.error('Error fetching team members:', error);
+        toast.error('Error al cargar los miembros del equipo');
+        return;
+      }
+
+      if (data && Array.isArray(data)) {
+        // Convertir los datos al formato esperado
+        const membersData: TeamMember[] = data.map((m: any) => ({
+          id: `${m.team_id}-${m.user_id}`,
+          team_id: m.team_id,
+          user_id: m.user_id,
+          role: m.role,
+          created_at: m.joined_at
+        }));
+        
+        const profilesMap: Record<string, MemberProfile> = {};
+        data.forEach((m: any) => {
+          profilesMap[m.user_id] = {
+            id: m.user_id,
+            full_name: m.full_name,
+            email: m.email
+          };
+        });
+        
+        setMembers(membersData);
+        setMemberProfiles(profilesMap);
       } else {
+        setMembers([]);
         setMemberProfiles({});
       }
+    } catch (error) {
+      console.error('Unexpected error fetching team members:', error);
+      toast.error('Error inesperado al cargar los miembros');
     }
   };
 
@@ -164,88 +177,27 @@ const TeamManager: React.FC = () => {
     try {
       const searchEmail = inviteEmail.trim();
       
-      // Try exact match first
-      let { data: userData, error: userError } = await supabase
-        .from('profiles')
-        .select('id, email, full_name')
-        .eq('email', searchEmail)
-        .maybeSingle();
+      // Usar la función RPC para invitar miembros
+      const { data, error } = await supabase
+        .rpc('invite_team_member', {
+          p_team_id: selectedTeam.id,
+          p_email: searchEmail,
+          p_role: 'member'
+        });
       
-      // If no exact match, try case-insensitive
-      if (!userData && !userError) {
-        const { data: userDataCI, error: userErrorCI } = await supabase
-          .from('profiles')
-          .select('id, email, full_name')
-          .ilike('email', searchEmail)
-          .maybeSingle();
+      if (error) {
+        console.error('Error inviting member:', error);
         
-        if (userDataCI) {
-          userData = userDataCI;
+        // Manejar errores específicos
+        if (error.message.includes('Usuario no encontrado')) {
+          toast.error(`Usuario no encontrado con el email: ${searchEmail}\n\nAsegúrate de que:\n- El email esté correctamente escrito\n- El usuario esté registrado en la aplicación`);
+        } else if (error.message.includes('ya es miembro')) {
+          toast('El usuario ya forma parte de este equipo.');
+        } else if (error.message.includes('No tienes permisos')) {
+          toast.error('No tienes permisos para invitar miembros a este equipo.');
+        } else {
+          toast.error(error.message || 'No se pudo invitar al miembro. Intenta de nuevo.');
         }
-      }
-      
-      if (userError) {
-        console.error('Error searching for user:', userError);
-        toast.error('No se pudo encontrar el usuario. Intenta de nuevo.');
-        return;
-      }
-      
-      if (!userData) {
-        // Let's also try a broader search to see what's in the database
-        const { data: similarProfiles, error: similarError } = await supabase
-          .from('profiles')
-          .select('id, email, full_name')
-          .or(`email.ilike.%${searchEmail.split('@')[0]}%,email.ilike.%${searchEmail.split('@')[1]}%`)
-          .limit(5);
-        
-        let errorMessage = `Usuario no encontrado con el email: ${searchEmail}\n\n`;
-        errorMessage += 'Asegúrate de que:\n';
-        errorMessage += '- El email esté correctamente escrito\n';
-        errorMessage += '- El usuario esté registrado en la aplicación\n';
-        errorMessage += '- El email coincida exactamente con el registrado\n\n';
-        
-        if (similarProfiles && similarProfiles.length > 0) {
-          errorMessage += 'Emails similares encontrados:\n';
-          similarProfiles.forEach(profile => {
-            errorMessage += `- ${profile.email}\n`;
-          });
-        }
-        
-        toast.error(errorMessage);
-        return;
-      }
-
-      // Check if user is already a member of this team
-      const { data: existingMember, error: memberCheckError } = await supabase
-        .from('team_members')
-        .select('team_id, user_id')
-        .eq('team_id', selectedTeam.id)
-        .eq('user_id', userData.id)
-        .maybeSingle();
-
-      if (memberCheckError) {
-        console.error('Error checking existing membership:', memberCheckError);
-        toast.error('No se pudo verificar la membresía. Intenta de nuevo.');
-        return;
-      }
-
-      if (existingMember) {
-        toast('El usuario ya forma parte de este equipo.');
-        return;
-      }
-
-      // Add user to team
-      const { error: memberError } = await supabase
-        .from('team_members')
-        .insert([{ 
-          team_id: selectedTeam.id, 
-          user_id: userData.id, 
-          role: 'member' 
-        }]);
-
-      if (memberError) {
-        console.error('Error inviting member:', memberError);
-        toast.error('No se pudo invitar al miembro. Intenta de nuevo.');
         return;
       }
 
@@ -260,26 +212,68 @@ const TeamManager: React.FC = () => {
 
   const handleChangeRole = async (userId: string, newRole: string) => {
     if (!selectedTeam) return;
-    const { error } = await supabase
-      .from('team_members')
-      .update({ role: newRole as 'admin' | 'member' | 'owner' })
-      .eq('team_id', selectedTeam.id)
-      .eq('user_id', userId);
-    if (!error) {
-      setMembers(members.map(m => m.user_id === userId ? { ...m, role: newRole as 'admin' | 'member' | 'owner' } : m));
+    
+    try {
+      const { error } = await supabase
+        .from('team_members')
+        .update({ role: newRole as 'admin' | 'member' | 'owner' })
+        .eq('team_id', selectedTeam.id)
+        .eq('user_id', userId);
+      
+      if (!error) {
+        setMembers(members.map(m => m.user_id === userId ? { ...m, role: newRole as 'admin' | 'member' | 'owner' } : m));
+        toast.success('Rol actualizado correctamente');
+      } else {
+        toast.error('Error al actualizar el rol: ' + error.message);
+      }
+    } catch (error) {
+      console.error('Error changing role:', error);
+      toast.error('Error inesperado al cambiar el rol');
     }
   };
 
   const handleRemoveMember = async (userId: string) => {
     if (!selectedTeam) return;
+    
+    // No permitir eliminar al propietario del equipo
+    const member = members.find(m => m.user_id === userId);
+    if (member?.role === 'owner') {
+      toast.error('No puedes eliminar al propietario del equipo');
+      return;
+    }
+    
+    // No permitir auto-eliminación si eres el único admin
+    if (userId === user?.id) {
+      const otherAdmins = members.filter(m => m.role === 'admin' && m.user_id !== userId);
+      if (otherAdmins.length === 0) {
+        toast.error('No puedes abandonar el equipo siendo el único administrador');
+        return;
+      }
+    }
+    
     if (!window.confirm('¿Seguro que quieres eliminar este miembro?')) return;
-    const { error } = await supabase
-      .from('team_members')
-      .delete()
-      .eq('team_id', selectedTeam.id)
-      .eq('user_id', userId);
-    if (!error) {
-      setMembers(members.filter(m => m.user_id !== userId));
+    
+    try {
+      const { error } = await supabase
+        .from('team_members')
+        .delete()
+        .eq('team_id', selectedTeam.id)
+        .eq('user_id', userId);
+      
+      if (!error) {
+        setMembers(members.filter(m => m.user_id !== userId));
+        toast.success('Miembro eliminado correctamente');
+        
+        // Si el usuario se eliminó a sí mismo, refrescar los equipos
+        if (userId === user?.id) {
+          await refreshTeams();
+        }
+      } else {
+        toast.error('Error al eliminar el miembro: ' + error.message);
+      }
+    } catch (error) {
+      console.error('Error removing member:', error);
+      toast.error('Error inesperado al eliminar el miembro');
     }
   };
 
@@ -293,21 +287,42 @@ const TeamManager: React.FC = () => {
       setTeams(teams.map(t => t.id === selectedTeam.id ? { ...t, name: newTeamName } : t));
       setSelectedTeam({ ...selectedTeam, name: newTeamName });
       setRenaming(false);
+      toast.success('Equipo renombrado correctamente');
+      await refreshTeams();
+    } else {
+      toast.error('Error al renombrar el equipo');
     }
   };
 
   const handleDeleteTeam = async () => {
     if (!selectedTeam) return;
     if (!window.confirm('¿Seguro que quieres eliminar este equipo? Esta acción no se puede deshacer.')) return;
-    const { error } = await supabase
-      .from('teams')
-      .delete()
-      .eq('id', selectedTeam.id);
-    if (!error) {
-      setTeams(teams.filter(t => t.id !== selectedTeam.id));
-      setSelectedTeam(null);
-      setMembers([]);
-      setMemberProfiles({});
+    
+    try {
+      const { error } = await supabase
+        .from('teams')
+        .delete()
+        .eq('id', selectedTeam.id);
+      
+      if (!error) {
+        setTeams(teams.filter(t => t.id !== selectedTeam.id));
+        setSelectedTeam(null);
+        setMembers([]);
+        setMemberProfiles({});
+        toast.success('Equipo eliminado correctamente');
+        
+        // Si el equipo eliminado era el equipo actual, cambiar a vista personal
+        if (currentTeam?.id === selectedTeam.id) {
+          setCurrentTeam(null);
+        }
+        
+        await refreshTeams();
+      } else {
+        toast.error('Error al eliminar el equipo: ' + error.message);
+      }
+    } catch (error) {
+      console.error('Error deleting team:', error);
+      toast.error('Error inesperado al eliminar el equipo');
     }
   };
 

@@ -17,7 +17,8 @@ export interface Project {
   filament_price: number;
   print_hours: number;
   electricity_cost: number;
-  materials: Material[];
+  materials: Material[]; // DEPRECATED: usar postprocessing_items
+  postprocessing_items?: PostprocessingItem[];
   total_cost: number;
   vat_percentage: number;
   profit_margin: number;
@@ -37,7 +38,8 @@ export interface AppProject {
   printHours: number;
   electricityCost: number;
   printerPower: number;
-  materials: Material[];
+  materials: Material[]; // DEPRECATED: usar postprocessingItems
+  postprocessingItems?: PostprocessingItem[];
   totalCost: number;
   vatPercentage: number;
   profitMargin: number;
@@ -66,12 +68,14 @@ export interface DatabaseProject {
   filament_price: number;
   print_hours: number;
   electricity_cost: number;
-  materials: Material[];
+  materials: Material[]; // DEPRECATED: usar postprocessing_items
+  postprocessing_items?: PostprocessingItem[];
   total_cost: number;
   vat_percentage: number;
   profit_margin: number;
   recommended_price: number;
   status: 'draft' | 'calculated' | 'completed';
+  project_type?: 'filament' | 'resin';
   team_id?: string | null;
   pieces?: DatabasePiece[];
   created_at: string;
@@ -143,6 +147,49 @@ export interface Material {
   price: number;
 }
 
+// Postprocessing types
+export interface PostprocessingPreset {
+  id: string;
+  user_id: string;
+  team_id?: string | null;
+  name: string;
+  description?: string;
+  cost_per_unit: number;
+  unit: string;
+  category?: string;
+  notes?: string;
+  is_default: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DatabasePostprocessingPreset {
+  id: string;
+  user_id: string;
+  team_id?: string | null;
+  name: string;
+  description?: string;
+  cost_per_unit: number;
+  unit: string;
+  category?: string;
+  notes?: string;
+  is_default: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PostprocessingItem {
+  id: string;
+  name: string;
+  cost_per_unit: number; // Coste por unidad (se multiplica por quantity para obtener el total)
+  quantity: number;
+  unit: string;
+  preset_id?: string | null;
+  is_from_preset: boolean;
+  description?: string;
+  category?: string;
+}
+
 // Client related types
 export interface Client {
   id: string;
@@ -188,6 +235,22 @@ export interface Sale {
   created_at: string;
   updated_at: string;
   items?: SaleItem[];
+  printer_amortizations?: SalePrinterAmortization[]; // Amortizaciones de impresoras vinculadas
+}
+
+// Amortización de impresora en una venta
+export interface SalePrinterAmortization {
+  id: string;
+  sale_id: string;
+  printer_preset_id: string;
+  amortization_method: AmortizationMethod;
+  amortization_value: number; // Porcentaje o cantidad según el método
+  amortization_amount: number; // Cantidad real amortizada (calculada)
+  profit_before_amortization: number;
+  profit_after_amortization: number;
+  created_at: string;
+  updated_at: string;
+  printer?: PrinterPreset; // Datos de la impresora (opcional, para joins)
 }
 
 // Expense related types
@@ -287,6 +350,11 @@ export interface SaleFormData {
   team_id?: string | null;
   client_id?: string | null;
   items: SaleItemFormData[];
+  printer_amortizations?: Array<{
+    printer_preset_id: string;
+    amortization_method: AmortizationMethod;
+    amortization_value: number;
+  }>;
 }
 
 export interface ExpenseFormData {
@@ -366,6 +434,8 @@ export interface ProjectSummaryProps {
   totalPrintHours: number;
   totalFilamentCost: number;
   totalElectricityCost: number;
+  totalPostprocessingCost?: number;
+  projectType?: 'filament' | 'resin';
 }
 
 // Cost calculator panel props
@@ -413,6 +483,9 @@ export interface PieceCardProps {
 
 export interface ModeSelectionProps {
   onModeSelect: (mode: ViewMode) => void;
+  drafts?: import('@/components/cost-calculator/hooks/useProjectDraft').ProjectDraft[];
+  onLoadDraft?: (draft: import('@/components/cost-calculator/hooks/useProjectDraft').ProjectDraft) => void;
+  onDeleteDraft?: (draftId: string) => void;
 }
 
 // Material preset types
@@ -474,4 +547,64 @@ export interface KanbanCard {
   created_at: string;
   updated_at: string;
   project?: Project; // opcional, para joins
+}
+
+// Printer preset types
+export type AmortizationMethod = 'fixed' | 'percentage';
+
+export interface PrinterPreset {
+  id: string;
+  user_id: string;
+  team_id?: string | null;
+  name: string;
+  power_consumption: number; // Consumo en kW
+  purchase_price: number; // Precio de compra de la impresora
+  amortization_hours: number; // Horas de vida útil estimadas para amortización
+  current_usage_hours: number; // Horas de uso actuales
+  brand?: string;
+  model?: string;
+  notes?: string;
+  is_default: boolean;
+  amortization_method?: AmortizationMethod; // Método por defecto: 'fixed' o 'percentage'
+  amortization_value?: number; // Valor por defecto (cantidad fija o porcentaje)
+  is_being_amortized?: boolean; // Indica si se está amortizando actualmente
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DatabasePrinterPreset {
+  id: string;
+  user_id: string;
+  team_id?: string | null;
+  name: string;
+  power_consumption: number;
+  purchase_price: number;
+  amortization_hours: number;
+  current_usage_hours: number;
+  brand?: string;
+  model?: string;
+  notes?: string;
+  is_default: boolean;
+  amortization_method?: AmortizationMethod;
+  amortization_value?: number;
+  is_being_amortized?: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AppPrinterPreset {
+  id: string;
+  name: string;
+  powerConsumption: number;
+  purchasePrice: number;
+  amortizationHours: number;
+  currentUsageHours: number;
+  brand?: string;
+  model?: string;
+  notes?: string;
+  isDefault: boolean;
+  // Campos calculados
+  amortizationCostPerHour: number; // purchasePrice / amortizationHours
+  remainingAmortizationHours: number; // amortizationHours - currentUsageHours
+  amortizationProgress: number; // (currentUsageHours / amortizationHours) * 100
 } 

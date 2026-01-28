@@ -13,26 +13,26 @@ interface ProjectCardProps {
 const statusInfo: Record<KanbanStatus, { label: string; color: string; icon: React.ReactNode }> = {
   pending: {
     label: 'Pendiente',
-    color: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-    icon: <PauseCircle className="w-4 h-4 mr-1 text-yellow-400" />,
+    color: 'bg-coral-50 text-coral-700 border-coral-200',
+    icon: <PauseCircle className="w-4 h-4 mr-1 text-coral-500" />,
   },
   in_progress: {
     label: 'En desarrollo',
-    color: 'bg-blue-100 text-blue-800 border-blue-200',
-    icon: <PlayCircle className="w-4 h-4 mr-1 text-blue-500" />,
+    color: 'bg-brand-50 text-brand-700 border-brand-200',
+    icon: <PlayCircle className="w-4 h-4 mr-1 text-brand-500" />,
   },
   completed: {
     label: 'Completado',
-    color: 'bg-green-100 text-green-800 border-green-200',
-    icon: <CheckCircle2 className="w-4 h-4 mr-1 text-green-500" />,
+    color: 'bg-brand-100 text-brand-800 border-brand-300',
+    icon: <CheckCircle2 className="w-4 h-4 mr-1 text-brand-600" />,
   },
 };
 
 function getPriorityInfo(margin?: number) {
-  if (typeof margin !== 'number') return { label: 'Baja', color: 'bg-slate-100 text-slate-500 border-slate-200' };
-  if (margin >= 30) return { label: 'Alta', color: 'bg-red-100 text-red-700 border-red-200' };
-  if (margin >= 15) return { label: 'Media', color: 'bg-orange-100 text-orange-700 border-orange-200' };
-  return { label: 'Baja', color: 'bg-slate-100 text-slate-500 border-slate-200' };
+  if (typeof margin !== 'number') return { label: 'Baja', color: 'bg-cream-100 text-dark-500 border-cream-200' };
+  if (margin >= 30) return { label: 'Alta', color: 'bg-brand-100 text-brand-700 border-brand-200' };
+  if (margin >= 15) return { label: 'Media', color: 'bg-coral-100 text-coral-700 border-coral-200' };
+  return { label: 'Baja', color: 'bg-cream-100 text-dark-500 border-cream-200' };
 }
 
 export const ProjectCard: React.FC<ProjectCardProps> = ({ card, onDelete, onChangePriority, isDragging }) => {
@@ -84,20 +84,20 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ card, onDelete, onChan
 
   return (
     <div
-      className={`relative bg-white border border-slate-100 rounded-2xl shadow group mb-4 px-5 py-4 text-slate-900 font-medium flex flex-col gap-2 transition-all duration-300 ease-in-out
-        ${isDragging ? 'ring-2 ring-blue-400 scale-105 z-10 shadow-2xl' : 'scale-100'}
-        hover:shadow-xl hover:-translate-y-1
+      className={`relative bg-white border border-cream-200 rounded-2xl shadow group mb-4 px-5 py-4 text-dark-900 font-medium flex flex-col gap-2 transition-all duration-300 ease-in-out
+        ${isDragging ? 'ring-2 ring-brand-400 scale-105 z-10 shadow-2xl' : 'scale-100'}
+        hover:shadow-xl hover:-translate-y-1 hover:border-brand-200
       `}
       tabIndex={0}
       aria-label={`Proyecto ${project?.name}`}
     >
       {/* Fila superior: nombre + eliminar */}
       <div className="flex items-center w-full">
-        <span className="text-base font-semibold flex-1 group-hover:text-blue-700 transition-colors duration-200" style={{lineHeight: 1.2}} title={project?.name}>
+        <span className="text-base font-semibold flex-1 group-hover:text-brand-600 transition-colors duration-200" style={{lineHeight: 1.2}} title={project?.name}>
           {project?.name || 'Proyecto'}
         </span>
         <button
-          className="text-slate-400 hover:text-red-500 ml-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+          className="text-cream-400 hover:text-brand-500 ml-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
           onClick={() => onDelete(card.id)}
           tabIndex={-1}
           aria-label="Eliminar proyecto"
@@ -133,7 +133,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ card, onDelete, onChan
         </div>
         {/* Fecha de creación */}
         {project?.created_at && (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border bg-slate-50 border-slate-200 text-slate-500 ml-1" title={`Creado el ${new Date(project.created_at).toLocaleDateString()}`}>
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border bg-cream-50 border-cream-200 text-dark-500 ml-1" title={`Creado el ${new Date(project.created_at).toLocaleDateString()}`}>
             <Calendar className="w-4 h-4 mr-1" />
             {new Date(project.created_at).toLocaleDateString()}
           </span>
@@ -143,7 +143,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ card, onDelete, onChan
       {/* Portal del dropdown */}
       {priorityOpen && createPortal(
         <div 
-          className="fixed z-[9999] w-28 bg-white border border-slate-200 rounded-lg shadow-lg py-1 text-xs animate-in fade-in-0 slide-in-from-top-2 duration-200" 
+          className="fixed z-[9999] w-28 bg-white border border-cream-200 rounded-lg shadow-lg py-1 text-xs animate-in fade-in-0 slide-in-from-top-2 duration-200" 
           style={{
             top: dropdownPosition.top,
             left: dropdownPosition.left
@@ -151,21 +151,21 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ card, onDelete, onChan
           role="listbox"
         >
           <button 
-            className="w-full text-left px-3 py-2 hover:bg-red-100 text-red-700 font-semibold flex items-center gap-2" 
+            className="w-full text-left px-3 py-2 hover:bg-brand-50 text-brand-700 font-semibold flex items-center gap-2" 
             onClick={() => { setPriorityOpen(false); onChangePriority(card.id, 30); }} 
             role="option"
           > 
             <Flag className="w-4 h-4" /> Alta
           </button>
           <button 
-            className="w-full text-left px-3 py-2 hover:bg-orange-100 text-orange-700 font-semibold flex items-center gap-2" 
+            className="w-full text-left px-3 py-2 hover:bg-coral-50 text-coral-700 font-semibold flex items-center gap-2" 
             onClick={() => { setPriorityOpen(false); onChangePriority(card.id, 15); }} 
             role="option"
           > 
             <Flag className="w-4 h-4" /> Media
           </button>
           <button 
-            className="w-full text-left px-3 py-2 hover:bg-slate-100 text-slate-500 font-semibold flex items-center gap-2" 
+            className="w-full text-left px-3 py-2 hover:bg-cream-100 text-dark-500 font-semibold flex items-center gap-2" 
             onClick={() => { setPriorityOpen(false); onChangePriority(card.id, 5); }} 
             role="option"
           > 

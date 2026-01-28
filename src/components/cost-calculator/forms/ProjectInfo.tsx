@@ -1,10 +1,12 @@
 import React from 'react';
-import { RotateCcw, Save } from 'lucide-react';
+import { RotateCcw, Save, Package, Droplet } from 'lucide-react';
 import type { ProjectInfoProps } from '../types';
 
 const ProjectInfo: React.FC<ProjectInfoProps> = ({ 
-  projectName, 
-  onProjectNameChange, 
+  projectName,
+  projectType,
+  onProjectNameChange,
+  onProjectTypeChange,
   onReset, 
   onSave,
   isSaving = false
@@ -32,13 +34,62 @@ const ProjectInfo: React.FC<ProjectInfoProps> = ({
           </button>
         </div>
       </div>
-      <input
-        type="text"
-        placeholder="Nombre del proyecto"
-        value={projectName}
-        onChange={(e) => onProjectNameChange(e.target.value)}
-        className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent transition-all duration-200"
-      />
+      
+      <div className="space-y-4">
+        {/* Selector de tipo de proyecto */}
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-2">
+            Tipo de proyecto
+          </label>
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={() => onProjectTypeChange('filament')}
+              disabled={isSaving}
+              className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 transition-all duration-200 ${
+                projectType === 'filament'
+                  ? 'border-blue-500 bg-blue-50 text-blue-700 shadow-md'
+                  : 'border-slate-300 bg-white text-slate-600 hover:border-slate-400 hover:bg-slate-50'
+              } disabled:opacity-50 disabled:cursor-not-allowed`}
+            >
+              <Package className="w-5 h-5" />
+              <span className="font-medium">Filamento</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => onProjectTypeChange('resin')}
+              disabled={isSaving}
+              className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 transition-all duration-200 ${
+                projectType === 'resin'
+                  ? 'border-purple-500 bg-purple-50 text-purple-700 shadow-md'
+                  : 'border-slate-300 bg-white text-slate-600 hover:border-slate-400 hover:bg-slate-50'
+              } disabled:opacity-50 disabled:cursor-not-allowed`}
+            >
+              <Droplet className="w-5 h-5" />
+              <span className="font-medium">Resina</span>
+            </button>
+          </div>
+          <p className="text-xs text-slate-500 mt-2">
+            {projectType === 'filament' 
+              ? 'Unidades: gramos (g) y kilogramos (kg)' 
+              : 'Unidades: mililitros (ml) y litros (L)'}
+          </p>
+        </div>
+
+        {/* Nombre del proyecto */}
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-2">
+            Nombre del proyecto
+          </label>
+          <input
+            type="text"
+            placeholder="Nombre del proyecto"
+            value={projectName}
+            onChange={(e) => onProjectNameChange(e.target.value)}
+            className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent transition-all duration-200"
+          />
+        </div>
+      </div>
     </div>
   );
 };

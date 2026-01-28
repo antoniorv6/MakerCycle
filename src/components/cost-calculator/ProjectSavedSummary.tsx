@@ -1,24 +1,22 @@
 import React from 'react';
 import { CheckCircle, Edit3, Plus, Calculator, DollarSign, Clock, Package } from 'lucide-react';
+import { useFormatCurrency } from '@/hooks/useFormatCurrency';
 import type { DatabaseProject, DatabasePiece } from '@/types';
 
 interface ProjectSavedSummaryProps {
   project: DatabaseProject & { pieces?: DatabasePiece[] };
   onEdit: () => void;
   onNewProject: () => void;
+  isEditing?: boolean; // Indica si se estaba editando un proyecto existente
 }
 
 const ProjectSavedSummary: React.FC<ProjectSavedSummaryProps> = ({ 
   project, 
   onEdit, 
-  onNewProject 
+  onNewProject,
+  isEditing = false
 }) => {
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-ES', {
-      style: 'currency',
-      currency: 'EUR'
-    }).format(amount);
-  };
+  const { formatCurrency } = useFormatCurrency();
 
   const formatTime = (hours: number) => {
     if (hours < 1) {
@@ -34,11 +32,17 @@ const ProjectSavedSummary: React.FC<ProjectSavedSummaryProps> = ({
     <div className="max-w-4xl mx-auto p-6">
       {/* Success Header */}
       <div className="text-center mb-8">
-        <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
+        <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4 animate-pulse">
           <CheckCircle className="w-8 h-8 text-green-600" />
         </div>
-        <h1 className="text-3xl font-bold text-slate-900 mb-2">¡Proyecto Guardado!</h1>
-        <p className="text-slate-600">Tu proyecto se ha guardado correctamente en la base de datos</p>
+        <h1 className="text-3xl font-bold text-slate-900 mb-2">
+          {isEditing ? '¡Proyecto Editado con Éxito!' : '¡Proyecto Guardado!'}
+        </h1>
+        <p className="text-slate-600 text-lg">
+          {isEditing 
+            ? 'Los cambios en tu proyecto se han guardado correctamente. Puedes continuar editando o crear un nuevo proyecto.' 
+            : 'Tu proyecto se ha guardado correctamente en la base de datos'}
+        </p>
       </div>
 
       {/* Project Summary Card */}
@@ -186,21 +190,45 @@ const ProjectSavedSummary: React.FC<ProjectSavedSummaryProps> = ({
 
       {/* Action Buttons */}
       <div className="flex flex-col sm:flex-row gap-4 justify-center">
-        <button
-          onClick={onEdit}
-          className="flex items-center justify-center space-x-2 px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors duration-200 font-medium"
-        >
-          <Edit3 className="w-5 h-5" />
-          <span>Editar Proyecto</span>
-        </button>
-        
-        <button
-          onClick={onNewProject}
-          className="flex items-center justify-center space-x-2 px-6 py-3 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors duration-200 font-medium"
-        >
-          <Plus className="w-5 h-5" />
-          <span>Añadir Nuevo Proyecto</span>
-        </button>
+        {isEditing ? (
+          // Cuando se edita un proyecto, mostrar opciones para editar de nuevo o crear nuevo proyecto
+          <>
+            <button
+              onClick={onEdit}
+              className="flex items-center justify-center space-x-2 px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors duration-200 font-medium shadow-md hover:shadow-lg"
+            >
+              <Edit3 className="w-5 h-5" />
+              <span>Continuar Editando</span>
+            </button>
+            
+            <button
+              onClick={onNewProject}
+              className="flex items-center justify-center space-x-2 px-6 py-3 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors duration-200 font-medium shadow-md hover:shadow-lg"
+            >
+              <Plus className="w-5 h-5" />
+              <span>Nuevo Proyecto</span>
+            </button>
+          </>
+        ) : (
+          // Cuando se crea un proyecto nuevo, mostrar ambas opciones
+          <>
+            <button
+              onClick={onEdit}
+              className="flex items-center justify-center space-x-2 px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors duration-200 font-medium shadow-md hover:shadow-lg"
+            >
+              <Edit3 className="w-5 h-5" />
+              <span>Editar Proyecto</span>
+            </button>
+            
+            <button
+              onClick={onNewProject}
+              className="flex items-center justify-center space-x-2 px-6 py-3 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors duration-200 font-medium shadow-md hover:shadow-lg"
+            >
+              <Plus className="w-5 h-5" />
+              <span>Añadir Nuevo Proyecto</span>
+            </button>
+          </>
+        )}
       </div>
     </div>
   );

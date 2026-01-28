@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Plus, Trash2, Star, Edit2, X, Check, Package, Filter } from 'lucide-react';
 import { useMaterialPresets } from '@/hooks/useMaterialPresets';
+import { useFormatCurrency } from '@/hooks/useFormatCurrency';
 import type { DatabaseMaterialPreset } from '@/types';
 
 const MATERIAL_TYPES = {
@@ -17,8 +18,11 @@ export default function MaterialPresetsManager() {
   const [selectedCategory, setSelectedCategory] = useState<'filament' | 'resin'>('filament');
   const [showTypeSelector, setShowTypeSelector] = useState(false);
   const { presets, loading, addPreset, updatePreset, removePreset, setAsDefault, stats } = useMaterialPresets();
+  const { currencySymbol } = useFormatCurrency();
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  // Estado local para input numérico (permite que esté vacío)
+  const [priceInput, setPriceInput] = useState<string>('');
 
 
   const [formData, setFormData] = useState<Omit<DatabaseMaterialPreset, 'id' | 'user_id' | 'created_at' | 'updated_at'>>({
@@ -47,6 +51,7 @@ export default function MaterialPresetsManager() {
       is_default: false,
       team_id: null,
     });
+    setPriceInput('');
     setIsAdding(false);
     setEditingId(null);
   };
@@ -84,6 +89,8 @@ export default function MaterialPresetsManager() {
       return;
     }
 
+    // Guardar el preset tal cual, sin conversiones
+    // El precio se guarda tal como lo introduce el usuario
     if (editingId) {
       const success = await updatePreset(editingId, formData);
       if (success) {
@@ -100,6 +107,7 @@ export default function MaterialPresetsManager() {
   const handleEdit = (presetId: string) => {
     const preset = presets.find(p => p.id === presetId);
     if (preset) {
+      // Cargar el preset tal cual, sin conversiones
       setFormData({
         name: preset.name,
         price_per_unit: preset.price_per_unit,
@@ -112,6 +120,7 @@ export default function MaterialPresetsManager() {
         is_default: preset.is_default,
         team_id: preset.team_id || null,
       });
+      setPriceInput(preset.price_per_unit?.toString() || '');
       setEditingId(presetId);
       setIsAdding(false);
       setSelectedCategory(preset.category);
@@ -239,10 +248,10 @@ export default function MaterialPresetsManager() {
               <button
                 key={id}
                 onClick={() => handleCategoryChange(id as 'filament' | 'resin')}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                className={`px-4 py-2 rounded-lg font-medium transition-colors border ${
                   selectedCategory === id
-                    ? 'bg-purple-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    ? 'bg-purple-600 text-white border-purple-600'
+                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400'
                 }`}
               >
                 {label} ({count})
@@ -276,15 +285,41 @@ export default function MaterialPresetsManager() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Precio por {formData.unit} (€) *
+                Precio por {formData.unit} ({currencySymbol}) *
               </label>
               <input
                 type="number"
                 step="0.01"
-                value={formData.price_per_unit}
-                onChange={(e) => setFormData({ ...formData, price_per_unit: parseFloat(e.target.value) || 0 })}
+                value={priceInput !== undefined && priceInput !== null ? priceInput : (formData.price_per_unit?.toString() || '')}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setPriceInput(value);
+                  // Only update parent if we have a valid number
+                  if (value !== '' && value !== '-' && value !== '.') {
+                    const numValue = parseFloat(value);
+                    if (!isNaN(numValue)) {
+                      setFormData({ ...formData, price_per_unit: numValue });
+                    }
+                  }
+                }}
+                onBlur={(e) => {
+                  const value = priceInput;
+                  if (value === '' || value === '-' || value === '.') {
+                    setPriceInput('0');
+                    setFormData({ ...formData, price_per_unit: 0 });
+                  } else {
+                    const numValue = parseFloat(value);
+                    if (!isNaN(numValue)) {
+                      setPriceInput(numValue.toString());
+                      setFormData({ ...formData, price_per_unit: numValue });
+                    } else {
+                      setPriceInput('0');
+                      setFormData({ ...formData, price_per_unit: 0 });
+                    }
+                  }
+                }}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                placeholder="25.00"
+                placeholder={formData.category === 'resin' ? '50.00' : '25.00'}
                 required
               />
             </div>
@@ -391,7 +426,7 @@ export default function MaterialPresetsManager() {
             <button
               type="button"
               onClick={resetForm}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-colors shadow-sm"
             >
               <X className="w-4 h-4" />
               Cancelar
@@ -453,7 +488,7 @@ export default function MaterialPresetsManager() {
                     <div>
                       <span className="text-gray-500">Precio:</span>
                       <span className="ml-2 font-medium text-purple-600">
-                        {preset.price_per_unit.toFixed(2)}€/{preset.unit}
+                        {preset.price_per_unit.toFixed(2)}{currencySymbol}/{preset.unit}
                       </span>
                     </div>
                     <div>

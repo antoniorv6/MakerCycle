@@ -1,20 +1,229 @@
-import React from 'react';
-import { Zap, Info } from 'lucide-react';
+import React, { useState } from 'react';
+import { Zap, Info, Plus, ChevronDown, Settings, X } from 'lucide-react';
 import type { ElectricitySectionProps } from '../types';
+import { useFormatCurrency } from '@/hooks/useFormatCurrency';
 
 const ElectricitySection: React.FC<ElectricitySectionProps> = ({
   printHours,
   electricityCost,
   printerPower,
   onElectricityCostChange,
-  onPrinterPowerChange
+  onPrinterPowerChange,
+  selectedPrinterId,
+  onPrinterSelect,
+  printerPresets = [],
+  onNavigateToSettings
 }) => {
+  const [powerInput, setPowerInput] = useState<string>(printerPower?.toString() || '');
+  const [costInput, setCostInput] = useState<string>(electricityCost?.toString() || '');
+  const [showPrinterSelector, setShowPrinterSelector] = useState(false);
+  const { formatCurrency, currencySymbol } = useFormatCurrency();
+  
+  const selectedPrinter = printerPresets.find(p => p.id === selectedPrinterId);
+
+  // Sync with props when they change externally
+  React.useEffect(() => {
+    setPowerInput(printerPower?.toString() || '');
+  }, [printerPower]);
+
+  React.useEffect(() => {
+    setCostInput(electricityCost?.toString() || '');
+  }, [electricityCost]);
+
+  const handlePowerChange = (value: string) => {
+    // Allow any input while typing - empty, decimal point, negative sign, etc.
+    setPowerInput(value);
+    // Only update parent if we have a valid number
+    if (value !== '' && value !== '-' && value !== '.') {
+      const numValue = parseFloat(value);
+      if (!isNaN(numValue)) {
+        onPrinterPowerChange(numValue);
+      }
+    }
+  };
+
+  const handlePowerBlur = () => {
+    // Normalize empty or incomplete values to 0
+    if (powerInput === '' || powerInput === '-' || powerInput === '.') {
+      setPowerInput('0');
+      onPrinterPowerChange(0);
+    } else {
+      // Normalize values like ".5" to "0.5"
+      const numValue = parseFloat(powerInput);
+      if (!isNaN(numValue)) {
+        setPowerInput(numValue.toString());
+        onPrinterPowerChange(numValue);
+      } else {
+        setPowerInput('0');
+        onPrinterPowerChange(0);
+      }
+    }
+  };
+
+  const handleCostChange = (value: string) => {
+    // Allow any input while typing - empty, decimal point, negative sign, etc.
+    setCostInput(value);
+    // Only update parent if we have a valid number
+    if (value !== '' && value !== '-' && value !== '.') {
+      const numValue = parseFloat(value);
+      if (!isNaN(numValue)) {
+        onElectricityCostChange(numValue);
+      }
+    }
+  };
+
+  const handleCostBlur = () => {
+    // Normalize empty or incomplete values to 0
+    if (costInput === '' || costInput === '-' || costInput === '.') {
+      setCostInput('0');
+      onElectricityCostChange(0);
+    } else {
+      // Normalize values like ".5" to "0.5"
+      const numValue = parseFloat(costInput);
+      if (!isNaN(numValue)) {
+        setCostInput(numValue.toString());
+        onElectricityCostChange(numValue);
+      } else {
+        setCostInput('0');
+        onElectricityCostChange(0);
+      }
+    }
+  };
+
+  const handlePrinterSelect = (printerId: string | null) => {
+    if (printerId && onPrinterSelect) {
+      const printer = printerPresets.find(p => p.id === printerId);
+      if (printer) {
+        // Auto-rellenar la potencia de la impresora seleccionada
+        onPrinterPowerChange(printer.power_consumption);
+        onPrinterSelect(printerId);
+      }
+    } else if (onPrinterSelect) {
+      onPrinterSelect(null);
+    }
+    setShowPrinterSelector(false);
+  };
+
   return (
     <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-shadow duration-300">
-      <div className="flex items-center mb-4">
-        <Zap className="w-5 h-5 text-yellow-500 mr-2" />
-        <h2 className="text-xl font-semibold text-gray-900">Electricidad</h2>
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center">
+          <Zap className="w-5 h-5 text-yellow-500 mr-2" />
+          <h2 className="text-xl font-semibold text-gray-900">Electricidad e Impresora</h2>
+        </div>
+        
+        {/* Selector de impresora */}
+        {printerPresets.length > 0 && (
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setShowPrinterSelector(!showPrinterSelector)}
+              className="flex items-center gap-2 px-3 py-2 text-sm bg-amber-50 text-amber-700 rounded-lg hover:bg-amber-100 transition-colors border border-amber-200"
+            >
+              {selectedPrinter ? selectedPrinter.name : 'Seleccionar impresora'}
+              <ChevronDown className={`w-4 h-4 transition-transform ${showPrinterSelector ? 'rotate-180' : ''}`} />
+            </button>
+            
+            {showPrinterSelector && (
+              <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
+                <div className="p-2">
+                  <button
+                    type="button"
+                    onClick={() => handlePrinterSelect(null)}
+                    className={`w-full text-left px-3 py-2 rounded-lg text-sm hover:bg-gray-100 ${
+                      !selectedPrinterId ? 'bg-gray-100 font-medium' : ''
+                    }`}
+                  >
+                    Ninguna (manual)
+                  </button>
+                  {printerPresets.map(printer => (
+                    <button
+                      key={printer.id}
+                      type="button"
+                      onClick={() => handlePrinterSelect(printer.id)}
+                      className={`w-full text-left px-3 py-2 rounded-lg text-sm hover:bg-amber-50 ${
+                        selectedPrinterId === printer.id ? 'bg-amber-100 font-medium' : ''
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span>{printer.name}</span>
+                        <span className="text-xs text-gray-500">{printer.power_consumption} kW</span>
+                      </div>
+                      {printer.brand && (
+                        <div className="text-xs text-gray-400">{printer.brand} {printer.model}</div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+                {onNavigateToSettings && (
+                  <div className="border-t border-gray-200 p-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowPrinterSelector(false);
+                        onNavigateToSettings();
+                      }}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-amber-600 hover:bg-amber-50 rounded-lg"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Añadir nueva impresora
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+        
+        {printerPresets.length === 0 && onNavigateToSettings && (
+          <button
+            type="button"
+            onClick={onNavigateToSettings}
+            className="flex items-center gap-2 px-3 py-2 text-sm text-amber-600 hover:bg-amber-50 rounded-lg border border-amber-200"
+          >
+            <Plus className="w-4 h-4" />
+            Añadir impresora
+          </button>
+        )}
       </div>
+
+      {/* Info de impresora seleccionada */}
+      {selectedPrinter && (
+        <div className="mb-4 p-3 bg-amber-50 rounded-lg border border-amber-200">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="font-medium text-amber-900">{selectedPrinter.name}</span>
+              {selectedPrinter.brand && (
+                <span className="text-sm text-amber-600">({selectedPrinter.brand} {selectedPrinter.model})</span>
+              )}
+              <span className="text-xs text-amber-600 bg-amber-100 px-2 py-1 rounded">
+                {selectedPrinter.power_consumption} kW
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              {onNavigateToSettings && (
+                <button
+                  type="button"
+                  onClick={onNavigateToSettings}
+                  className="p-1 text-amber-500 hover:text-amber-700 hover:bg-amber-100 rounded"
+                  title="Editar impresora"
+                >
+                  <Settings className="w-4 h-4" />
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => handlePrinterSelect(null)}
+                className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded"
+                title="Quitar impresora"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="grid md:grid-cols-3 gap-4">
         <div>
           <div className="flex items-center mb-2">
@@ -38,8 +247,9 @@ const ElectricitySection: React.FC<ElectricitySectionProps> = ({
           </label>
           <input
             type="number"
-            value={printerPower || ''}
-            onChange={(e) => onPrinterPowerChange(Number(e.target.value) || 0)}
+            value={powerInput}
+            onChange={(e) => handlePowerChange(e.target.value)}
+            onBlur={handlePowerBlur}
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200"
             min="0"
             step="0.01"
@@ -48,18 +258,31 @@ const ElectricitySection: React.FC<ElectricitySectionProps> = ({
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Coste electricidad (€/kWh)
+            Coste electricidad ({currencySymbol}/kWh)
           </label>
           <input
             type="number"
-            value={electricityCost || ''}
-            onChange={(e) => onElectricityCostChange(Number(e.target.value) || 0)}
+            value={costInput}
+            onChange={(e) => handleCostChange(e.target.value)}
+            onBlur={handleCostBlur}
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200"
             min="0"
             step="0.01"
           />
         </div>
       </div>
+
+      {/* Resumen de costes de electricidad */}
+      {printHours > 0 && (
+        <div className="mt-4 pt-4 border-t border-gray-200">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-gray-600">Coste de electricidad estimado:</span>
+            <span className="font-medium text-gray-900">
+              {formatCurrency(printHours * printerPower * electricityCost)}
+            </span>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

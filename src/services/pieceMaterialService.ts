@@ -39,7 +39,7 @@ export class PieceMaterialService {
 
     // Agrupar por piece_id
     const grouped: Record<string, PieceMaterial[]> = {};
-    (data || []).forEach(material => {
+    (data || []).forEach((material: PieceMaterial) => {
       if (!grouped[material.piece_id]) {
         grouped[material.piece_id] = [];
       }

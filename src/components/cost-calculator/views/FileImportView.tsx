@@ -2,6 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { Upload, FileText, AlertCircle, CheckCircle, ArrowLeft, Loader2, Save, Bookmark } from 'lucide-react';
 import { PrintCostCalculator, type CostSummary } from '@/lib/from_3mf';
 import { useMaterialPresets } from '@/hooks/useMaterialPresets';
+import { useFormatCurrency } from '@/hooks/useFormatCurrency';
 import { SlicerLogoDisplay } from '../SlicerLogos';
 import type { Piece, MaterialPreset } from '@/types';
 
@@ -32,6 +33,7 @@ const FileImportView: React.FC<FileImportViewProps> = ({ onBack, onImportComplet
   const [isLoadingProfiles, setIsLoadingProfiles] = useState(false);
   const [calculator] = useState(() => new PrintCostCalculator());
   const { addPreset, addPresetsBatch } = useMaterialPresets(); // Solo necesitamos las funciones de creación
+  const { formatCurrency, currencySymbol } = useFormatCurrency();
 
   const handleFileSelect = useCallback(async (file: File) => {
     if (!file.name.toLowerCase().endsWith('.gcode.3mf')) {
@@ -381,8 +383,8 @@ const FileImportView: React.FC<FileImportViewProps> = ({ onBack, onImportComplet
                           </div>
                           <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm text-slate-600">
                             <div>Peso total: {profile.weightG.toFixed(1)}g</div>
-                            <div>Precio: {profile.costPerKg.toFixed(2)}€/kg</div>
-                            <div>Coste total: {(profile.weightG * profile.costPerKg / 1000).toFixed(2)}€</div>
+                            <div>Precio: {formatCurrency(profile.costPerKg)}/kg</div>
+                            <div>Coste total: {formatCurrency(profile.weightG * profile.costPerKg / 1000)}</div>
                           </div>
                         </div>
                       </div>

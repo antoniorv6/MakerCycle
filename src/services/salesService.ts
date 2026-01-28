@@ -10,7 +10,11 @@ export class SalesService {
       .from('sales')
       .select(`
         *,
-        items:sale_items(*)
+        items:sale_items(*),
+        printer_amortizations:sales_printer_amortizations(
+          *,
+          printer:printer_presets(*)
+        )
       `)
       .order('created_at', { ascending: false });
 
@@ -36,7 +40,11 @@ export class SalesService {
       .from('sales')
       .select(`
         *,
-        items:sale_items(*)
+        items:sale_items(*),
+        printer_amortizations:sales_printer_amortizations(
+          *,
+          printer:printer_presets(*)
+        )
       `)
       .eq('id', id)
       .single();
@@ -94,6 +102,45 @@ export class SalesService {
         // Delete the sale if items creation fails
         await this.supabase.from('sales').delete().eq('id', saleRecord.id);
         throw new Error(`Error creating sale items: ${itemsError.message}`);
+      }
+    }
+
+    // Create printer amortizations if any
+    if (saleData.printer_amortizations && saleData.printer_amortizations.length > 0) {
+      // Calculate profit before amortization
+      const totalAmount = saleData.items.reduce((sum, item) => sum + item.sale_price, 0);
+      const totalCost = saleData.items.reduce((sum, item) => sum + (item.unit_cost * item.quantity), 0);
+      const profitBeforeAmortization = totalAmount - totalCost;
+
+      const amortizations = saleData.printer_amortizations.map(amort => {
+        // Calculate amortization amount
+        let amortizationAmount = 0;
+        if (amort.amortization_method === 'percentage') {
+          amortizationAmount = (profitBeforeAmortization * amort.amortization_value) / 100;
+        } else {
+          // Fixed amount: cannot exceed profit
+          amortizationAmount = Math.min(amort.amortization_value, profitBeforeAmortization);
+        }
+        amortizationAmount = Math.max(0, amortizationAmount);
+
+        return {
+          sale_id: saleRecord.id,
+          printer_preset_id: amort.printer_preset_id,
+          amortization_method: amort.amortization_method,
+          amortization_value: amort.amortization_value,
+          amortization_amount: amortizationAmount,
+          profit_before_amortization: profitBeforeAmortization,
+          profit_after_amortization: profitBeforeAmortization - amortizationAmount
+        };
+      });
+
+      const { error: amortizationsError } = await this.supabase
+        .from('sales_printer_amortizations')
+        .insert(amortizations);
+
+      if (amortizationsError) {
+        console.error('Error creating printer amortizations:', amortizationsError);
+        // Don't fail the sale creation if amortizations fail, just log it
       }
     }
 
@@ -165,6 +212,61 @@ export class SalesService {
     } catch (error) {
       console.error('Error in updateSaleItems:', error);
       throw error;
+    }
+  }
+
+  async updateSaleAmortizations(saleId: string, amortizations: Array<{
+    printer_preset_id: string;
+    amortization_method: 'fixed' | 'percentage';
+    amortization_value: number;
+  }>, profitBeforeAmortization: number): Promise<void> {
+    try {
+      // Delete existing amortizations
+      const { error: deleteError } = await this.supabase
+        .from('sales_printer_amortizations')
+        .delete()
+        .eq('sale_id', saleId);
+
+      if (deleteError) {
+        throw new Error(`Error deleting existing amortizations: ${deleteError.message}`);
+      }
+
+      // Insert new amortizations if there are any
+      if (amortizations.length > 0) {
+        const amortizationsData = amortizations.map(amort => {
+          // Calculate amortization amount
+          let amortizationAmount = 0;
+          if (amort.amortization_method === 'percentage') {
+            amortizationAmount = (profitBeforeAmortization * amort.amortization_value) / 100;
+          } else {
+            // Fixed amount: cannot exceed profit
+            amortizationAmount = Math.min(amort.amortization_value, profitBeforeAmortization);
+          }
+          amortizationAmount = Math.max(0, amortizationAmount);
+
+          return {
+            sale_id: saleId,
+            printer_preset_id: amort.printer_preset_id,
+            amortization_method: amort.amortization_method,
+            amortization_value: amort.amortization_value,
+            amortization_amount: amortizationAmount,
+            profit_before_amortization: profitBeforeAmortization,
+            profit_after_amortization: profitBeforeAmortization - amortizationAmount
+          };
+        });
+
+        const { error: insertError } = await this.supabase
+          .from('sales_printer_amortizations')
+          .insert(amortizationsData);
+
+        if (insertError) {
+          console.error('Error inserting new amortizations:', insertError);
+          // Don't throw error to avoid breaking the main flow
+        }
+      }
+    } catch (error) {
+      console.error('Error updating sale amortizations:', error);
+      // Don't throw error to avoid breaking the main flow
     }
   }
 

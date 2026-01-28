@@ -1,13 +1,23 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Exportación estática para Capacitor
+  output: 'export',
+  
+  // Desactivar optimización de imágenes (no compatible con export estático)
   images: {
-    domains: ['images.pexels.com'],
-    unoptimized: true, // Para compatibilidad con Netlify
+    unoptimized: true,
   },
-  // Asegurar que los archivos estáticos se sirvan correctamente
-  trailingSlash: false,
+  
+  // Trailing slash necesario para rutas en Capacitor
+  trailingSlash: true,
+  
   // Configuración para archivos estáticos
-  assetPrefix: process.env.NODE_ENV === 'production' ? '' : '',
+  assetPrefix: '',
+  
+  // Desactivar indicadores de desarrollo en móvil
+  devIndicators: {
+    buildActivity: false,
+  },
 }
 
 module.exports = nextConfig

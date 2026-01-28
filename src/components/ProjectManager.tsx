@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Search, Filter, Calendar, Euro, FileText, Clock, Package, Layers, Zap } from 'lucide-react';
+import { Plus, Search, Filter, Calendar, Euro, FileText, Clock, Package, Layers, Zap, Eye, Pencil } from 'lucide-react';
 import { createClient } from '@/lib/supabase';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useTeam } from '@/components/providers/TeamProvider';
+import { useFormatCurrency } from '@/hooks/useFormatCurrency';
 import type { DatabaseProject, DatabasePiece, PieceMaterial } from '@/types';
 import { toast } from 'react-hot-toast';
 import ProjectInfo from './cost-calculator/forms/ProjectInfo';
@@ -12,6 +13,7 @@ import ConfirmModal from './cost-calculator/ConfirmModal';
 
 interface ProjectManagerProps {
   onLoadProject: (project: DatabaseProject & { pieces?: DatabasePiece[] }) => void;
+  onEditProject?: (project: DatabaseProject & { pieces?: DatabasePiece[] }) => void;
 }
 
 // Function to process pieces (solo sistema multi-material)
@@ -42,9 +44,10 @@ async function processPieces(
   return processedPieces;
 }
 
-export default function ProjectManager({ onLoadProject }: ProjectManagerProps) {
+export default function ProjectManager({ onLoadProject, onEditProject }: ProjectManagerProps) {
   const { user } = useAuth();
   const { currentTeam } = useTeam();
+  const { formatCurrency, currencySymbol } = useFormatCurrency();
   const supabase = createClient();
   const [projects, setProjects] = useState<(DatabaseProject & { pieces?: DatabasePiece[] })[]>([]);
   const [loading, setLoading] = useState(true);
@@ -52,6 +55,7 @@ export default function ProjectManager({ onLoadProject }: ProjectManagerProps) {
   const [filterStatus, setFilterStatus] = useState('all');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newProjectName, setNewProjectName] = useState('');
+  const [newProjectType, setNewProjectType] = useState<'filament' | 'resin'>('filament');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
 
@@ -88,7 +92,7 @@ export default function ProjectManager({ onLoadProject }: ProjectManagerProps) {
 
       // Fetch pieces for each project with their materials
       const projectsWithPieces = await Promise.all(
-        (data || []).map(async (project) => {
+        (data || []).map(async (project: DatabaseProject) => {
           const { data: pieces } = await supabase
             .from('pieces')
             .select(`
@@ -124,9 +128,39 @@ export default function ProjectManager({ onLoadProject }: ProjectManagerProps) {
         `)
         .eq('project_id', project.id);
 
-      if (pieces && pieces.length > 0) {
-      } else {
+      if (error) {
+        console.error('Error fetching pieces:', error);
+        toast.error('No se pudieron cargar las piezas del proyecto. Intenta de nuevo.');
+        return;
       }
+
+      // Process pieces (handle both new system and legacy)
+      const piecesWithMaterials = await processPieces(pieces || [], supabase);
+
+      const projectWithPieces = { ...project, pieces: piecesWithMaterials };
+      onLoadProject(projectWithPieces);
+    } catch (error) {
+      console.error('Error loading project:', error);
+      toast.error('No se pudo cargar el proyecto. Intenta de nuevo.');
+    }
+  };
+
+  const handleEditProject = async (project: DatabaseProject) => {
+    if (!onEditProject) {
+      // Fallback: si no hay onEditProject, usar el flujo normal
+      handleLoadProject(project);
+      return;
+    }
+
+    try {
+      // Fetch pieces for the project with their materials
+      const { data: pieces, error } = await supabase
+        .from('pieces')
+        .select(`
+          *,
+          piece_materials (*)
+        `)
+        .eq('project_id', project.id);
 
       if (error) {
         console.error('Error fetching pieces:', error);
@@ -136,13 +170,12 @@ export default function ProjectManager({ onLoadProject }: ProjectManagerProps) {
 
       // Process pieces (handle both new system and legacy)
       const piecesWithMaterials = await processPieces(pieces || [], supabase);
-      
 
       const projectWithPieces = { ...project, pieces: piecesWithMaterials };
-      onLoadProject(projectWithPieces);
+      onEditProject(projectWithPieces);
     } catch (error) {
-      console.error('Error loading project:', error);
-      toast.error('No se pudo cargar el proyecto. Intenta de nuevo.');
+      console.error('Error loading project for edit:', error);
+      toast.error('No se pudo cargar el proyecto para editar. Intenta de nuevo.');
     }
   };
 
@@ -349,20 +382,28 @@ export default function ProjectManager({ onLoadProject }: ProjectManagerProps) {
                     </div>
                     <div className="flex items-center space-x-1">
                       <Euro className="w-4 h-4" />
-                      <span className="font-medium">€{project.total_cost.toFixed(2)}</span>
+                      <span className="font-medium">{formatCurrency(project.total_cost)}</span>
                     </div>
                   </div>
                 </div>
                 <div className="flex space-x-2">
                   <button
                     onClick={() => handleLoadProject(project)}
-                    className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors duration-200 text-sm font-medium"
+                    className="flex items-center space-x-1.5 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors duration-200 text-sm font-medium"
                   >
-                    Cargar
+                    <Eye className="w-4 h-4" />
+                    <span>Ver detalles</span>
+                  </button>
+                  <button
+                    onClick={() => handleEditProject(project)}
+                    className="flex items-center space-x-1.5 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 text-sm font-medium shadow-sm hover:shadow-md"
+                  >
+                    <Pencil className="w-4 h-4" />
+                    <span>Editar</span>
                   </button>
                   <button
                     onClick={() => handleDeleteProject(project.id)}
-                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-200 text-sm font-medium"
+                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-200 text-sm font-medium shadow-sm hover:shadow-md"
                   >
                     Eliminar
                   </button>
@@ -425,7 +466,7 @@ export default function ProjectManager({ onLoadProject }: ProjectManagerProps) {
                     <Euro className="w-4 h-4" />
                     Coste Total
                   </div>
-                  <div className="text-orange-900 font-bold text-lg">€{project.total_cost.toFixed(2)}</div>
+                  <div className="text-orange-900 font-bold text-lg">{formatCurrency(project.total_cost)}</div>
                 </div>
               </div>
 
@@ -481,7 +522,7 @@ export default function ProjectManager({ onLoadProject }: ProjectManagerProps) {
                                 <Euro className="w-3 h-3" />
                                 Coste
                               </div>
-                              <div className="font-medium text-gray-900">€{(pieceCost * piece.quantity).toFixed(2)}</div>
+                              <div className="font-medium text-gray-900">{formatCurrency(pieceCost * piece.quantity)}</div>
                             </div>
                             <div>
                               <div className="flex items-center gap-1 text-gray-600 mb-1">
@@ -514,7 +555,7 @@ export default function ProjectManager({ onLoadProject }: ProjectManagerProps) {
                                       </span>
                                     </div>
                                     <div className="text-gray-600">
-                                      {material.weight || 0}{material.unit || 'g'} • €{((material.weight || 0) * (material.price_per_kg || 0) / (material.unit === 'kg' ? 1 : 1000)).toFixed(2)}
+                                      {material.weight || 0}{material.unit || 'g'} • {formatCurrency((material.weight || 0) * (material.price_per_kg || 0) / (material.unit === 'kg' ? 1 : 1000))}
                                     </div>
                                   </div>
                                 ))}
@@ -543,8 +584,13 @@ export default function ProjectManager({ onLoadProject }: ProjectManagerProps) {
             <h2 className="text-xl font-semibold mb-4">Crear nuevo proyecto</h2>
             <ProjectInfo
               projectName={newProjectName}
+              projectType={newProjectType}
               onProjectNameChange={setNewProjectName}
-              onReset={() => setNewProjectName('')}
+              onProjectTypeChange={setNewProjectType}
+              onReset={() => {
+                setNewProjectName('');
+                setNewProjectType('filament');
+              }}
               onSave={handleCreateProject}
             />
             <div className="mt-4">

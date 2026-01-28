@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Download, FileText, Plus, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useClients } from '@/hooks/useClients';
+import { useFormatCurrency } from '@/hooks/useFormatCurrency';
 import type { Sale, InvoiceFormData } from '@/types';
 import { toast } from 'react-hot-toast';
 
@@ -13,6 +14,8 @@ interface InvoiceFormProps {
 
 export function InvoiceForm({ sale, onClose, onGeneratePDF }: InvoiceFormProps) {
   const { clients } = useClients();
+  // Estado local para inputs numéricos (permite que estén vacíos)
+  const [inputValues, setInputValues] = useState<Record<number, { quantity?: string; unitPrice?: string }>>({});
   const [formData, setFormData] = useState<InvoiceFormData>({
     clientName: '',
     clientAddress: '',
@@ -126,7 +129,26 @@ export function InvoiceForm({ sale, onClose, onGeneratePDF }: InvoiceFormProps) 
     onGeneratePDF(formData);
   };
 
-  const formatCurrency = (value: number) => `€${value.toFixed(2)}`;
+  const { formatCurrency, currencySymbol } = useFormatCurrency();
+
+  // Obtener el valor del input local o el del prop
+  const getInputValue = (index: number, field: 'quantity' | 'unitPrice', propValue: number | undefined): string => {
+    if (inputValues[index]?.[field] !== undefined && inputValues[index][field] !== null) {
+      return inputValues[index][field];
+    }
+    return propValue?.toString() || '';
+  };
+
+  // Actualizar el valor del input local
+  const setInputValue = (index: number, field: 'quantity' | 'unitPrice', value: string) => {
+    setInputValues(prev => ({
+      ...prev,
+      [index]: {
+        ...prev[index],
+        [field]: value
+      }
+    }));
+  };
 
   return (
     <AnimatePresence>
@@ -329,24 +351,76 @@ export function InvoiceForm({ sale, onClose, onGeneratePDF }: InvoiceFormProps) 
                         <input
                           type="number"
                           required
-                          min="1"
-                          value={item.quantity}
-                          onChange={(e) => handleItemChange(index, 'quantity', parseInt(e.target.value) || 1)}
+                          min="0"
+                          value={getInputValue(index, 'quantity', item.quantity)}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            setInputValue(index, 'quantity', value);
+                            // Only update parent if we have a valid number
+                            if (value !== '' && value !== '-') {
+                              const numValue = parseInt(value);
+                              if (!isNaN(numValue)) {
+                                handleItemChange(index, 'quantity', numValue);
+                              }
+                            }
+                          }}
+                          onBlur={(e) => {
+                            const value = getInputValue(index, 'quantity', item.quantity);
+                            if (value === '' || value === '-') {
+                              setInputValue(index, 'quantity', '0');
+                              handleItemChange(index, 'quantity', 0);
+                            } else {
+                              const numValue = parseInt(value);
+                              if (!isNaN(numValue)) {
+                                setInputValue(index, 'quantity', numValue.toString());
+                                handleItemChange(index, 'quantity', numValue);
+                              } else {
+                                setInputValue(index, 'quantity', '0');
+                                handleItemChange(index, 'quantity', 0);
+                              }
+                            }
+                          }}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         />
                       </div>
 
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Precio Unitario (€) *
+                          Precio Unitario ({currencySymbol}) *
                         </label>
                         <input
                           type="number"
                           required
                           min="0"
                           step="0.01"
-                          value={item.unitPrice}
-                          onChange={(e) => handleItemChange(index, 'unitPrice', parseFloat(e.target.value) || 0)}
+                          value={getInputValue(index, 'unitPrice', item.unitPrice)}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            setInputValue(index, 'unitPrice', value);
+                            // Only update parent if we have a valid number
+                            if (value !== '' && value !== '-' && value !== '.') {
+                              const numValue = parseFloat(value);
+                              if (!isNaN(numValue)) {
+                                handleItemChange(index, 'unitPrice', numValue);
+                              }
+                            }
+                          }}
+                          onBlur={(e) => {
+                            const value = getInputValue(index, 'unitPrice', item.unitPrice);
+                            if (value === '' || value === '-' || value === '.') {
+                              setInputValue(index, 'unitPrice', '0');
+                              handleItemChange(index, 'unitPrice', 0);
+                            } else {
+                              const numValue = parseFloat(value);
+                              if (!isNaN(numValue)) {
+                                setInputValue(index, 'unitPrice', numValue.toString());
+                                handleItemChange(index, 'unitPrice', numValue);
+                              } else {
+                                setInputValue(index, 'unitPrice', '0');
+                                handleItemChange(index, 'unitPrice', 0);
+                              }
+                            }
+                          }}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         />
                       </div>

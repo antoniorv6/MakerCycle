@@ -1,17 +1,74 @@
 import { createBrowserClient, createServerClient } from '@supabase/ssr'
 import { SupabaseClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-export const createClient = () =>
-  createBrowserClient(supabaseUrl, supabaseAnonKey)
+// Singleton para el cliente del navegador
+let browserClient: ReturnType<typeof createBrowserClient> | null = null
+
+// Validar que las variables de entorno estén disponibles
+function validateSupabaseEnv() {
+  // Si las variables están disponibles, usarlas directamente
+  if (supabaseUrl && supabaseAnonKey) {
+    return {
+      url: supabaseUrl,
+      key: supabaseAnonKey
+    }
+  }
+  
+  // Durante el build de Next.js, si las variables no están disponibles,
+  // usar valores placeholder que @supabase/ssr aceptará sin lanzar error
+  // Estos valores solo se usarán durante el build y nunca en runtime
+  // Detectamos el build time verificando si estamos en un contexto sin window
+  const isBuildTime = typeof window === 'undefined'
+  
+  if (isBuildTime) {
+    // Valores placeholder válidos para el build (no se usarán en runtime)
+    // Usamos un formato válido de JWT para evitar errores de validación
+    // Nota: Estos valores solo se usan durante el build. En runtime, las variables
+    // deben estar disponibles como variables de entorno del contenedor.
+    return {
+      url: 'https://placeholder.supabase.co',
+      key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBsYWNlaG9sZGVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE2NDUxOTIwMDAsImV4cCI6MTk2MDc2ODAwMH0.placeholder'
+    }
+  }
+  
+  // En runtime (cliente), las variables deben estar disponibles
+  throw new Error('Missing Supabase environment variables. Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY')
+}
+
+export const createClient = () => {
+  // Usar singleton para evitar múltiples instancias del cliente
+  // Esto también evita que se disparen múltiples listeners de onAuthStateChange
+  if (browserClient) {
+    return browserClient
+  }
+  
+  const { url, key } = validateSupabaseEnv()
+  
+  browserClient = createBrowserClient(url, key, {
+    auth: {
+      // Deshabilitar el auto-refresh cuando la ventana recupera el foco
+      // Esto evita recargas innecesarias al cambiar de pestaña
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: true,
+      // Evitar que Supabase detecte cambios de visibilidad y refresque el token
+      // El token se refrescará automáticamente cuando expire, no cuando cambie el foco
+      flowType: 'pkce'
+    }
+  })
+  
+  return browserClient
+}
 
 export const createServerSupabaseClient = async () => {
+  const { url, key } = validateSupabaseEnv()
   const { cookies } = await import('next/headers')
   const cookieStore = await cookies()
   
-  return createServerClient(supabaseUrl, supabaseAnonKey, {
+  return createServerClient(url, key, {
     cookies: {
       get(name: string) {
         return cookieStore.get(name)?.value
@@ -176,6 +233,7 @@ export type Database = {
           email: string
           full_name: string | null
           avatar_url: string | null
+          currency: string
           created_at: string
           updated_at: string
         }
@@ -184,6 +242,7 @@ export type Database = {
           email: string
           full_name?: string | null
           avatar_url?: string | null
+          currency?: string
           created_at?: string
           updated_at?: string
         }
@@ -192,6 +251,50 @@ export type Database = {
           email?: string
           full_name?: string | null
           avatar_url?: string | null
+          currency?: string
+          updated_at?: string
+        }
+      }
+      postprocessing_presets: {
+        Row: {
+          id: string
+          user_id: string
+          team_id: string | null
+          name: string
+          description: string | null
+          cost_per_unit: number
+          unit: string
+          category: string | null
+          notes: string | null
+          is_default: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          team_id?: string | null
+          name: string
+          description?: string | null
+          cost_per_unit: number
+          unit?: string
+          category?: string | null
+          notes?: string | null
+          is_default?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          team_id?: string | null
+          name?: string
+          description?: string | null
+          cost_per_unit?: number
+          unit?: string
+          category?: string | null
+          notes?: string | null
+          is_default?: boolean
           updated_at?: string
         }
       }
@@ -205,11 +308,13 @@ export type Database = {
           print_hours: number
           electricity_cost: number
           materials: any
+          postprocessing_items: any
           total_cost: number
           vat_percentage: number
           profit_margin: number
           recommended_price: number
           status: 'draft' | 'calculated' | 'completed'
+          project_type: 'filament' | 'resin'
           created_at: string
           updated_at: string
         }
@@ -222,11 +327,13 @@ export type Database = {
           print_hours: number
           electricity_cost: number
           materials?: any
+          postprocessing_items?: any
           total_cost: number
           vat_percentage?: number
           profit_margin?: number
           recommended_price?: number
           status?: 'draft' | 'calculated' | 'completed'
+          project_type?: 'filament' | 'resin'
           created_at?: string
           updated_at?: string
         }
@@ -239,11 +346,13 @@ export type Database = {
           print_hours?: number
           electricity_cost?: number
           materials?: any
+          postprocessing_items?: any
           total_cost?: number
           vat_percentage?: number
           profit_margin?: number
           recommended_price?: number
           status?: 'draft' | 'calculated' | 'completed'
+          project_type?: 'filament' | 'resin'
           updated_at?: string
         }
       }

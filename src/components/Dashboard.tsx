@@ -4,6 +4,7 @@ import React, { useState, Suspense } from 'react'
 import { Settings } from 'lucide-react'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { useDashboardData } from '@/hooks/useDashboardData'
+import { useCapacitorContext } from '@/components/providers/CapacitorProvider'
 
 // Import existing components
 import Sidebar from './Sidebar'
@@ -16,6 +17,9 @@ import dynamic from 'next/dynamic';
 const KanbanBoard = dynamic(() => import('./kanban/KanbanBoard'), { ssr: false });
 import { KanbanBoardSkeleton } from './skeletons';
 
+// Import mobile layout
+import { MobileLayout } from './mobile'
+
 // Import lazy components
 import { 
   LazyAccounting, 
@@ -26,6 +30,7 @@ import {
 import { DashboardSkeleton } from './skeletons'
 
 export default function Dashboard({ initialPage }: { initialPage?: string } = {}) {
+  const { isNative, platform } = useCapacitorContext()
   const [currentPage, setCurrentPage] = useState(initialPage || 'home')
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [loadedProject, setLoadedProject] = useState<AppProject | null>(null)
@@ -108,11 +113,18 @@ export default function Dashboard({ initialPage }: { initialPage?: string } = {}
     };
   }
 
-  // New: go to project-info view first
+  // Go to project-info view to see details
   const handleLoadProject = (dbProject: DatabaseProject & { pieces?: DatabasePiece[] }) => {
     const project = dbProjectToProject(dbProject);
     setLoadedProject(project)
     setCurrentPage('project-info')
+  }
+
+  // Go directly to calculator to edit
+  const handleEditProject = (dbProject: DatabaseProject & { pieces?: DatabasePiece[] }) => {
+    const project = dbProjectToProject(dbProject);
+    setLoadedProject(project)
+    setCurrentPage('calculator')
   }
 
   const handleProjectSaved = (savedProject: DatabaseProject) => {
@@ -121,7 +133,18 @@ export default function Dashboard({ initialPage }: { initialPage?: string } = {}
     setLoadedProject(updatedProject);
   }
 
+  // Callback cuando se termina de editar un proyecto
+  const handleEditingComplete = () => {
+    setLoadedProject(null);
+  }
+
   const handlePageChange = (page: string, tab?: string) => {
+    // Clear loadedProject when navigating away from calculator
+    // The draft system will preserve unsaved changes
+    if (currentPage === 'calculator' && page !== 'calculator') {
+      setLoadedProject(null);
+    }
+
     setCurrentPage(page)
     if (page === 'settings' && tab) {
       setSettingsTab(tab)
@@ -151,6 +174,7 @@ export default function Dashboard({ initialPage }: { initialPage?: string } = {}
             <LazyCostCalculator 
               loadedProject={loadedProject ? projectToDbProject(loadedProject) : undefined} 
               onProjectSaved={handleProjectSaved}
+              onEditingComplete={handleEditingComplete}
               onNavigateToSettings={() => handlePageChange('settings', 'materials')}
             />
           </Suspense>
@@ -164,7 +188,10 @@ export default function Dashboard({ initialPage }: { initialPage?: string } = {}
       case 'projects':
         return (
           <Suspense fallback={<DashboardSkeleton />}>
-            <LazyProjectManager onLoadProject={handleLoadProject} />
+            <LazyProjectManager 
+              onLoadProject={handleLoadProject} 
+              onEditProject={handleEditProject}
+            />
           </Suspense>
         )
       case 'settings':
@@ -185,6 +212,7 @@ export default function Dashboard({ initialPage }: { initialPage?: string } = {}
             <LazyCostCalculator 
               loadedProject={loadedProject ? projectToDbProject(loadedProject) : undefined} 
               onProjectSaved={handleProjectSaved}
+              onEditingComplete={handleEditingComplete}
               onNavigateToSettings={() => handlePageChange('settings', 'materials')}
             />
           </Suspense>
@@ -192,8 +220,16 @@ export default function Dashboard({ initialPage }: { initialPage?: string } = {}
     }
   }
 
+  // Use mobile layout for native apps or small screens
+  // Also check window width for web mobile experience
+  const isMobileView = isNative || (typeof window !== 'undefined' && window.innerWidth < 768)
+
+  if (isMobileView) {
+    return <MobileLayout initialPage={initialPage} />
+  }
+
   return (
-    <div className="flex h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+    <div className="flex h-screen bg-cream-gradient">
       <Sidebar
         currentPage={currentPage}
         onPageChange={handlePageChange}
@@ -206,8 +242,6 @@ export default function Dashboard({ initialPage }: { initialPage?: string } = {}
           {renderContent()}
         </div>
       </main>
-
-
     </div>
   )
 }

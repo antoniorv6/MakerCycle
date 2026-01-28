@@ -20,11 +20,14 @@ export function useDashboardData() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
-  const { currentTeam } = useTeam();
+  const { currentTeam, isEditingMode, editingTeam } = useTeam();
   const supabase = createClient();
+  
+  // Calcular el equipo efectivo directamente
+  const effectiveTeamId = isEditingMode && editingTeam ? editingTeam.id : currentTeam?.id;
 
   // Create cache key that includes team context
-  const cacheKey = `${user?.id || ''}-${currentTeam?.id || 'personal'}`;
+  const cacheKey = `${user?.id || ''}-${effectiveTeamId || 'personal'}`;
 
   const fetchDashboardData = useCallback(async () => {
     if (!user) return;
@@ -63,11 +66,11 @@ export function useDashboardData() {
         .limit(10);
 
       // Apply team context filters
-      if (currentTeam) {
+      if (effectiveTeamId) {
         // Get team data
-        projectsQuery = projectsQuery.eq('team_id', currentTeam.id);
-        salesQuery = salesQuery.eq('team_id', currentTeam.id);
-        expensesQuery = expensesQuery.eq('team_id', currentTeam.id);
+        projectsQuery = projectsQuery.eq('team_id', effectiveTeamId);
+        salesQuery = salesQuery.eq('team_id', effectiveTeamId);
+        expensesQuery = expensesQuery.eq('team_id', effectiveTeamId);
       } else {
         // Get personal data (where team_id is null)
         projectsQuery = projectsQuery.eq('user_id', user.id).is('team_id', null);
@@ -119,7 +122,7 @@ export function useDashboardData() {
     } finally {
       setLoading(false);
     }
-  }, [user, currentTeam, cacheKey, supabase]);
+  }, [user, effectiveTeamId, cacheKey, supabase]);
 
   const invalidateCache = useCallback(() => {
     dashboardCache.delete(cacheKey);
@@ -129,7 +132,7 @@ export function useDashboardData() {
     if (user) {
       fetchDashboardData();
     }
-  }, [user, currentTeam, fetchDashboardData]);
+  }, [user, effectiveTeamId, fetchDashboardData]);
 
   const stats = useMemo((): DashboardStats => {
     const totalRevenue = sales.reduce((sum, sale) => sum + sale.total_amount, 0);

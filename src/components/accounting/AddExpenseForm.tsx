@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Save, Euro, FileText, Calendar, Users, User } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useTeam } from '@/components/providers/TeamProvider';
+import { useFormatCurrency } from '@/hooks/useFormatCurrency';
 import type { Expense, ExpenseFormData, Team } from '@/types';
 
 interface AddExpenseFormProps {
@@ -12,7 +13,10 @@ interface AddExpenseFormProps {
 
 export function AddExpenseForm({ expense, onSave, onCancel }: AddExpenseFormProps) {
   const { currentTeam, userTeams, getEffectiveTeam } = useTeam();
+  const { currencySymbol } = useFormatCurrency();
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
+  // Estado local para input numérico (permite que esté vacío)
+  const [amountInput, setAmountInput] = useState<string>('');
   
   const [formData, setFormData] = useState<ExpenseFormData>({
     description: '',
@@ -44,6 +48,7 @@ export function AddExpenseForm({ expense, onSave, onCancel }: AddExpenseFormProp
         notes: expense.notes || '',
         team_id: expense.team_id || null
       });
+      setAmountInput(expense.amount?.toString() || '');
       setSelectedTeamId(expense.team_id || null);
     } else {
       // For new expenses, use effective team context
@@ -52,6 +57,7 @@ export function AddExpenseForm({ expense, onSave, onCancel }: AddExpenseFormProp
         ...prev,
         team_id: effectiveTeam?.id || null
       }));
+      setAmountInput('');
       setSelectedTeamId(effectiveTeam?.id || null);
     }
   }, [expense, getEffectiveTeam]);
@@ -114,13 +120,39 @@ export function AddExpenseForm({ expense, onSave, onCancel }: AddExpenseFormProp
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Cantidad (€)
+                    Cantidad ({currencySymbol})
                   </label>
                   <input
                     type="number"
                     step="0.01"
-                    value={formData.amount}
-                    onChange={(e) => handleInputChange('amount', parseFloat(e.target.value) || 0)}
+                    value={amountInput}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setAmountInput(value);
+                      // Only update parent if we have a valid number
+                      if (value !== '' && value !== '-' && value !== '.') {
+                        const numValue = parseFloat(value);
+                        if (!isNaN(numValue)) {
+                          handleInputChange('amount', numValue);
+                        }
+                      }
+                    }}
+                    onBlur={(e) => {
+                      const value = amountInput;
+                      if (value === '' || value === '-' || value === '.') {
+                        setAmountInput('0');
+                        handleInputChange('amount', 0);
+                      } else {
+                        const numValue = parseFloat(value);
+                        if (!isNaN(numValue)) {
+                          setAmountInput(numValue.toString());
+                          handleInputChange('amount', numValue);
+                        } else {
+                          setAmountInput('0');
+                          handleInputChange('amount', 0);
+                        }
+                      }
+                    }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     required
                   />

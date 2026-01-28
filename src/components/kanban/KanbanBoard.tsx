@@ -162,20 +162,20 @@ export default function KanbanBoard() {
   };
 
   return (
-    <div className="min-h-screen w-full bg-slate-100 py-10 px-2 md:px-8">
+    <div className="min-h-screen w-full bg-cream-50 py-10 px-2 md:px-8">
       <div className="flex items-center justify-between mb-8 max-w-5xl mx-auto">
-        <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Organización de proyectos</h1>
+        <h1 className="text-3xl font-extrabold text-dark-900 tracking-tight">Organización de proyectos</h1>
         <button
-          className="flex items-center gap-2 px-5 py-2.5 bg-slate-900 text-white rounded-xl shadow-lg hover:bg-slate-800 transition font-semibold text-base"
+          className="flex items-center gap-2 px-5 py-2.5 bg-brand-500 text-white rounded-xl shadow-brand hover:bg-brand-600 transition font-semibold text-base"
           onClick={() => setAdding(true)}
         >
           <Plus className="w-5 h-5" /> Añadir a Organización
         </button>
       </div>
       {adding && (
-        <div className="mb-8 flex gap-3 items-center max-w-2xl mx-auto bg-white rounded-xl shadow-lg p-4 border border-slate-100">
+        <div className="mb-8 flex gap-3 items-center max-w-2xl mx-auto bg-white rounded-xl shadow-lg p-4 border border-cream-200">
           <select
-            className="border border-slate-300 rounded-lg px-4 py-2 text-base focus:ring-2 focus:ring-slate-400"
+            className="border border-cream-300 rounded-lg px-4 py-2 text-base focus:ring-2 focus:ring-brand-500 bg-cream-50 text-dark-900"
             value={selectedProject}
             onChange={e => setSelectedProject(e.target.value)}
           >
@@ -185,11 +185,11 @@ export default function KanbanBoard() {
             ))}
           </select>
           <button
-            className="px-5 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 font-semibold transition"
+            className="px-5 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 font-semibold transition shadow-sm"
             onClick={handleAddCard}
           >Añadir</button>
           <button
-            className="px-5 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-semibold transition"
+            className="px-5 py-2 bg-cream-200 text-dark-700 rounded-lg hover:bg-cream-300 font-semibold transition"
             onClick={() => setAdding(false)}
           >Cancelar</button>
         </div>
@@ -202,16 +202,16 @@ export default function KanbanBoard() {
                 <div
                   ref={provided.innerRef}
                   {...provided.droppableProps}
-                  className={`bg-white border border-slate-200 rounded-2xl shadow-md p-10 min-h-[420px] flex flex-col transition-all duration-300 overflow-visible ${snapshot.isDraggingOver ? 'ring-2 ring-blue-300' : ''}`}
+                  className={`bg-white border border-cream-200 rounded-2xl shadow-md p-10 min-h-[420px] flex flex-col transition-all duration-300 overflow-visible ${snapshot.isDraggingOver ? 'ring-2 ring-brand-300 border-brand-300' : ''}`}
                 >
                   <ColumnHeader status={status} count={columns[status].length} />
                   {columns[status].length === 0 && (
                     <div className="flex flex-col items-center justify-center py-12 animate-in fade-in-0 duration-300">
-                      <div className="w-16 h-16 flex items-center justify-center rounded-full bg-slate-50 border border-slate-200 mb-4">
-                        <FolderOpen className="w-8 h-8 text-slate-300" />
+                      <div className="w-16 h-16 flex items-center justify-center rounded-full bg-cream-50 border border-cream-200 mb-4">
+                        <FolderOpen className="w-8 h-8 text-cream-400" />
                       </div>
-                      <div className="text-lg font-semibold text-slate-400 mb-1">Sin proyectos</div>
-                      <div className="text-xs text-slate-400">Arrastra o añade proyectos aquí para empezar</div>
+                      <div className="text-lg font-semibold text-dark-400 mb-1">Sin proyectos</div>
+                      <div className="text-xs text-dark-400">Arrastra o añade proyectos aquí para empezar</div>
                     </div>
                   )}
                   {columns[status].map((card, idx) => (
@@ -241,7 +241,7 @@ export default function KanbanBoard() {
       </DragDropContext>
       {loading && (
         <div className="fixed inset-0 bg-white/60 flex items-center justify-center z-50">
-          <span className="text-slate-500 text-lg">Cargando...</span>
+          <span className="text-dark-500 text-lg">Cargando...</span>
         </div>
       )}
 
