@@ -672,36 +672,6 @@ export default function PrinterPresetsManager() {
             </label>
           </div>
 
-          {/* Preview de amortización */}
-          {formData.purchase_price > 0 && formData.amortization_hours > 0 && (
-            <div className="mb-4 p-3 bg-white rounded-lg border border-amber-300">
-              <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                <TrendingUp className="w-4 h-4 text-amber-600" />
-                Vista previa de amortización
-              </h4>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
-                <div>
-                  <span className="text-gray-500">Coste por hora:</span>
-                  <span className="ml-2 font-medium text-amber-600">
-                    {formatCurrency(formData.purchase_price / formData.amortization_hours)}/h
-                  </span>
-                </div>
-                <div>
-                  <span className="text-gray-500">Progreso:</span>
-                  <span className="ml-2 font-medium">
-                    {((formData.current_usage_hours / formData.amortization_hours) * 100).toFixed(1)}%
-                  </span>
-                </div>
-                <div>
-                  <span className="text-gray-500">Por amortizar:</span>
-                  <span className="ml-2 font-medium text-purple-600">
-                    {formatCurrency(Math.max(formData.purchase_price - (formData.current_usage_hours / formData.amortization_hours) * formData.purchase_price, 0))}
-                  </span>
-                </div>
-              </div>
-            </div>
-          )}
-
           <div className="flex gap-2">
             <button
               type="submit"
