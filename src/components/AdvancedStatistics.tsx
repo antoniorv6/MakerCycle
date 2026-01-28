@@ -695,8 +695,8 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="dateFormatted" />
                       <YAxis />
-                      <Tooltip 
-                        formatter={(value: any, name: string) => {
+                      <Tooltip
+                        formatter={(value: any, name?: string) => {
                           if (name === 'margin') return [formatPercentage(value), 'Margen'];
                           if (name === 'eurosPerHour') return [formatCurrency(value), `${currencySymbol}/Hora`];
                           if (name === 'netProfit') return [formatCurrency(value), 'Beneficio Neto'];
@@ -747,7 +747,7 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
                       cx="50%"
                       cy="50%"
                       labelLine={false}
-                      label={({ name, count }) => `${name}: ${count}`}
+                      label={({ name, value }) => `${name}: ${value}`}
                       outerRadius={100}
                       fill="#8884d8"
                       dataKey="count"
@@ -859,7 +859,7 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
                       cx="50%"
                       cy="50%"
                       outerRadius={100}
-                      label={({ category, percent }) => percent !== undefined ? `${category}: ${(percent * 100).toFixed(1)}%` : category}
+                      label={({ name, percent }) => percent !== undefined ? `${name}: ${(percent * 100).toFixed(1)}%` : name}
                     >
                       {expenseCategoryBreakdown.map((entry, index) => (
                         <Cell key={`cell-expense-${index}`} fill={COLORS[(index + 2) % COLORS.length]} />
@@ -980,8 +980,8 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="dateFormatted" />
                   <YAxis />
-                  <Tooltip 
-                    formatter={(value: any, name: string) => [
+                  <Tooltip
+                    formatter={(value: any, name?: string) => [
                       name === 'margin' ? formatPercentage(value) : formatCurrency(value),
                       name === 'revenue' ? 'Ingresos' : name === 'profit' ? 'Beneficio' : name === 'expenses' ? 'Gastos' : 'Margen'
                     ]}
