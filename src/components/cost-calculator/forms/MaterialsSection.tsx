@@ -153,7 +153,7 @@ const MaterialsSection: React.FC<ExtendedMaterialsSectionProps> = ({
           )}
           <button
             onClick={handleAddItem}
-            className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors duration-200 text-sm font-medium"
+            className="px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors duration-200 text-sm font-medium shadow-sm border border-brand-600/20"
           >
             <Plus className="w-4 h-4 inline mr-1" />
             Añadir
