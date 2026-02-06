@@ -2,7 +2,7 @@
 
 ## Funcionalidad Implementada
 
-Se ha implementado una funcionalidad completa para importar proyectos de impresión 3D desde archivos `.gcode.3mf` exportados por OrcaSlicer y BambuStudio.
+Se ha implementado una funcionalidad completa para importar proyectos de impresión 3D desde archivos `.gcode.3mf` exportados por OrcaSlicer, BambuStudio y Creality Print, archivos `.gcode` exportados por AnycubicSlicerNext y archivos `.bgcode` exportados por PrusaSlicer.
 
 ### Características Principales
 
@@ -21,7 +21,7 @@ Se ha implementado una funcionalidad completa para importar proyectos de impresi
    - **NUEVO:** Opción de guardar perfiles detectados en la biblioteca de materiales
    - **NUEVO:** Consolidación automática de perfiles duplicados entre placas
    - **NUEVO:** Extracción automática del color del filamento (hex)
-   - **NUEVO:** Detección automática del slicer utilizado (OrcaSlicer/BambuStudio)
+   - **NUEVO:** Detección automática del slicer utilizado (OrcaSlicer/BambuStudio/Creality Print/AnycubicSlicerNext/PrusaSlicer)
    - **NUEVO:** Visualización del logo del slicer en la interfaz
 
 3. **Interfaz de Usuario Intuitiva**
@@ -42,13 +42,13 @@ Se ha implementado una funcionalidad completa para importar proyectos de impresi
 - `FileImportView`: Interfaz de subida y procesamiento de archivos
 - `CostCalculatorWrapper`: Wrapper principal que maneja los diferentes modos
 - `PrintCostCalculator`: Librería para procesar archivos .gcode.3mf
-- `SlicerLogos`: Componentes SVG para logos de OrcaSlicer y BambuStudio
+- `SlicerLogos`: Componentes para logos de OrcaSlicer, BambuStudio, Creality Print, AnycubicSlicerNext y PrusaSlicer
 
 ### Flujo de Trabajo
 
 1. El usuario accede al cost calculator
 2. Selecciona "Importar desde Archivo"
-3. Sube un archivo .gcode.3mf de OrcaSlicer o BambuStudio
+3. Sube un archivo .gcode.3mf de OrcaSlicer, BambuStudio o Creality Print, un archivo .gcode de AnycubicSlicerNext o un archivo .bgcode de PrusaSlicer
 4. El sistema detecta automáticamente el slicer y muestra su logo
 5. El sistema extrae automáticamente:
    - Información de cada placa (peso, tiempo, configuraciones)
@@ -83,7 +83,10 @@ import CostCalculator from '@/components/cost-calculator';
 
 - Archivos .gcode.3mf de OrcaSlicer
 - Archivos .gcode.3mf de BambuStudio
-- Múltiples placas por archivo
+- Archivos .gcode.3mf de Creality Print
+- Archivos .gcode de AnycubicSlicerNext
+- Archivos .bgcode de PrusaSlicer
+- Múltiples placas por archivo (solo para .gcode.3mf)
 - Diferentes formatos de tiempo de impresión
 - Varios tipos de filamento
 - Detección automática del slicer utilizado

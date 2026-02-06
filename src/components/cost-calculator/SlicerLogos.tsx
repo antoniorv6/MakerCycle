@@ -74,6 +74,108 @@ export const BambuStudioLogo: React.FC<SlicerLogoProps> = ({
   );
 };
 
+export const CrealityPrintLogo: React.FC<SlicerLogoProps> = ({ 
+  className = "w-6 h-6", 
+  size = 24 
+}) => {
+  const [imageError, setImageError] = useState(false);
+
+  if (imageError) {
+    return (
+      <div className={`${className} flex items-center justify-center bg-orange-100 rounded`}>
+        <div className="w-full h-full flex items-center justify-center text-orange-600 font-bold text-xs">
+          CP
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`${className} flex items-center justify-center bg-orange-100 rounded`}>
+      <Image
+        src="/creality_print.webp"
+        alt="Creality Print Logo"
+        width={size}
+        height={size}
+        className="object-contain"
+        onError={() => {
+          console.error('Error loading Creality Print logo');
+          setImageError(true);
+        }}
+        priority={false}
+      />
+    </div>
+  );
+};
+
+export const AnycubicSlicerNextLogo: React.FC<SlicerLogoProps> = ({ 
+  className = "w-6 h-6", 
+  size = 24 
+}) => {
+  const [imageError, setImageError] = useState(false);
+
+  if (imageError) {
+    return (
+      <div className={`${className} flex items-center justify-center bg-purple-100 rounded`}>
+        <div className="w-full h-full flex items-center justify-center text-purple-600 font-bold text-xs">
+          AS
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`${className} flex items-center justify-center bg-purple-100 rounded`}>
+      <Image
+        src="/anycubic_logo.webp"
+        alt="AnycubicSlicerNext Logo"
+        width={size}
+        height={size}
+        className="object-contain"
+        onError={() => {
+          console.error('Error loading AnycubicSlicerNext logo');
+          setImageError(true);
+        }}
+        priority={false}
+      />
+    </div>
+  );
+};
+
+export const PrusaSlicerLogo: React.FC<SlicerLogoProps> = ({ 
+  className = "w-6 h-6", 
+  size = 24 
+}) => {
+  const [imageError, setImageError] = useState(false);
+
+  if (imageError) {
+    return (
+      <div className={`${className} flex items-center justify-center bg-orange-100 rounded`}>
+        <div className="w-full h-full flex items-center justify-center text-orange-600 font-bold text-xs">
+          PS
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`${className} flex items-center justify-center bg-orange-100 rounded`}>
+      <Image
+        src="/prusaslicer-logo.webp"
+        alt="PrusaSlicer Logo"
+        width={size}
+        height={size}
+        className="object-contain"
+        onError={() => {
+          console.error('Error loading PrusaSlicer logo');
+          setImageError(true);
+        }}
+        priority={false}
+      />
+    </div>
+  );
+};
+
 export const UnknownSlicerLogo: React.FC<SlicerLogoProps> = ({ 
   className = "w-6 h-6", 
   size = 24 
@@ -105,7 +207,7 @@ export const UnknownSlicerLogo: React.FC<SlicerLogoProps> = ({
 };
 
 interface SlicerLogoDisplayProps {
-  slicer: 'OrcaSlicer' | 'BambuStudio' | 'Unknown';
+  slicer: 'OrcaSlicer' | 'BambuStudio' | 'CrealityPrint' | 'AnycubicSlicerNext' | 'PrusaSlicer' | 'Unknown';
   className?: string;
   size?: number;
   showLabel?: boolean;
@@ -123,6 +225,12 @@ export const SlicerLogoDisplay: React.FC<SlicerLogoDisplayProps> = ({
         return <OrcaSlicerLogo className={className} size={size} />;
       case 'BambuStudio':
         return <BambuStudioLogo className={className} size={size} />;
+      case 'CrealityPrint':
+        return <CrealityPrintLogo className={className} size={size} />;
+      case 'AnycubicSlicerNext':
+        return <AnycubicSlicerNextLogo className={className} size={size} />;
+      case 'PrusaSlicer':
+        return <PrusaSlicerLogo className={className} size={size} />;
       default:
         return <UnknownSlicerLogo className={className} size={size} />;
     }

@@ -36,8 +36,9 @@ const FileImportView: React.FC<FileImportViewProps> = ({ onBack, onImportComplet
   const { formatCurrency, currencySymbol } = useFormatCurrency();
 
   const handleFileSelect = useCallback(async (file: File) => {
-    if (!file.name.toLowerCase().endsWith('.gcode.3mf')) {
-      setError('Por favor, selecciona un archivo .gcode.3mf válido de OrcaSlicer o BambuStudio');
+    const fileName = file.name.toLowerCase();
+    if (!fileName.endsWith('.gcode.3mf') && !fileName.endsWith('.gcode') && !fileName.endsWith('.bgcode')) {
+      setError('Por favor, selecciona un archivo .gcode.3mf, .gcode o .bgcode válido de OrcaSlicer, BambuStudio, Creality Print, AnycubicSlicerNext o PrusaSlicer');
       return;
     }
 
@@ -95,7 +96,7 @@ const FileImportView: React.FC<FileImportViewProps> = ({ onBack, onImportComplet
       
     } catch (err) {
       console.error('Error processing file:', err);
-      setError('Error al procesar el archivo. Asegúrate de que es un archivo .gcode.3mf válido de OrcaSlicer o BambuStudio.');
+      setError('Error al procesar el archivo. Asegúrate de que es un archivo .gcode.3mf, .gcode o .bgcode válido de OrcaSlicer, BambuStudio, Creality Print, AnycubicSlicerNext o PrusaSlicer.');
       setIsLoadingProfiles(false);
     } finally {
       setIsProcessing(false);
@@ -212,7 +213,7 @@ const FileImportView: React.FC<FileImportViewProps> = ({ onBack, onImportComplet
         </button>
         <div>
           <h1 className="text-3xl font-bold text-slate-900">Importar desde Archivo</h1>
-          <p className="text-slate-600">Sube un archivo .gcode.3mf de OrcaSlicer o BambuStudio para importar automáticamente</p>
+          <p className="text-slate-600">Sube un archivo .gcode.3mf, .gcode o .bgcode de OrcaSlicer, BambuStudio, Creality Print, AnycubicSlicerNext o PrusaSlicer para importar automáticamente</p>
         </div>
       </div>
 
@@ -239,7 +240,7 @@ const FileImportView: React.FC<FileImportViewProps> = ({ onBack, onImportComplet
               <input
                 id="file-input"
                 type="file"
-                accept=".gcode.3mf"
+                accept=".gcode.3mf,.gcode,.bgcode"
                 onChange={handleFileInputChange}
                 className="hidden"
                 disabled={isProcessing}
@@ -250,7 +251,7 @@ const FileImportView: React.FC<FileImportViewProps> = ({ onBack, onImportComplet
                   <Loader2 className="w-16 h-16 text-emerald-600 mx-auto animate-spin" />
                   <div>
                     <h3 className="text-lg font-semibold text-slate-900 mb-2">Procesando archivo...</h3>
-                    <p className="text-slate-600">Extrayendo información del archivo .gcode.3mf</p>
+                    <p className="text-slate-600">Extrayendo información del archivo</p>
                   </div>
                 </div>
               ) : (
@@ -263,9 +264,9 @@ const FileImportView: React.FC<FileImportViewProps> = ({ onBack, onImportComplet
                       Arrastra y suelta tu archivo aquí
                     </h3>
                     <p className="text-slate-600 mb-4">
-                      O haz clic para seleccionar un archivo .gcode.3mf
+                      O haz clic para seleccionar un archivo .gcode.3mf, .gcode o .bgcode
                     </p>
-                    <div className="flex items-center justify-center gap-4 mb-4">
+                    <div className="flex items-center justify-center gap-4 mb-4 flex-wrap">
                       <div className="flex items-center gap-2 text-sm text-slate-500">
                         <SlicerLogoDisplay slicer="OrcaSlicer" size={20} />
                         <span>OrcaSlicer</span>
@@ -274,6 +275,21 @@ const FileImportView: React.FC<FileImportViewProps> = ({ onBack, onImportComplet
                       <div className="flex items-center gap-2 text-sm text-slate-500">
                         <SlicerLogoDisplay slicer="BambuStudio" size={20} />
                         <span>BambuStudio</span>
+                      </div>
+                      <div className="text-slate-300">•</div>
+                      <div className="flex items-center gap-2 text-sm text-slate-500">
+                        <SlicerLogoDisplay slicer="CrealityPrint" size={20} />
+                        <span>Creality Print</span>
+                      </div>
+                      <div className="text-slate-300">•</div>
+                      <div className="flex items-center gap-2 text-sm text-slate-500">
+                        <SlicerLogoDisplay slicer="AnycubicSlicerNext" size={20} />
+                        <span>AnycubicSlicerNext</span>
+                      </div>
+                      <div className="text-slate-300">•</div>
+                      <div className="flex items-center gap-2 text-sm text-slate-500">
+                        <SlicerLogoDisplay slicer="PrusaSlicer" size={20} />
+                        <span>PrusaSlicer</span>
                       </div>
                     </div>
                     <div className="inline-flex items-center gap-2 px-4 py-2 bg-slate-600 text-white rounded-lg text-sm font-medium">
@@ -519,8 +535,8 @@ const FileImportView: React.FC<FileImportViewProps> = ({ onBack, onImportComplet
                 separada del proyecto que podrás editar después de la importación.
               </p>
               <p className="text-sm text-blue-700 mb-2">
-                <strong>Soporte:</strong> Compatible con archivos .gcode.3mf de OrcaSlicer y BambuStudio. 
-                El sistema detectará automáticamente el slicer utilizado y mostrará el logo correspondiente.
+                <strong>Soporte:</strong> Compatible con archivos .gcode.3mf de OrcaSlicer, BambuStudio y Creality Print, 
+                archivos .gcode de AnycubicSlicerNext y archivos .bgcode de PrusaSlicer. El sistema detectará automáticamente el slicer utilizado y mostrará el logo correspondiente.
               </p>
               <p className="text-sm text-blue-700">
                 <strong>Nota:</strong> Los perfiles de filamentos detectados se mostrarán en la calculadora principal 
