@@ -388,11 +388,12 @@ export class PrintCostCalculator {
    * Extrae el tiempo de impresión (común para ambos slicers)
    */
   private extractPrintTime(gcodeContent: string): number | null {
+    // Patrones con soporte para días (d), horas (h), minutos (m) y segundos (s)
     const timePatterns = [
-      /;\s*model printing time:\s*(?:(\d+)h\s*)?(?:(\d+)m\s*)?(?:(\d+)s)?/i,
-      /;\s*total estimated time:\s*(?:(\d+)h\s*)?(?:(\d+)m\s*)?(?:(\d+)s)?/i,
-      /;\s*estimated printing time.*?=\s*(?:(\d+)h\s*)?(?:(\d+)m\s*)?(?:(\d+)s)?/i,
-      /;\s*total print time.*?:\s*(?:(\d+)h\s*)?(?:(\d+)m\s*)?(?:(\d+)s)?/i,
+      /;\s*model printing time:\s*(?:(\d+)d\s*)?(?:(\d+)h\s*)?(?:(\d+)m\s*)?(?:(\d+)s)?/i,
+      /;\s*total estimated time:\s*(?:(\d+)d\s*)?(?:(\d+)h\s*)?(?:(\d+)m\s*)?(?:(\d+)s)?/i,
+      /;\s*estimated printing time.*?=\s*(?:(\d+)d\s*)?(?:(\d+)h\s*)?(?:(\d+)m\s*)?(?:(\d+)s)?/i,
+      /;\s*total print time.*?:\s*(?:(\d+)d\s*)?(?:(\d+)h\s*)?(?:(\d+)m\s*)?(?:(\d+)s)?/i,
       /;\s*print_time\s*=\s*(\d+)/i,
       /;\s*time cost\s*=\s*(\d+):(\d+):(\d+)/i,
     ];
@@ -401,15 +402,25 @@ export class PrintCostCalculator {
       const match = gcodeContent.match(pattern);
       if (match) {
         const groups = match.slice(1);
-        
+
         if (groups.length === 1 && groups[0]) {
+          // print_time en segundos
           return parseFloat(groups[0]) / 60;
-        } else {
+        } else if (groups.length === 3 && pattern.source.includes(':')) {
+          // Formato HH:MM:SS (time cost)
           const hours = groups[0] ? parseFloat(groups[0]) : 0;
           const minutes = groups[1] ? parseFloat(groups[1]) : 0;
           const seconds = groups[2] ? parseFloat(groups[2]) : 0;
           const printTimeMin = hours * 60 + minutes + seconds / 60;
-          
+          if (printTimeMin > 0) return printTimeMin;
+        } else {
+          // Formato con d/h/m/s (4 grupos)
+          const days = groups[0] ? parseFloat(groups[0]) : 0;
+          const hours = groups[1] ? parseFloat(groups[1]) : 0;
+          const minutes = groups[2] ? parseFloat(groups[2]) : 0;
+          const seconds = groups[3] ? parseFloat(groups[3]) : 0;
+          const printTimeMin = days * 24 * 60 + hours * 60 + minutes + seconds / 60;
+
           if (printTimeMin > 0) return printTimeMin;
         }
       }
@@ -521,8 +532,17 @@ export class PrintCostCalculator {
 // ============================================================================
 
 export function formatPrintTime(minutes: number): string {
-  const hours = Math.floor(minutes / 60);
+  const totalHours = Math.floor(minutes / 60);
   const mins = Math.round(minutes % 60);
+  const days = Math.floor(totalHours / 24);
+  const hours = totalHours % 24;
+
+  if (days > 0) {
+    if (hours === 0 && mins === 0) return `${days}d`;
+    if (mins === 0) return `${days}d ${hours}h`;
+    if (hours === 0) return `${days}d ${mins}m`;
+    return `${days}d ${hours}h ${mins}m`;
+  }
 
   if (hours === 0) return `${mins}m`;
   if (mins === 0) return `${hours}h`;
