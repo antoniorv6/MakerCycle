@@ -1,9 +1,11 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { Upload, FileText, AlertCircle, CheckCircle, ArrowLeft, Loader2, Save, Bookmark } from 'lucide-react';
 import { PrintCostCalculator, type CostSummary } from '@/lib/from_3mf';
+import { extractThumbnails } from '@/lib/thumbnail_extractor';
 import { useMaterialPresets } from '@/hooks/useMaterialPresets';
 import { useFormatCurrency } from '@/hooks/useFormatCurrency';
 import { SlicerLogoDisplay } from '../SlicerLogos';
+import PlatePreview from '../preview/PlatePreview';
 import type { Piece, MaterialPreset } from '@/types';
 
 interface FileImportViewProps {
@@ -31,6 +33,8 @@ const FileImportView: React.FC<FileImportViewProps> = ({ onBack, onImportComplet
   const [detectedProfiles, setDetectedProfiles] = useState<DetectedFilamentProfile[]>([]);
   const [fileSelected, setFileSelected] = useState(false);
   const [isLoadingProfiles, setIsLoadingProfiles] = useState(false);
+  const [plateThumbnails, setPlateThumbnails] = useState<Map<number, string>>(new Map());
+  const [plateGcodes, setPlateGcodes] = useState<Map<number, string>>(new Map());
   const [calculator] = useState(() => new PrintCostCalculator());
   const { addPreset, addPresetsBatch } = useMaterialPresets(); // Solo necesitamos las funciones de creación
   const { formatCurrency, currencySymbol } = useFormatCurrency();
@@ -46,11 +50,20 @@ const FileImportView: React.FC<FileImportViewProps> = ({ onBack, onImportComplet
     setError(null);
     setImportedData(null);
     setDetectedProfiles([]);
+    setPlateThumbnails(new Map());
+    setPlateGcodes(new Map());
     setFileSelected(true);
     setIsLoadingProfiles(true);
 
     try {
-      const result = await calculator.processFile(file);
+      // Parsear archivo con contenido gcode + extraer thumbnails en paralelo
+      const [result, thumbnails] = await Promise.all([
+        calculator.processFileWithContent(file),
+        extractThumbnails(file),
+      ]);
+
+      setPlateGcodes(result.gcodeContents);
+      setPlateThumbnails(thumbnails);
       setImportedData(result);
       
       // Procesar perfiles detectados inmediatamente sin esperar a que se carguen los presets
@@ -142,6 +155,8 @@ const FileImportView: React.FC<FileImportViewProps> = ({ onBack, onImportComplet
     setFileSelected(false);
     setImportedData(null);
     setDetectedProfiles([]);
+    setPlateThumbnails(new Map());
+    setPlateGcodes(new Map());
     setError(null);
     setIsProcessing(false);
     setIsLoadingProfiles(false);
@@ -428,6 +443,16 @@ const FileImportView: React.FC<FileImportViewProps> = ({ onBack, onImportComplet
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {importedData.plates.map((plate) => (
                   <div key={plate.plateId} className="bg-slate-50 rounded-lg p-4 border border-slate-200">
+                    {/* Vista previa de la placa */}
+                    <div className="mb-3">
+                      <PlatePreview
+                        plateId={plate.plateId}
+                        thumbnailDataUrl={plateThumbnails.get(plate.plateId)}
+                        gcodeContent={plateGcodes.get(plate.plateId)}
+                        filamentColor={plate.filaments[0]?.color}
+                        filamentColors={plate.filaments.map(f => f.color).filter((c): c is string => !!c)}
+                      />
+                    </div>
                     <div className="flex items-center justify-between mb-2">
                       <h5 className="font-medium text-slate-900">Placa {plate.plateId}</h5>
                       <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded">

@@ -41,6 +41,11 @@ export interface ParseResult {
   plates: PlateInfo[];
 }
 
+export interface ParseResultWithContent extends ParseResult {
+  /** Contenido gcode raw por placa (plateId -> gcode string) */
+  gcodeContents: Map<number, string>;
+}
+
 export interface CostSummary {
   fileName: string;
   slicer: SlicerType;
@@ -150,6 +155,80 @@ export class PrintCostCalculator {
       fileName,
       slicer: this.slicerType,
       plates,
+    };
+  }
+
+  /**
+   * Parsea un archivo y retorna tanto los metadatos como el contenido gcode raw por placa.
+   * Util para la previsualizacion 3D donde se necesita acceso al gcode completo.
+   */
+  async parseFileWithContent(file: File | Blob): Promise<ParseResultWithContent> {
+    const fileName = file instanceof File ? file.name : 'unknown';
+    const gcodeContents = new Map<number, string>();
+
+    // .bgcode: formato binario, no se puede parsear para 3D
+    if (fileName.toLowerCase().endsWith('.bgcode')) {
+      const buffer = await file.arrayBuffer();
+      const uint8Array = new Uint8Array(buffer);
+      let textContent = '';
+      for (let i = 0; i < Math.min(2000, uint8Array.length); i++) {
+        const char = String.fromCharCode(uint8Array[i]);
+        if (char >= ' ' && char <= '~') {
+          textContent += char;
+        } else if (char === '\n' || char === '\r') {
+          textContent += '\n';
+        }
+      }
+      const plateInfo = this.extractFromGcode(textContent, fileName);
+      // No se puede extraer gcode parseable de .bgcode
+      return {
+        fileName,
+        slicer: this.slicerType,
+        plates: plateInfo ? [plateInfo] : [],
+        gcodeContents,
+      };
+    }
+
+    // .gcode directo
+    if (fileName.toLowerCase().endsWith('.gcode')) {
+      const content = await file.text();
+      const plateInfo = this.extractFromGcode(content, fileName);
+      if (plateInfo) {
+        gcodeContents.set(plateInfo.plateId, content);
+      }
+      return {
+        fileName,
+        slicer: this.slicerType,
+        plates: plateInfo ? [plateInfo] : [],
+        gcodeContents,
+      };
+    }
+
+    // .gcode.3mf
+    const JSZip = (await import('jszip')).default;
+    const zip = await JSZip.loadAsync(file);
+    const plates: PlateInfo[] = [];
+
+    const gcodeFiles = Object.keys(zip.files).filter(
+      (name) => name.endsWith('.gcode') && name.includes('plate_')
+    );
+
+    if (gcodeFiles.length > 0) {
+      for (const gcodeFile of gcodeFiles.sort()) {
+        const content = await zip.files[gcodeFile].async('string');
+        const plateInfo = this.extractFromGcode(content, gcodeFile);
+        if (plateInfo) {
+          plates.push(plateInfo);
+          gcodeContents.set(plateInfo.plateId, content);
+        }
+      }
+    }
+
+    return {
+      fileName,
+      slicer: this.slicerType,
+      plates,
+      gcodeContents,
     };
   }
 
@@ -753,11 +832,9 @@ export class PrintCostCalculator {
   }
 
   /**
-   * Procesa un archivo completo
+   * Construye CostSummary a partir de un ParseResult
    */
-  async processFile(file: File | Blob): Promise<CostSummary> {
-    const parseResult = await this.parseFile(file);
-
+  private buildCostSummary(parseResult: ParseResult): CostSummary {
     if (parseResult.plates.length === 0) {
       throw new Error('No se pudo extraer información de slicing del archivo');
     }
@@ -773,7 +850,7 @@ export class PrintCostCalculator {
     for (const plate of parseResult.plates) {
       for (const filament of plate.filaments) {
         const key = `${filament.profileName}__${filament.costPerKg}`;
-        
+
         if (!allFilamentsMap.has(key)) {
           allFilamentsMap.set(key, {
             profileName: filament.profileName,
@@ -783,7 +860,7 @@ export class PrintCostCalculator {
             cost: 0,
           });
         }
-        
+
         const existing = allFilamentsMap.get(key)!;
         existing.weightG += filament.weightG;
         existing.cost += filament.cost;
@@ -835,6 +912,24 @@ export class PrintCostCalculator {
         filamentsUsed,
       },
     };
+  }
+
+  /**
+   * Procesa un archivo completo
+   */
+  async processFile(file: File | Blob): Promise<CostSummary> {
+    const parseResult = await this.parseFile(file);
+    return this.buildCostSummary(parseResult);
+  }
+
+  /**
+   * Procesa un archivo y retorna CostSummary + contenido gcode raw por placa.
+   * Evita parsear el archivo dos veces cuando se necesita preview 3D.
+   */
+  async processFileWithContent(file: File | Blob): Promise<CostSummary & { gcodeContents: Map<number, string> }> {
+    const parseResult = await this.parseFileWithContent(file);
+    const costSummary = this.buildCostSummary(parseResult);
+    return { ...costSummary, gcodeContents: parseResult.gcodeContents };
   }
 
   updateConfig(config: CalculatorConfig): void {
