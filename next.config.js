@@ -18,6 +18,9 @@ const nextConfig = {
   devIndicators: {
     buildActivity: false,
   },
+  
+  // Transpilar three.js y react-three-fiber para compatibilidad con Turbopack
+  transpilePackages: ['three', '@react-three/fiber', '@react-three/drei'],
 }
 
 module.exports = nextConfig

@@ -11,9 +11,7 @@ import PiecesSection from './forms/PiecesSection';
 import ElectricitySection from './forms/ElectricitySection';
 import MaterialsSection from './forms/MaterialsSection';
 import PricingConfig from './forms/PricingConfig';
-import ProjectSummaryPanel from './panels/ProjectSummaryPanel';
-import CostBreakdownPanel from './panels/CostBreakdownPanel';
-import SalePricePanel from './panels/SalePricePanel';
+import SummaryTabsPanel from './panels/SummaryTabsPanel';
 import DisasterModeButton from './DisasterModeButton';
 import StickyNote from './StickyNote';
 import ConfirmModal from './ConfirmModal';
@@ -1066,26 +1064,19 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({
         </div>
 
         {/* Columna derecha: Resultados */}
-        <div className="space-y-6">
-          <ProjectSummaryPanel
-            pieces={pieces}
-            totalFilamentWeight={totalFilamentWeight}
-            totalPrintHours={totalPrintHours}
-            totalFilamentCost={totalFilamentCost}
-            totalElectricityCost={totalElectricityCost}
-            totalPostprocessingCost={postprocessingItems.reduce((sum, item) => sum + (item.cost_per_unit * (item.quantity || 1)), 0)}
-            projectType={projectType}
-          />
-
-          <CostBreakdownPanel costs={costs} />
-
-          <SalePricePanel
-            salePrice={salePrice}
-            costs={costs}
-            vatPercentage={vatPercentage}
-            profitMargin={profitMargin}
-          />
-        </div>
+        <SummaryTabsPanel
+          pieces={pieces}
+          totalFilamentWeight={totalFilamentWeight}
+          totalPrintHours={totalPrintHours}
+          totalFilamentCost={totalFilamentCost}
+          totalElectricityCost={totalElectricityCost}
+          totalPostprocessingCost={postprocessingItems.reduce((sum, item) => sum + (item.cost_per_unit * (item.quantity || 1)), 0)}
+          projectType={projectType}
+          costs={costs}
+          salePrice={salePrice}
+          vatPercentage={vatPercentage}
+          profitMargin={profitMargin}
+        />
       </div>
 
       {/* Disaster mode button */}
