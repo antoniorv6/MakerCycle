@@ -134,6 +134,24 @@ export default function MobileDrawer({ isOpen, onClose, onPageChange, currentPag
               </div>
             </div>
 
+            {/* Buy Me a Coffee Button */}
+            <div className="px-4 py-4 border-t border-slate-100">
+              <div className="flex justify-center mb-4">
+                <a 
+                  href="https://www.buymeacoffee.com/3dmaniaconh" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="block"
+                >
+                  <img 
+                    src="https://img.buymeacoffee.com/button-api/?text=¡Apoya a MakerCycle!&emoji=🖤&slug=3dmaniaconh&button_colour=FFDD00&font_colour=000000&font_family=Lato&outline_colour=000000&coffee_colour=ffffff" 
+                    alt="Buy Me a Coffee" 
+                    className="h-auto w-full max-w-[200px]"
+                  />
+                </a>
+              </div>
+            </div>
+
             {/* Sign Out */}
             <div className="px-4 py-4 border-t border-slate-100">
               <button

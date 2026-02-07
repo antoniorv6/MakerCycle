@@ -139,7 +139,23 @@ export default function Sidebar({ currentPage, onPageChange, isOpen, onToggle }:
         </div>
 
         {/* Fixed bottom section */}
-        <div className="flex-shrink-0 p-6 border-t border-cream-200 bg-cream-50">
+        <div className="flex-shrink-0 p-6 border-t border-cream-200 bg-cream-50 space-y-4">
+          {/* Buy Me a Coffee Button */}
+          <div className="flex justify-center">
+            <a 
+              href="https://www.buymeacoffee.com/3dmaniaconh" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="block"
+            >
+              <img 
+                src="https://img.buymeacoffee.com/button-api/?text=¡Apoya a MakerCycle!&emoji=🖤&slug=3dmaniaconh&button_colour=FFDD00&font_colour=000000&font_family=Lato&outline_colour=000000&coffee_colour=ffffff" 
+                alt="Buy Me a Coffee" 
+                className="h-auto w-full max-w-[200px]"
+              />
+            </a>
+          </div>
+          
           <button
             onClick={async () => {
               try {
