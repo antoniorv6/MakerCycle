@@ -537,6 +537,24 @@ export interface AppMaterialPreset {
 }
 
 export type KanbanStatus = 'pending' | 'in_progress' | 'completed';
+export type KanbanPriority = 'high' | 'medium' | 'low';
+
+export interface KanbanCardTodo {
+  id: string;
+  kanban_card_id: string;
+  phase: KanbanStatus;
+  title: string;
+  is_completed: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface KanbanCardTodoInput {
+  phase: KanbanStatus;
+  title: string;
+  sort_order: number;
+}
 
 export interface KanbanCard {
   id: string;
@@ -544,9 +562,12 @@ export interface KanbanCard {
   team_id?: string | null;
   project_id: string;
   status: KanbanStatus;
+  priority: KanbanPriority;
+  deadline: string | null;
   created_at: string;
   updated_at: string;
   project?: Project; // opcional, para joins
+  todos?: KanbanCardTodo[]; // opcional, para joins
 }
 
 // Printer preset types

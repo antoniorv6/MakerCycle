@@ -1,13 +1,15 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
+import toast, { Toaster } from 'react-hot-toast';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useTeam } from '@/components/providers/TeamProvider';
 import { projectService } from '@/services/projectService';
 import { kanbanBoardService } from '@/services/kanbanBoardService';
-import type { Project, KanbanCard, KanbanStatus } from '@/types';
-import { Plus, Trash2, PauseCircle, PlayCircle, CheckCircle2, FolderOpen } from 'lucide-react';
+import type { Project, KanbanCard, KanbanCardTodoInput, KanbanPriority, KanbanStatus } from '@/types';
+import { Plus, FolderOpen } from 'lucide-react';
 import { ProjectCard } from './ProjectCard';
 import { ColumnHeader } from './ColumnHeader';
+import { AddCardModal } from './AddCardModal';
 import ConfirmModal from '../cost-calculator/ConfirmModal';
 
 const columnOrder: KanbanStatus[] = ['pending', 'in_progress', 'completed'];
@@ -22,11 +24,11 @@ export default function KanbanBoard() {
   const { currentTeam } = useTeam();
   const [projects, setProjects] = useState<Project[]>([]);
   const [cards, setCards] = useState<KanbanCard[]>([]);
-  const [adding, setAdding] = useState(false);
-  const [selectedProject, setSelectedProject] = useState('');
   const [loading, setLoading] = useState(true);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [cardToDelete, setCardToDelete] = useState<string | null>(null);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [editingCard, setEditingCard] = useState<KanbanCard | null>(null);
 
   // Cargar proyectos y tarjetas Kanban
   useEffect(() => {
@@ -43,7 +45,7 @@ export default function KanbanBoard() {
     try {
       const data = await projectService.getProjects(user.id, currentTeam?.id);
       setProjects(data);
-    } catch (e) {
+    } catch {
       setProjects([]);
     } finally {
       setLoading(false);
@@ -56,7 +58,7 @@ export default function KanbanBoard() {
     try {
       const data = await kanbanBoardService.getKanbanCards(user.id, currentTeam?.id);
       setCards(data);
-    } catch (e) {
+    } catch {
       setCards([]);
     } finally {
       setLoading(false);
@@ -77,17 +79,69 @@ export default function KanbanBoard() {
   const usedProjectIds = new Set(cards.map(c => c.project_id));
   const availableProjects = projects.filter(p => !usedProjectIds.has(p.id));
 
-  // Añadir tarjeta
-  const handleAddCard = async () => {
-    if (!user || !selectedProject) return;
+  // Añadir tarjeta desde el modal
+  const handleAddCard = async (data: {
+    projectId: string;
+    priority: KanbanPriority;
+    deadline: string | null;
+    todos: { phase: KanbanStatus; title: string }[];
+  }) => {
+    if (!user || !data.projectId) return;
     setLoading(true);
     try {
-      await kanbanBoardService.addKanbanCard(user.id, selectedProject, 'pending', currentTeam?.id);
-      setSelectedProject('');
-      setAdding(false);
+      const card = await kanbanBoardService.addKanbanCard(
+        user.id,
+        data.projectId,
+        'pending',
+        currentTeam?.id,
+        data.priority,
+        data.deadline
+      );
+      if (data.todos.length > 0) {
+        const todoInputs: KanbanCardTodoInput[] = data.todos.map((t, i) => ({
+          phase: t.phase,
+          title: t.title,
+          sort_order: i,
+        }));
+        await kanbanBoardService.addTodos(card.id, todoInputs);
+      }
+      setShowAddModal(false);
       fetchKanbanCards();
-    } catch (e) {
-      // error
+    } catch {
+      toast.error('Error al añadir la tarjeta');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Editar tarjeta existente
+  const handleEditCard = (card: KanbanCard) => {
+    setEditingCard(card);
+  };
+
+  const handleUpdateCard = async (data: {
+    projectId: string;
+    priority: KanbanPriority;
+    deadline: string | null;
+    todos: { phase: KanbanStatus; title: string }[];
+  }) => {
+    if (!editingCard) return;
+    setLoading(true);
+    try {
+      await kanbanBoardService.updateKanbanCard(editingCard.id, {
+        priority: data.priority,
+        deadline: data.deadline,
+      });
+      const todoInputs: KanbanCardTodoInput[] = data.todos.map((t, i) => ({
+        phase: t.phase,
+        title: t.title,
+        sort_order: i,
+      }));
+      await kanbanBoardService.updateTodos(editingCard.id, todoInputs);
+      setEditingCard(null);
+      fetchKanbanCards();
+    } catch {
+      toast.error('Error al guardar los cambios');
     } finally {
       setLoading(false);
     }
@@ -101,12 +155,11 @@ export default function KanbanBoard() {
 
   const confirmDeleteCard = async () => {
     if (!cardToDelete) return;
-
     setLoading(true);
     try {
       await kanbanBoardService.deleteKanbanCard(cardToDelete);
       fetchKanbanCards();
-    } catch (e) {
+    } catch {
       // error
     } finally {
       setLoading(false);
@@ -115,7 +168,25 @@ export default function KanbanBoard() {
     }
   };
 
-  // Drag & drop
+  // Toggle TODO checkbox (optimistic UI)
+  const handleToggleTodo = async (todoId: string, isCompleted: boolean) => {
+    // Optimistic update
+    setCards(prev =>
+      prev.map(card => ({
+        ...card,
+        todos: card.todos?.map(t =>
+          t.id === todoId ? { ...t, is_completed: isCompleted } : t
+        ),
+      }))
+    );
+    try {
+      await kanbanBoardService.toggleTodo(todoId, isCompleted);
+    } catch {
+      fetchKanbanCards(); // Revert on error
+    }
+  };
+
+  // Drag & drop con bloqueo por TODOs
   const onDragEnd = async (result: DropResult) => {
     const { destination, source, draggableId } = result;
     if (!destination) return;
@@ -130,6 +201,19 @@ export default function KanbanBoard() {
     const newStatus = destination.droppableId as KanbanStatus;
     if (card.status === newStatus) return;
 
+    // Check if current phase TODOs are all completed
+    const currentPhaseTodos = (card.todos || []).filter(t => t.phase === card.status);
+    if (currentPhaseTodos.length > 0) {
+      const incompleteCount = currentPhaseTodos.filter(t => !t.is_completed).length;
+      if (incompleteCount > 0) {
+        toast.error(
+          `No puedes mover esta tarjeta. Tienes ${incompleteCount} tarea${incompleteCount > 1 ? 's' : ''} pendiente${incompleteCount > 1 ? 's' : ''} en "${columnTitles[card.status]}".`,
+          { duration: 4000 }
+        );
+        return; // Block the move
+      }
+    }
+
     // Optimistic UI: actualizar localmente
     setCards(prevCards =>
       prevCards.map(c =>
@@ -140,60 +224,24 @@ export default function KanbanBoard() {
     // Sincronizar con Supabase en background
     try {
       await kanbanBoardService.updateKanbanCardStatus(card.id, newStatus);
-      // Opcional: fetchKanbanCards(); // para asegurar consistencia
-    } catch (e) {
-      // Si hay error, recargar desde Supabase
-      fetchKanbanCards();
-    }
-  };
-
-  // Cambiar prioridad (optimistic UI + persistencia)
-  const handleChangePriority = async (cardId: string, newValue: number) => {
-    setCards(prevCards => prevCards.map(c =>
-      c.id === cardId ? { ...c, project: { ...c.project!, profit_margin: newValue } } : c
-    ));
-    const card = cards.find(c => c.id === cardId);
-    if (!card || !card.project) return;
-    try {
-      await projectService.updateProject(card.project.id, { profit_margin: newValue });
     } catch {
+      // Si hay error, recargar desde Supabase
       fetchKanbanCards();
     }
   };
 
   return (
     <div className="min-h-screen w-full bg-cream-50 py-10 px-2 md:px-8">
+      <Toaster position="top-center" />
       <div className="flex items-center justify-between mb-8 max-w-5xl mx-auto">
         <h1 className="text-3xl font-extrabold text-dark-900 tracking-tight">Organización de proyectos</h1>
         <button
           className="flex items-center gap-2 px-5 py-2.5 bg-brand-500 text-white rounded-xl shadow-brand hover:bg-brand-600 transition font-semibold text-base"
-          onClick={() => setAdding(true)}
+          onClick={() => setShowAddModal(true)}
         >
           <Plus className="w-5 h-5" /> Añadir a Organización
         </button>
       </div>
-      {adding && (
-        <div className="mb-8 flex gap-3 items-center max-w-2xl mx-auto bg-white rounded-xl shadow-lg p-4 border border-cream-200">
-          <select
-            className="border border-cream-300 rounded-lg px-4 py-2 text-base focus:ring-2 focus:ring-brand-500 bg-cream-50 text-dark-900"
-            value={selectedProject}
-            onChange={e => setSelectedProject(e.target.value)}
-          >
-            <option value="">Selecciona un proyecto...</option>
-            {availableProjects.map((p) => (
-              <option key={p.id} value={p.id}>{p.name}</option>
-            ))}
-          </select>
-          <button
-            className="px-5 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 font-semibold transition shadow-sm"
-            onClick={handleAddCard}
-          >Añadir</button>
-          <button
-            className="px-5 py-2 bg-cream-200 text-dark-700 rounded-lg hover:bg-cream-300 font-semibold transition"
-            onClick={() => setAdding(false)}
-          >Cancelar</button>
-        </div>
-      )}
       <DragDropContext onDragEnd={onDragEnd}>
         <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-4 px-2 md:px-8 overflow-visible">
           {columnOrder.map((status) => (
@@ -225,7 +273,8 @@ export default function KanbanBoard() {
                           <ProjectCard
                             card={card}
                             onDelete={handleDeleteCard}
-                            onChangePriority={handleChangePriority}
+                            onToggleTodo={handleToggleTodo}
+                            onEdit={handleEditCard}
                             isDragging={snapshot.isDragging}
                           />
                         </div>
@@ -245,6 +294,30 @@ export default function KanbanBoard() {
         </div>
       )}
 
+      {/* Modal para añadir tarjeta */}
+      <AddCardModal
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        onSubmit={handleAddCard}
+        availableProjects={availableProjects}
+      />
+
+      {/* Modal para editar tarjeta */}
+      <AddCardModal
+        isOpen={!!editingCard}
+        onClose={() => setEditingCard(null)}
+        onSubmit={handleUpdateCard}
+        availableProjects={availableProjects}
+        isEditing
+        initialData={editingCard ? {
+          projectId: editingCard.project_id,
+          projectName: editingCard.project?.name,
+          priority: editingCard.priority || 'medium',
+          deadline: editingCard.deadline,
+          todos: editingCard.todos || [],
+        } : undefined}
+      />
+
       {/* Modal de confirmación para eliminar tarjeta */}
       <ConfirmModal
         isOpen={showDeleteModal}
@@ -261,4 +334,4 @@ export default function KanbanBoard() {
       />
     </div>
   );
-} 
+}
