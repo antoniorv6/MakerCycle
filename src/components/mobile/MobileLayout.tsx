@@ -240,7 +240,7 @@ export default function MobileLayout({ initialPage }: MobileLayoutProps) {
       />
 
       {/* Main Content - Native scroll behavior */}
-      <main className="pt-14 pb-20 min-h-screen native-scroll">
+      <main className="pt-14 pb-20 h-screen overflow-y-auto native-scroll">
         <div className="py-3">
           {renderContent()}
         </div>

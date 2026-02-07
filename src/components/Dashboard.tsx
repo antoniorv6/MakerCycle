@@ -238,7 +238,7 @@ export default function Dashboard({ initialPage }: { initialPage?: string } = {}
       />
       
       <main className="flex-1 overflow-auto transition-all duration-300 mx-auto">
-        <div className="py-8 px-4 lg:px-8">
+        <div className="py-2 px-2 lg:px-3">
           {renderContent()}
         </div>
       </main>
