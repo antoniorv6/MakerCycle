@@ -49,6 +49,7 @@ export default function Dashboard({ initialPage }: { initialPage?: string } = {}
       electricityCost: db.electricity_cost,
       printerPower: 0.35, // Valor por defecto para proyectos existentes
       materials: db.materials,
+      postprocessingItems: db.postprocessing_items,
       totalCost: db.total_cost,
       vatPercentage: db.vat_percentage,
       profitMargin: db.profit_margin,
@@ -79,6 +80,7 @@ export default function Dashboard({ initialPage }: { initialPage?: string } = {}
       print_hours: project.printHours,
       electricity_cost: project.electricityCost,
       materials: project.materials,
+      postprocessing_items: project.postprocessingItems,
       total_cost: project.totalCost,
       vat_percentage: project.vatPercentage,
       profit_margin: project.profitMargin,

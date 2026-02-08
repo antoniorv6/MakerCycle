@@ -133,9 +133,11 @@ export interface ProjectInfoPanelProps {
   totalPrintHours: number;
   totalFilamentCost: number;
   totalElectricityCost: number;
-  materials: Array<{
+  postprocessingItems: Array<{
     id: string;
     name: string;
-    price: number;
+    cost_per_unit: number;
+    quantity: number;
+    unit: string;
   }>;
 } 
