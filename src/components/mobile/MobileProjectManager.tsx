@@ -117,13 +117,26 @@ export default function MobileProjectManager({ onLoadProject, onEditProject }: M
 
     triggerHaptic('light')
     try {
+      // Reload the complete project from database to ensure we have all fields including postprocessing_items
+      const { data: projectData, error: projectError } = await supabase
+        .from('projects')
+        .select('*')
+        .eq('id', project.id)
+        .single()
+
+      if (projectError) {
+        console.error('Error fetching project:', projectError)
+        toast.error('Error al cargar proyecto')
+        return
+      }
+
       const { data: pieces } = await supabase
         .from('pieces')
         .select('*, piece_materials (*)')
         .eq('project_id', project.id)
 
       const processedPieces = await processPieces(pieces || [], supabase)
-      onEditProject({ ...project, pieces: processedPieces })
+      onEditProject({ ...projectData, pieces: processedPieces })
     } catch (error) {
       toast.error('Error al cargar proyecto para editar')
     }

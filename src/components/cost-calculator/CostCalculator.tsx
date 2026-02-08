@@ -242,8 +242,40 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({
     setProfitMargin(project.profit_margin);
     setMaterials(project.materials || []);
 
-    if (project.postprocessing_items && Array.isArray(project.postprocessing_items) && project.postprocessing_items.length > 0) {
-      setPostprocessingItems(project.postprocessing_items);
+    // Parse postprocessing_items - handle JSONB that might be a string, null, or array
+    let parsedPostprocessingItems: any[] = [];
+    
+    // Handle different possible formats from Supabase JSONB
+    const rawItems = project.postprocessing_items;
+    
+    if (rawItems !== null && rawItems !== undefined) {
+      // If it's already an array, use it directly
+      if (Array.isArray(rawItems)) {
+        parsedPostprocessingItems = rawItems;
+      } 
+      // If it's a string, try to parse it as JSON
+      else if (typeof rawItems === 'string') {
+        try {
+          const parsed = JSON.parse(rawItems);
+          if (Array.isArray(parsed)) {
+            parsedPostprocessingItems = parsed;
+          } else if (parsed && typeof parsed === 'object') {
+            // Sometimes Supabase returns a single object instead of array
+            parsedPostprocessingItems = [parsed];
+          }
+        } catch (e) {
+          console.error('Error parsing postprocessing_items:', e, 'Raw value:', rawItems);
+        }
+      }
+      // If it's an object (not array), wrap it in an array
+      else if (typeof rawItems === 'object' && !Array.isArray(rawItems)) {
+        parsedPostprocessingItems = [rawItems];
+      }
+    }
+    
+    // Always set the items, even if empty - this ensures the state is properly initialized
+    if (parsedPostprocessingItems.length > 0) {
+      setPostprocessingItems(parsedPostprocessingItems);
     } else if (project.materials && project.materials.length > 0) {
       const migratedItems = project.materials.map((m: any) => ({
         id: m.id || `migrated-${Date.now()}-${Math.random()}`,
@@ -611,7 +643,21 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({
   const handleEditProject = async () => {
     if (savedProject) {
       try {
-        const { data: pieces, error } = await supabase
+        // Reload the complete project from database to ensure we have all fields including postprocessing_items
+        const { data: projectData, error: projectError } = await supabase
+          .from('projects')
+          .select('*')
+          .eq('id', savedProject.id)
+          .single();
+
+        if (projectError) {
+          console.error('Error fetching project:', projectError);
+          toast.error('No se pudo cargar el proyecto. Intenta de nuevo.');
+          return;
+        }
+
+        // Fetch pieces for the project with their materials
+        const { data: pieces, error: piecesError } = await supabase
           .from('pieces')
           .select(`
             *,
@@ -619,8 +665,8 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({
           `)
           .eq('project_id', savedProject.id);
 
-        if (error) {
-          console.error('Error fetching pieces:', error);
+        if (piecesError) {
+          console.error('Error fetching pieces:', piecesError);
           toast.error('No se pudieron cargar las piezas del proyecto. Intenta de nuevo.');
           return;
         }
@@ -628,7 +674,7 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({
         const processedPieces = await processPieces(pieces || [], supabase);
 
         const projectWithPieces = {
-          ...savedProject,
+          ...projectData,
           pieces: processedPieces
         };
 
@@ -786,6 +832,9 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({
         }
       }
 
+      // Ensure postprocessing_items is always an array (never null) for consistency
+      const postprocessingItemsToSave = postprocessingItems.length > 0 ? postprocessingItems : [];
+      
       const project = {
         user_id: user.id,
         name: projectName,
@@ -795,7 +844,7 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({
         print_hours: totalPrintHours,
         electricity_cost: electricityCost,
         materials,
-        postprocessing_items: postprocessingItems.length > 0 ? postprocessingItems : null,
+        postprocessing_items: postprocessingItemsToSave, // Always save as array, never null
         total_cost: costs.total,
         vat_percentage: vatPercentage,
         profit_margin: profitMargin,

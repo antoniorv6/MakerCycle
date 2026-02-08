@@ -153,8 +153,21 @@ export default function ProjectManager({ onLoadProject, onEditProject }: Project
     }
 
     try {
+      // Reload the complete project from database to ensure we have all fields including postprocessing_items
+      const { data: projectData, error: projectError } = await supabase
+        .from('projects')
+        .select('*')
+        .eq('id', project.id)
+        .single();
+
+      if (projectError) {
+        console.error('Error fetching project:', projectError);
+        toast.error('No se pudo cargar el proyecto. Intenta de nuevo.');
+        return;
+      }
+
       // Fetch pieces for the project with their materials
-      const { data: pieces, error } = await supabase
+      const { data: pieces, error: piecesError } = await supabase
         .from('pieces')
         .select(`
           *,
@@ -162,8 +175,8 @@ export default function ProjectManager({ onLoadProject, onEditProject }: Project
         `)
         .eq('project_id', project.id);
 
-      if (error) {
-        console.error('Error fetching pieces:', error);
+      if (piecesError) {
+        console.error('Error fetching pieces:', piecesError);
         toast.error('No se pudieron cargar las piezas del proyecto. Intenta de nuevo.');
         return;
       }
@@ -171,7 +184,7 @@ export default function ProjectManager({ onLoadProject, onEditProject }: Project
       // Process pieces (handle both new system and legacy)
       const piecesWithMaterials = await processPieces(pieces || [], supabase);
 
-      const projectWithPieces = { ...project, pieces: piecesWithMaterials };
+      const projectWithPieces = { ...projectData, pieces: piecesWithMaterials };
       onEditProject(projectWithPieces);
     } catch (error) {
       console.error('Error loading project for edit:', error);

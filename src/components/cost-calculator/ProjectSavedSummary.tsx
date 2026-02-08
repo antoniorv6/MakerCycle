@@ -164,9 +164,9 @@ const ProjectSavedSummary: React.FC<ProjectSavedSummaryProps> = ({
                 <span className="font-medium">{formatCurrency(project.electricity_cost)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-600">Materiales:</span>
+                <span className="text-slate-600">Postprocesado:</span>
                 <span className="font-medium">
-                  {formatCurrency(project.materials?.reduce((sum, mat) => sum + mat.price, 0) || 0)}
+                  {formatCurrency(project.postprocessing_items?.reduce((sum, item) => sum + (item.cost_per_unit * item.quantity), 0) || 0)}
                 </span>
               </div>
             </div>

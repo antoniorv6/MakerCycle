@@ -42,7 +42,6 @@ const ProjectInfoView: React.FC<ProjectInfoViewProps> = ({ project, onEdit, onBa
   }, 0) || 0;
 
   const totalPrintHours = project.pieces?.reduce((sum, piece) => sum + (piece.printHours * piece.quantity), 0) || 0;
-  const totalMaterials = project.materials?.length || 0;
   
   // Calcular materiales únicos
   const uniqueMaterials = new Set<string>();
@@ -55,6 +54,11 @@ const ProjectInfoView: React.FC<ProjectInfoViewProps> = ({ project, onEdit, onBa
   });
 
   const totalElectricityCost = totalPrintHours * (project.printerPower || 0.35) * project.electricityCost;
+
+  // Calcular coste de postprocesado
+  const totalPostprocessingCost = project.postprocessingItems?.reduce((sum, item) => {
+    return sum + (item.cost_per_unit * item.quantity);
+  }, 0) || 0;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -399,11 +403,11 @@ const ProjectInfoView: React.FC<ProjectInfoViewProps> = ({ project, onEdit, onBa
                 <span className="text-lg font-bold text-gray-900">{formatCurrency(totalElectricityCost)}</span>
               </div>
               
-              {project.materials && project.materials.length > 0 && (
+              {project.postprocessingItems && project.postprocessingItems.length > 0 && (
                 <div className="flex justify-between items-center py-3 border-b border-gray-100">
-                  <span className="text-gray-700">Materiales adicionales:</span>
+                  <span className="text-gray-700">Costes de postprocesado:</span>
                   <span className="text-lg font-bold text-gray-900">
-                    {formatCurrency(project.materials.reduce((sum, material) => sum + material.price, 0))}
+                    {formatCurrency(totalPostprocessingCost)}
                   </span>
                 </div>
               )}
@@ -411,32 +415,44 @@ const ProjectInfoView: React.FC<ProjectInfoViewProps> = ({ project, onEdit, onBa
               <div className="flex justify-between items-center py-4 bg-gray-50 rounded-lg px-4">
                 <span className="text-lg font-bold text-gray-900">Coste total:</span>
                 <span className="text-2xl font-bold text-gray-900">
-                  {formatCurrency(totalFilamentCost + totalElectricityCost + (project.materials?.reduce((sum, material) => sum + material.price, 0) || 0))}
+                  {formatCurrency(totalFilamentCost + totalElectricityCost + totalPostprocessingCost)}
                 </span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Materiales adicionales del proyecto */}
-        {project.materials && project.materials.length > 0 && (
+        {/* Costes de postprocesado del proyecto */}
+        {project.postprocessingItems && project.postprocessingItems.length > 0 && (
           <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
             <div className="px-6 py-4 border-b border-warning-200 bg-warning-50">
               <div className="flex items-center gap-3">
                 <Package className="w-5 h-5 text-warning-600" />
-                <h2 className="text-xl font-semibold text-warning-900">Materiales Adicionales</h2>
+                <h2 className="text-xl font-semibold text-warning-900">Costes de Postprocesado</h2>
               </div>
-              <p className="text-warning-600 text-sm mt-1">Materiales extra del proyecto</p>
+              <p className="text-warning-600 text-sm mt-1">Items de postproducción aplicados al proyecto</p>
             </div>
             
             <div className="p-6">
               <div className="space-y-3">
-                {project.materials.map((material, index) => (
-                  <div key={index} className="flex justify-between items-center py-3 border-b border-gray-100 last:border-b-0">
-                    <span className="text-gray-700">{material.name}</span>
-                    <span className="text-lg font-bold text-gray-900">{formatCurrency(material.price)}</span>
+                {project.postprocessingItems.map((item, index) => (
+                  <div key={item.id || index} className="flex justify-between items-center py-3 border-b border-gray-100 last:border-b-0">
+                    <div>
+                      <div className="text-gray-900 font-medium">{item.name}</div>
+                      <div className="text-sm text-gray-500">
+                        {item.quantity} {item.unit} × {formatCurrency(item.cost_per_unit)}/{item.unit}
+                      </div>
+                    </div>
+                    <span className="text-lg font-bold text-gray-900">
+                      {formatCurrency(item.cost_per_unit * item.quantity)}
+                    </span>
                   </div>
                 ))}
+              </div>
+              
+              <div className="mt-4 pt-4 border-t border-gray-200 flex justify-between items-center">
+                <span className="font-semibold text-gray-900">Total Postprocesado:</span>
+                <span className="text-xl font-bold text-warning-700">{formatCurrency(totalPostprocessingCost)}</span>
               </div>
             </div>
           </div>
