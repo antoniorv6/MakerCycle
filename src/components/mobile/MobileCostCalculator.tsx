@@ -78,9 +78,24 @@ export default function MobileCostCalculator({
   const [vatPercentage, setVatPercentage] = useState(loadedProject?.vat_percentage || 21)
   const [profitMargin, setProfitMargin] = useState(loadedProject?.profit_margin || 15)
   
-  // Postprocessing items
+  // Postprocessing items - parse JSONB that might be a string, null, or array
+  const parsePostprocessingItems = (items: any): PostprocessingItem[] => {
+    if (!items) return [];
+    if (Array.isArray(items)) return items;
+    if (typeof items === 'string') {
+      try {
+        const parsed = JSON.parse(items);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (e) {
+        console.error('Error parsing postprocessing_items:', e);
+        return [];
+      }
+    }
+    return [];
+  };
+
   const [postprocessingItems, setPostprocessingItems] = useState<PostprocessingItem[]>(
-    loadedProject?.postprocessing_items || []
+    parsePostprocessingItems(loadedProject?.postprocessing_items)
   )
   
   // UI states para selectores

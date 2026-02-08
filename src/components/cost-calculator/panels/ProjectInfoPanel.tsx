@@ -9,7 +9,7 @@ const ProjectInfoPanel: React.FC<ProjectInfoPanelProps> = ({
   totalPrintHours,
   totalFilamentCost,
   totalElectricityCost,
-  materials 
+  postprocessingItems 
 }) => {
   const { formatCurrency, currencySymbol } = useFormatCurrency();
   // Calcular estadísticas de materiales
@@ -318,12 +318,12 @@ const ProjectInfoPanel: React.FC<ProjectInfoPanelProps> = ({
               <div className="text-lg font-semibold text-gray-900">Coste total del proyecto</div>
               <div className="text-sm text-gray-600">
                 Materiales: {formatCurrency(totalFilamentCost)} • Electricidad: {formatCurrency(totalElectricityCost)}
-                {materials.length > 0 && ` • Adicionales: ${formatCurrency(materials.reduce((sum, m) => sum + m.price, 0))}`}
+                {postprocessingItems.length > 0 && ` • Postprocesado: ${formatCurrency(postprocessingItems.reduce((sum, item) => sum + (item.cost_per_unit * item.quantity), 0))}`}
               </div>
             </div>
             <div className="text-right">
               <div className="text-3xl font-bold text-gray-900">
-                {formatCurrency(totalFilamentCost + totalElectricityCost + materials.reduce((sum, m) => sum + m.price, 0))}
+                {formatCurrency(totalFilamentCost + totalElectricityCost + postprocessingItems.reduce((sum, item) => sum + (item.cost_per_unit * item.quantity), 0))}
               </div>
             </div>
           </div>
