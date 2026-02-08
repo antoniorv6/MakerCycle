@@ -292,24 +292,6 @@ const ProjectInfoPanel: React.FC<ProjectInfoPanelProps> = ({
         })}
       </div>
 
-      {/* Materiales adicionales del proyecto */}
-      {materials.length > 0 && (
-        <div className="mt-6 pt-6 border-t border-gray-200">
-          <h4 className="text-md font-semibold text-gray-900 mb-3 flex items-center gap-2">
-            <Zap className="w-4 h-4" />
-            Materiales adicionales del proyecto
-          </h4>
-          <div className="space-y-2">
-            {materials.map((material, index) => (
-              <div key={material.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div className="font-medium text-gray-900">{material.name}</div>
-                <div className="text-sm font-semibold text-gray-700">{formatCurrency(material.price)}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* Totales finales */}
       <div className="mt-6 pt-6 border-t border-gray-200">
         <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4 border border-blue-200">
