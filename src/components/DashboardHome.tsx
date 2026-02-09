@@ -13,7 +13,7 @@ import { useTeam } from '@/components/providers/TeamProvider';
 import { createClient } from '@/lib/supabase';
 import { kanbanBoardService } from '@/services/kanbanBoardService';
 import { LineChart as RechartsLineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import type { DashboardStats, Sale, Expense, KanbanCard } from '@/types';
+import type { DashboardStats, Sale, Expense, KanbanCard, KanbanStatus } from '@/types';
 import TeamContextBanner from './TeamContextBanner';
 
 interface DashboardHomeProps {
@@ -126,7 +126,7 @@ export default function DashboardHome({ stats, onNavigate }: DashboardHomeProps)
       const dayData = grouped[dateStr] || { date: dateStr, revenue: 0, sales: 0 };
       
       // Calcular acumulado
-      const previousDay = chartData.length > 0 ? chartData[chartData.length - 1].revenue : 0;
+      const previousDay: number = chartData.length > 0 ? chartData[chartData.length - 1].revenue : 0;
       chartData.push({
         date: day.toString(),
         dateFormatted: date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }),
@@ -162,7 +162,7 @@ export default function DashboardHome({ stats, onNavigate }: DashboardHomeProps)
       const dayData = grouped[dateStr] || { date: dateStr, amount: 0, count: 0 };
       
       // Calcular acumulado
-      const previousDay = chartData.length > 0 ? chartData[chartData.length - 1].amount : 0;
+      const previousDay: number = chartData.length > 0 ? chartData[chartData.length - 1].amount : 0;
       chartData.push({
         date: day.toString(),
         dateFormatted: date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }),
@@ -254,7 +254,7 @@ export default function DashboardHome({ stats, onNavigate }: DashboardHomeProps)
         animate={{ opacity: 1, y: 0 }}
         className="text-center pb-1 flex-shrink-0"
       >
-        <img src="/logo.svg" alt="Logo MakerCycle" className="w-32 h-auto mx-auto mb-1 object-contain" />
+        <img src="/logo.svg" alt="Logo MakerCycle" className="w-48 h-auto mx-auto mb-1 object-contain" />
         <p className="text-xs text-dark-500 max-w-2xl mx-auto">
           Bienvenid@ {user?.user_metadata?.full_name || user?.email?.split('@')[0] || ''}
         </p>
@@ -340,7 +340,7 @@ export default function DashboardHome({ stats, onNavigate }: DashboardHomeProps)
                     <XAxis 
                       dataKey="date" 
                       tick={{ fontSize: 10 }}
-                      interval="auto"
+                      interval="preserveStartEnd"
                     />
                     <YAxis 
                       tick={{ fontSize: 10 }}
@@ -382,7 +382,7 @@ export default function DashboardHome({ stats, onNavigate }: DashboardHomeProps)
                     <XAxis 
                       dataKey="date" 
                       tick={{ fontSize: 10 }}
-                      interval="auto"
+                      interval="preserveStartEnd"
                     />
                     <YAxis 
                       tick={{ fontSize: 10 }}
@@ -490,13 +490,15 @@ export default function DashboardHome({ stats, onNavigate }: DashboardHomeProps)
           ) : (
             <div className="grid grid-cols-1 gap-2">
               {kanbanCards.map((card) => {
-                const statusColors = {
+                const statusColors: Record<KanbanStatus, string> = {
                   pending: 'bg-coral-50 text-coral-700 border-coral-200',
                   in_progress: 'bg-brand-50 text-brand-700 border-brand-200',
+                  completed: 'bg-green-50 text-green-700 border-green-200',
                 };
-                const statusLabels = {
+                const statusLabels: Record<KanbanStatus, string> = {
                   pending: 'Pendiente',
                   in_progress: 'En desarrollo',
+                  completed: 'Completado',
                 };
                 return (
                   <div

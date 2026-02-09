@@ -67,9 +67,6 @@ export default function Sidebar({ currentPage, onPageChange, isOpen, onToggle }:
             <div className="mb-6 flex justify-center">
               <img src="/logo.svg" alt="Logo MakerCycle" className="w-36 h-auto object-contain" />
             </div>
-            <div className="text-center mb-6">
-              <p className="text-sm text-dark-500">Gestión Profesional 3D</p>
-            </div>
 
             {/* User info */}
             <div className="mb-6 p-4 bg-cream-gradient rounded-2xl border border-cream-200">

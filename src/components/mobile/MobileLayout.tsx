@@ -19,7 +19,7 @@ import type { DatabaseProject, DatabasePiece, AppProject } from '@/types'
 
 // Lazy load heavy components
 const KanbanBoard = dynamic(() => import('../kanban/KanbanBoard'), { ssr: false })
-import { LazyAccounting } from '../LazyComponent'
+const MobileAccounting = dynamic(() => import('./MobileAccounting'), { ssr: false })
 
 interface MobileLayoutProps {
   initialPage?: string
@@ -198,7 +198,7 @@ export default function MobileLayout({ initialPage }: MobileLayoutProps) {
       case 'accounting':
         return (
           <Suspense fallback={<DashboardSkeleton />}>
-            <LazyAccounting />
+            <MobileAccounting />
           </Suspense>
         )
       case 'projects':

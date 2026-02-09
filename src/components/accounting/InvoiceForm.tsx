@@ -16,7 +16,7 @@ export function InvoiceForm({ sale, onClose, onGeneratePDF }: InvoiceFormProps) 
   const { clients } = useClients();
   // Estado local para inputs numéricos (permite que estén vacíos)
   const [inputValues, setInputValues] = useState<Record<number, { quantity?: string; unitPrice?: string }>>({});
-  const [formData, setFormData] = useState<InvoiceFormData>({
+  const [formData, setFormData] = useState<InvoiceFormData>(() => ({
     clientName: '',
     clientAddress: '',
     clientPhone: '',
@@ -36,7 +36,7 @@ export function InvoiceForm({ sale, onClose, onGeneratePDF }: InvoiceFormProps) 
     subtotal: Number(sale.total_amount) || 0,
     totalPrice: Number(sale.total_amount) || 0,
     notes: ''
-  });
+  }));
 
   // Cargar datos del cliente si existe
   useEffect(() => {

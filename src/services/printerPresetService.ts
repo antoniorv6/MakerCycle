@@ -105,13 +105,12 @@ export async function getDefaultPrinterPreset(userId: string, teamId?: string | 
   const supabase = createClient();
 
   try {
-    let query = supabase
+    const { data, error } = await supabase
       .from('printer_presets')
       .select('*')
       .eq('user_id', userId)
-      .eq('is_default', true);
-
-    const { data, error } = await query.limit(1);
+      .eq('is_default', true)
+      .limit(1);
 
     if (error) {
       console.error('Error fetching default printer preset:', error);

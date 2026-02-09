@@ -465,7 +465,7 @@ export function SaleItemsForm({ items, onItemsChange }: SaleItemsFormProps) {
         <div className="text-center py-8 text-gray-500">
           <Package className="w-12 h-12 mx-auto mb-4 text-gray-300" />
           <p>No hay proyectos agregados</p>
-          <p className="text-sm">Haz clic en "Agregar Proyecto" para comenzar</p>
+          <p className="text-sm">Haz clic en &quot;Agregar Proyecto&quot; para comenzar</p>
         </div>
       )}
     </div>

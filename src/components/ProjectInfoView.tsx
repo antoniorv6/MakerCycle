@@ -61,7 +61,7 @@ const ProjectInfoView: React.FC<ProjectInfoViewProps> = ({ project, onEdit, onBa
   }, 0) || 0;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div>
       <div className="max-w-7xl mx-auto p-6">
         {/* Header con navegación */}
         <div className="mb-8">
@@ -80,7 +80,7 @@ const ProjectInfoView: React.FC<ProjectInfoViewProps> = ({ project, onEdit, onBa
             </div>
             <button
               onClick={onEdit}
-              className="bg-primary-600 hover:bg-primary-700 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center gap-2"
+              className="bg-brand-gradient hover:bg-brand-600 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 shadow-lg hover:shadow-xl flex items-center gap-2 active:scale-95"
             >
               <Edit3 className="w-4 h-4" />
               Editar Proyecto

@@ -2,10 +2,11 @@ import { useState, useEffect, useCallback } from 'react';
 import { createClient } from '@/lib/supabase';
 import { useAuth } from '@/components/providers/AuthProvider';
 
-// Lista de monedas disponibles
+// Lista de monedas disponibles (actualizada con MXN)
 export const CURRENCIES = [
   { code: 'EUR', symbol: '€', name: 'Euro' },
   { code: 'USD', symbol: 'US$', name: 'Dólar estadounidense' },
+  { code: 'MXN', symbol: 'MX$', name: 'Peso mexicano' },
   { code: 'ARS', symbol: 'ARS$', name: 'Peso argentino' },
   { code: 'BRL', symbol: 'R$', name: 'Real brasileño' },
   { code: 'CLP', symbol: 'CLP$', name: 'Peso chileno' },
