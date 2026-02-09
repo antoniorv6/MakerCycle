@@ -58,10 +58,10 @@ export default function Sidebar({ currentPage, onPageChange, isOpen, onToggle }:
           x: isOpen ? 0 : -280,
           transition: { type: "spring", stiffness: 300, damping: 30 }
         }}
-        className="fixed left-0 top-0 h-full w-70 bg-white border-r border-cream-200 shadow-xl z-50 lg:relative lg:translate-x-0 lg:z-auto lg:w-64 flex flex-col"
+        className="fixed left-0 top-0 h-full w-70 bg-white border-r border-cream-200 shadow-xl z-50 lg:relative lg:translate-x-0 lg:z-auto lg:w-64 flex flex-col overflow-x-hidden"
       >
         {/* Scrollable content area */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden">
           <div className="p-6">
             {/* Logo */}
             <div className="mb-6 flex justify-center">

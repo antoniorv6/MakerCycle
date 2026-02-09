@@ -1,5 +1,5 @@
 import React from 'react';
-import { CheckCircle, Edit3, Plus, Calculator, DollarSign, Clock, Package } from 'lucide-react';
+import { CheckCircle, Edit3, Plus, Calculator, TrendingDown, Clock, Package, TrendingUp } from 'lucide-react';
 import { useFormatCurrency } from '@/hooks/useFormatCurrency';
 import type { DatabaseProject, DatabasePiece } from '@/types';
 
@@ -62,7 +62,7 @@ const ProjectSavedSummary: React.FC<ProjectSavedSummaryProps> = ({
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
           <div className="bg-slate-50 rounded-lg p-4">
             <div className="flex items-center space-x-3">
-              <DollarSign className="w-5 h-5 text-slate-600" />
+              <Calculator className="w-5 h-5 text-slate-600" />
               <div>
                 <p className="text-sm text-slate-600">Coste Total</p>
                 <p className="text-xl font-semibold text-slate-900">
@@ -96,7 +96,7 @@ const ProjectSavedSummary: React.FC<ProjectSavedSummaryProps> = ({
 
           <div className="bg-slate-50 rounded-lg p-4">
             <div className="flex items-center space-x-3">
-              <DollarSign className="w-5 h-5 text-slate-600" />
+              <TrendingUp className="w-5 h-5 text-slate-600" />
               <div>
                 <p className="text-sm text-slate-600">Precio Recomendado</p>
                 <p className="text-xl font-semibold text-slate-900">
@@ -156,12 +156,34 @@ const ProjectSavedSummary: React.FC<ProjectSavedSummaryProps> = ({
           <div className="grid md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <div className="flex justify-between">
-                <span className="text-slate-600">Filamento:</span>
-                <span className="font-medium">{formatCurrency(project.filament_price)}</span>
+                <span className="text-slate-600">Materiales:</span>
+                <span className="font-medium">
+                  {formatCurrency((() => {
+                    const totalMaterialCost = project.pieces?.reduce((sum, piece) => {
+                      if ((piece as any).materials && (piece as any).materials.length > 0) {
+                        const pieceCost = (piece as any).materials.reduce((materialSum: number, material: any) => {
+                          const weightInKg = material.unit === 'g' ? material.weight / 1000 : material.weight;
+                          const pricePerKg = material.pricePerKg || material.price_per_kg || 0;
+                          return materialSum + (weightInKg * pricePerKg);
+                        }, 0);
+                        return sum + (pieceCost * piece.quantity);
+                      } else {
+                        return sum + (piece.filament_weight * piece.quantity * piece.filament_price) / 1000;
+                      }
+                    }, 0) || 0;
+                    return totalMaterialCost;
+                  })())}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-600">Electricidad:</span>
-                <span className="font-medium">{formatCurrency(project.electricity_cost)}</span>
+                <span className="font-medium">
+                  {formatCurrency((() => {
+                    const totalPrintHours = project.pieces?.reduce((sum, piece) => sum + (piece.print_hours * piece.quantity), 0) || 0;
+                    const electricityCost = totalPrintHours * (project.printer_power || 0.35) * project.electricity_cost;
+                    return electricityCost;
+                  })())}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-600">Postprocesado:</span>
@@ -174,7 +196,11 @@ const ProjectSavedSummary: React.FC<ProjectSavedSummaryProps> = ({
               <div className="flex justify-between">
                 <span className="text-slate-600">IVA ({project.vat_percentage}%):</span>
                 <span className="font-medium">
-                  {formatCurrency(project.total_cost * (project.vat_percentage / 100))}
+                  {formatCurrency((() => {
+                    const basePrice = project.total_cost * (1 + project.profit_margin / 100);
+                    const vatAmount = basePrice * (project.vat_percentage / 100);
+                    return vatAmount;
+                  })())}
                 </span>
               </div>
               <div className="flex justify-between">

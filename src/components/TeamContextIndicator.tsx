@@ -117,12 +117,13 @@ export default function TeamContextIndicator() {
             initial={{ opacity: 0, y: -10, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -10, scale: 0.95 }}
-            className={`absolute top-full mt-2 w-72 bg-white border border-slate-200 rounded-lg shadow-xl z-50 ${
+            className={`absolute top-full mt-2 w-60 bg-white border border-slate-200 rounded-lg shadow-xl z-50 ${
               popupPosition === 'left' ? 'right-0' : 'left-0'
             }`}
             style={{
               maxHeight: 'calc(100vh - 100px)',
-              overflowY: 'auto'
+              overflowY: 'auto',
+              maxWidth: '100%'
             }}
           >
             <div className="p-3">
