@@ -5,6 +5,7 @@ import { AuthProvider } from '@/components/providers/AuthProvider'
 import { TeamProvider } from '@/components/providers/TeamProvider'
 import { CurrencyProvider } from '@/components/providers/CurrencyProvider'
 import { CapacitorProvider } from '@/components/providers/CapacitorProvider'
+import { QueryClientProvider } from '@/components/providers/QueryClientProvider'
 import { Toaster } from 'react-hot-toast'
 import CookieBanner from '@/components/CookieBanner'
 
@@ -56,19 +57,21 @@ export default function RootLayout({
         <meta name="mobile-web-app-capable" content="yes" />
       </head>
       <body className={`${inter.className} h-full antialiased`}>
-        <CapacitorProvider>
-          <AuthProvider>
-            <CurrencyProvider>
-              <TeamProvider>
-                <div className="min-h-screen-safe flex flex-col">
-                  <main className="flex-1">
-                    {children}
-                  </main>
-                </div>
-              </TeamProvider>
-            </CurrencyProvider>
-          </AuthProvider>
-        </CapacitorProvider>
+        <QueryClientProvider>
+          <CapacitorProvider>
+            <AuthProvider>
+              <CurrencyProvider>
+                <TeamProvider>
+                  <div className="min-h-screen-safe flex flex-col">
+                    <main className="flex-1">
+                      {children}
+                    </main>
+                  </div>
+                </TeamProvider>
+              </CurrencyProvider>
+            </AuthProvider>
+          </CapacitorProvider>
+        </QueryClientProvider>
         <CookieBanner />
         <Toaster
           position="top-center"

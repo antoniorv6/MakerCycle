@@ -15,12 +15,12 @@ import MobileAmortizations from './accounting/MobileAmortizations'
 import MobileAddSaleForm from './accounting/MobileAddSaleForm'
 import MobileAddExpenseForm from './accounting/MobileAddExpenseForm'
 import { InvoiceForm } from '../accounting/InvoiceForm'
-import { InvoiceService } from '@/services/invoiceService'
 import { salesService } from '@/services/salesService'
 import { AccountingSkeleton } from '../skeletons'
 import AdvancedStatistics from '@/components/AdvancedStatistics'
 import type { Sale, Expense, SaleFormData, ExpenseFormData, AccountingStats } from '@/types'
 import { toast } from 'react-hot-toast'
+import { logger } from '@/lib/logger'
 
 type TabType = 'sales' | 'expenses' | 'amortizations'
 
@@ -69,10 +69,13 @@ export default function MobileAccounting() {
   const handleAddSale = async (saleData: SaleFormData) => {
     try {
       if (editingSale) {
-        await updateSale(editingSale.id, {
-          date: saleData.date,
-          team_id: saleData.team_id,
-          client_id: saleData.client_id
+        await updateSale({
+          id: editingSale.id,
+          updates: {
+            date: saleData.date,
+            team_id: saleData.team_id,
+            client_id: saleData.client_id
+          }
         })
         if (editingSale.items) {
           const items = saleData.items.map(item => ({
@@ -105,20 +108,23 @@ export default function MobileAccounting() {
       }
       setShowAddSaleForm(false)
     } catch (error) {
-      console.error('Error saving sale:', error)
+      logger.error('Error saving sale:', error)
     }
   }
 
   const handleAddExpense = async (expenseData: ExpenseFormData) => {
     try {
       if (editingExpense) {
-        await updateExpense(editingExpense.id, {
-          description: expenseData.description,
-          amount: expenseData.amount,
-          category: expenseData.category,
-          date: expenseData.date,
-          notes: expenseData.notes,
-          team_id: expenseData.team_id
+        await updateExpense({
+          id: editingExpense.id,
+          updates: {
+            description: expenseData.description,
+            amount: expenseData.amount,
+            category: expenseData.category,
+            date: expenseData.date,
+            notes: expenseData.notes,
+            team_id: expenseData.team_id
+          }
         })
         setEditingExpense(null)
       } else {
@@ -126,7 +132,7 @@ export default function MobileAccounting() {
       }
       setShowAddExpenseForm(false)
     } catch (error) {
-      console.error('Error saving expense:', error)
+      logger.error('Error saving expense:', error)
     }
   }
 
@@ -134,7 +140,7 @@ export default function MobileAccounting() {
     try {
       await deleteSale(id)
     } catch (error) {
-      console.error('Error deleting sale:', error)
+      logger.error('Error deleting sale:', error)
     }
   }
 
@@ -142,7 +148,7 @@ export default function MobileAccounting() {
     try {
       await deleteExpense(id)
     } catch (error) {
-      console.error('Error deleting expense:', error)
+      logger.error('Error deleting expense:', error)
     }
   }
 
@@ -165,13 +171,15 @@ export default function MobileAccounting() {
     setShowInvoiceForm(true)
   }
 
-  const handleGeneratePDF = async (invoiceData: Parameters<typeof InvoiceService.generatePDF>[0]) => {
+  const handleGeneratePDF = async (invoiceData: any) => {
     try {
+      const { InvoiceService } = await import('@/services/invoiceService')
       await InvoiceService.generatePDF(invoiceData, companyData, currencySymbol)
       setShowInvoiceForm(false)
       setSelectedSaleForInvoice(null)
     } catch (error) {
-      console.error('Error generating PDF:', error)
+      logger.error('Error generating PDF:', error)
+      toast.error('Error al generar el PDF')
     }
   }
 

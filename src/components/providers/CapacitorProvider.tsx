@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react'
 import { Capacitor } from '@capacitor/core'
+import { logger } from '@/lib/logger'
 
 interface CapacitorContextType {
   isNative: boolean
@@ -82,7 +83,7 @@ export function CapacitorProvider({ children }: CapacitorProviderProps) {
           })
 
         } catch (error) {
-          console.log('Capacitor plugin initialization error:', error)
+          logger.error('Capacitor plugin initialization error:', error)
         }
       }
 
@@ -103,7 +104,7 @@ export function CapacitorProvider({ children }: CapacitorProviderProps) {
             Keyboard.removeAllListeners()
             App.removeAllListeners()
           } catch (error) {
-            console.log('Cleanup error:', error)
+            logger.error('Cleanup error:', error)
           }
         }
         cleanup()

@@ -1,106 +1,82 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useTeam } from '@/components/providers/TeamProvider';
 import { projectService } from '@/services/projectService';
 import type { Project, DatabaseProject } from '@/types';
 import toast from 'react-hot-toast';
-
-// Cache for projects data
-const projectsCache = new Map<string, { data: Project[], timestamp: number }>();
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+import { useMemo } from 'react';
+import { logger } from '@/lib/logger';
 
 export function useProjects() {
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
   const { currentTeam, isEditingMode, editingTeam } = useTeam();
-  
-  // Calcular el equipo efectivo directamente
-  const effectiveTeamId = isEditingMode && editingTeam ? editingTeam.id : currentTeam?.id;
+  const queryClient = useQueryClient();
 
-  const cacheKey = `${user?.id || ''}-${effectiveTeamId || 'personal'}`;
+  const effectiveTeamId = (isEditingMode && editingTeam) ? editingTeam.id : currentTeam?.id;
 
-  const fetchProjects = useCallback(async () => {
-    if (!user) return;
-    
-    // Check cache first
-    const cached = projectsCache.get(cacheKey);
-    if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-      setProjects(cached.data);
-      setLoading(false);
-      return;
-    }
-    
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await projectService.getProjects(user.id, effectiveTeamId);
-      
-      // Update cache
-      projectsCache.set(cacheKey, { data, timestamp: Date.now() });
-      setProjects(data);
-    } catch (err) {
-      console.error('Error fetching projects:', err);
-      setError(err instanceof Error ? err.message : 'Error fetching projects');
-      toast.error('Error loading projects');
-    } finally {
-      setLoading(false);
-    }
-  }, [user, effectiveTeamId, cacheKey]);
+  // Query para obtener proyectos
+  const { data: projects = [], isLoading, error, refetch } = useQuery({
+    queryKey: ['projects', user?.id, effectiveTeamId],
+    queryFn: async () => {
+      if (!user) return [];
+      try {
+        return await projectService.getProjects(user.id, effectiveTeamId);
+      } catch (err) {
+        logger.error('Error fetching projects:', err);
+        throw err;
+      }
+    },
+    enabled: !!user,
+  });
 
-  const invalidateCache = useCallback(() => {
-    projectsCache.delete(cacheKey);
-  }, [cacheKey]);
-
-  useEffect(() => {
-    if (user) {
-      fetchProjects();
-    }
-  }, [user, effectiveTeamId, fetchProjects]);
-
-  const createProject = useCallback(async (projectData: Omit<DatabaseProject, 'id' | 'created_at' | 'updated_at'>) => {
-    if (!user) throw new Error('User not authenticated');
-    
-    try {
-      const newProject = await projectService.createProject(projectData);
-      setProjects(prev => [newProject, ...prev]);
-      invalidateCache();
+  // Mutation para crear proyecto
+  const createProjectMutation = useMutation({
+    mutationFn: async (projectData: Omit<DatabaseProject, 'id' | 'created_at' | 'updated_at'>) => {
+      if (!user) throw new Error('User not authenticated');
+      return await projectService.createProject(projectData);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projects', user?.id, effectiveTeamId] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard', user?.id, effectiveTeamId] });
       toast.success('Project created successfully');
-      return newProject;
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Error creating project';
-      toast.error(message);
-      throw err;
-    }
-  }, [user, invalidateCache]);
+    },
+    onError: (err: Error) => {
+      logger.error('Error creating project:', err);
+      toast.error(err.message || 'Error creating project');
+    },
+  });
 
-  const updateProject = useCallback(async (id: string, updates: Partial<DatabaseProject>) => {
-    try {
-      const updatedProject = await projectService.updateProject(id, updates);
-      setProjects(prev => prev.map(p => p.id === id ? updatedProject : p));
-      invalidateCache();
+  // Mutation para actualizar proyecto
+  const updateProjectMutation = useMutation({
+    mutationFn: async ({ id, updates }: { id: string; updates: Partial<DatabaseProject> }) => {
+      return await projectService.updateProject(id, updates);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projects', user?.id, effectiveTeamId] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard', user?.id, effectiveTeamId] });
       toast.success('Project updated successfully');
-      return updatedProject;
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Error updating project';
-      toast.error(message);
-      throw err;
-    }
-  }, [invalidateCache]);
+    },
+    onError: (err: Error) => {
+      logger.error('Error updating project:', err);
+      toast.error(err.message || 'Error updating project');
+    },
+  });
 
-  const deleteProject = useCallback(async (id: string) => {
-    try {
-      await projectService.deleteProject(id);
-      setProjects(prev => prev.filter(p => p.id !== id));
-      invalidateCache();
+  // Mutation para eliminar proyecto
+  const deleteProjectMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return await projectService.deleteProject(id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projects', user?.id, effectiveTeamId] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard', user?.id, effectiveTeamId] });
       toast.success('Project deleted successfully');
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Error deleting project';
-      toast.error(message);
-      throw err;
-    }
-  }, [invalidateCache]);
+    },
+    onError: (err: Error) => {
+      logger.error('Error deleting project:', err);
+      toast.error(err.message || 'Error deleting project');
+    },
+  });
 
   const getProjectStats = useMemo(() => {
     return {
@@ -112,13 +88,15 @@ export function useProjects() {
 
   return {
     projects,
-    loading,
-    error,
-    createProject,
-    updateProject,
-    deleteProject,
+    loading: isLoading,
+    error: error ? (error as Error).message : null,
+    createProject: createProjectMutation.mutateAsync,
+    updateProject: updateProjectMutation.mutateAsync,
+    deleteProject: deleteProjectMutation.mutateAsync,
+    isCreating: createProjectMutation.isPending,
+    isUpdating: updateProjectMutation.isPending,
+    isDeleting: deleteProjectMutation.isPending,
     getProjectStats,
-    refetch: fetchProjects,
-    invalidateCache
+    refetch,
   };
-} 
+}

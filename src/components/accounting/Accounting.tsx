@@ -14,7 +14,7 @@ import { AddExpenseForm } from './AddExpenseForm';
 import { InvoiceForm } from './InvoiceForm';
 import AdvancedStatistics from '@/components/AdvancedStatistics';
 import { AccountingSkeleton } from '@/components/skeletons';
-import { InvoiceService } from '@/services/invoiceService';
+import { logger } from '@/lib/logger';
 import { salesService } from '@/services/salesService';
 import type { Sale, Expense, SaleFormData, ExpenseFormData } from '@/types';
 import { toast } from 'react-hot-toast';
@@ -61,10 +61,13 @@ export default function Accounting() {
     try {
       if (editingSale) {
         // For editing, we need to update the sale and its items
-        await updateSale(editingSale.id, {
-          date: saleData.date,
-          team_id: saleData.team_id,
-          client_id: saleData.client_id
+        await updateSale({
+          id: editingSale.id,
+          updates: {
+            date: saleData.date,
+            team_id: saleData.team_id,
+            client_id: saleData.client_id
+          }
         });
         
         // Update sale items
@@ -103,20 +106,23 @@ export default function Accounting() {
       }
       setShowAddForm(false);
     } catch (error) {
-      console.error('Error saving sale:', error);
+      logger.error('Error saving sale:', error);
     }
   };
 
   const handleAddExpense = async (expenseData: ExpenseFormData) => {
     try {
       if (editingExpense) {
-        await updateExpense(editingExpense.id, {
-          description: expenseData.description,
-          amount: expenseData.amount,
-          category: expenseData.category,
-          date: expenseData.date,
-          notes: expenseData.notes,
-          team_id: expenseData.team_id
+        await updateExpense({
+          id: editingExpense.id,
+          updates: {
+            description: expenseData.description,
+            amount: expenseData.amount,
+            category: expenseData.category,
+            date: expenseData.date,
+            notes: expenseData.notes,
+            team_id: expenseData.team_id
+          }
         });
         setEditingExpense(null);
       } else {
@@ -124,7 +130,7 @@ export default function Accounting() {
       }
       setShowAddExpenseForm(false);
     } catch (error) {
-      console.error('Error saving expense:', error);
+      logger.error('Error saving expense:', error);
     }
   };
 
@@ -132,7 +138,7 @@ export default function Accounting() {
     try {
       await deleteSale(id);
     } catch (error) {
-      console.error('Error deleting sale:', error);
+      logger.error('Error deleting sale:', error);
     }
   };
 
@@ -140,7 +146,7 @@ export default function Accounting() {
     try {
       await deleteExpense(id);
     } catch (error) {
-      console.error('Error deleting expense:', error);
+      logger.error('Error deleting expense:', error);
     }
   };
 
@@ -166,13 +172,13 @@ export default function Accounting() {
 
   const handleGeneratePDF = async (invoiceData: any) => {
     try {
-      
+      const { InvoiceService } = await import('@/services/invoiceService');
       await InvoiceService.generatePDF(invoiceData, companyData, currencySymbol);
       setShowInvoiceForm(false);
       setSelectedSaleForInvoice(null);
     } catch (error) {
-      console.error('Error generating PDF:', error);
-      // Aquí podrías mostrar una notificación de error
+      logger.error('Error generating PDF:', error);
+      toast.error('Error al generar el PDF');
     }
   };
 

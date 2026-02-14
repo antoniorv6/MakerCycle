@@ -1,106 +1,83 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useTeam } from '@/components/providers/TeamProvider';
 import { expenseService } from '@/services/expenseService';
 import type { Expense, ExpenseFormData } from '@/types';
 import toast from 'react-hot-toast';
+import { logger } from '@/lib/logger';
 
 export function useExpenses() {
-  const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
   const { currentTeam, isEditingMode, editingTeam } = useTeam();
-  
-  // Calcular el equipo efectivo directamente
-  const effectiveTeamId = isEditingMode && editingTeam ? editingTeam.id : currentTeam?.id;
-  
-  // Usar ref para evitar llamadas duplicadas
-  // Usamos un símbolo especial para indicar "nunca fetched" vs "fetched con undefined/null"
-  const NEVER_FETCHED = useRef(Symbol('NEVER_FETCHED'));
-  const lastFetchedTeamId = useRef<string | null | undefined | symbol>(NEVER_FETCHED.current);
+  const queryClient = useQueryClient();
 
-  const fetchExpenses = useCallback(async () => {
-    if (!user) {
-      setLoading(false);
-      return;
-    }
-    
-    // Evitar refetch si el equipo no ha cambiado (y ya se hizo un fetch)
-    if (lastFetchedTeamId.current !== NEVER_FETCHED.current && lastFetchedTeamId.current === effectiveTeamId) {
-      return;
-    }
-    
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await expenseService.getExpenses(user.id, effectiveTeamId);
-      setExpenses(data);
-      lastFetchedTeamId.current = effectiveTeamId;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error fetching expenses');
-      toast.error('Error loading expenses');
-    } finally {
-      setLoading(false);
-    }
-  }, [user, effectiveTeamId]);
+  const effectiveTeamId = (isEditingMode && editingTeam) ? editingTeam.id : currentTeam?.id;
 
-  useEffect(() => {
-    if (user) {
-      // Reset lastFetchedTeamId cuando cambia el equipo para forzar refetch
-      if (lastFetchedTeamId.current !== NEVER_FETCHED.current && lastFetchedTeamId.current !== effectiveTeamId) {
-        lastFetchedTeamId.current = NEVER_FETCHED.current;
+  // Query para obtener gastos
+  const { data: expenses = [], isLoading, error, refetch } = useQuery({
+    queryKey: ['expenses', user?.id, effectiveTeamId],
+    queryFn: async () => {
+      if (!user) return [];
+      try {
+        return await expenseService.getExpenses(user.id, effectiveTeamId);
+      } catch (err) {
+        logger.error('Error fetching expenses:', err);
+        throw err;
       }
-      fetchExpenses();
-    }
-  }, [user, effectiveTeamId, fetchExpenses]);
+    },
+    enabled: !!user,
+  });
 
-  const createExpense = async (expenseData: ExpenseFormData) => {
-    if (!user) throw new Error('User not authenticated');
-    
-    try {
-      // Usar el team_id del formData si está especificado, sino usar el equipo efectivo
+  // Mutation para crear gasto
+  const createExpenseMutation = useMutation({
+    mutationFn: async (expenseData: ExpenseFormData) => {
+      if (!user) throw new Error('User not authenticated');
       const teamIdToUse = expenseData.team_id !== undefined ? expenseData.team_id : effectiveTeamId;
-      const newExpense = await expenseService.createExpense(user.id, expenseData, teamIdToUse);
-      
-      // Solo agregar a la lista si el equipo coincide con el contexto actual
-      if ((teamIdToUse || null) === (effectiveTeamId || null)) {
-        setExpenses(prev => [newExpense, ...prev]);
-      }
-      
+      return await expenseService.createExpense(user.id, expenseData, teamIdToUse);
+    },
+    onSuccess: (_, variables) => {
+      const teamIdToUse = variables.team_id !== undefined ? variables.team_id : effectiveTeamId;
+      queryClient.invalidateQueries({ queryKey: ['expenses', user?.id, teamIdToUse] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard', user?.id, teamIdToUse] });
       toast.success('Gasto creado correctamente');
-      return newExpense;
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Error creating expense';
-      toast.error(message);
-      throw err;
-    }
-  };
+    },
+    onError: (err: Error) => {
+      logger.error('Error creating expense:', err);
+      toast.error(err.message || 'Error creating expense');
+    },
+  });
 
-  const updateExpense = async (id: string, updates: Partial<Expense>) => {
-    try {
-      const updatedExpense = await expenseService.updateExpense(id, updates);
-      setExpenses(prev => prev.map(e => e.id === id ? updatedExpense : e));
+  // Mutation para actualizar gasto
+  const updateExpenseMutation = useMutation({
+    mutationFn: async ({ id, updates }: { id: string; updates: Partial<Expense> }) => {
+      return await expenseService.updateExpense(id, updates);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['expenses', user?.id, effectiveTeamId] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard', user?.id, effectiveTeamId] });
       toast.success('Expense updated successfully');
-      return updatedExpense;
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Error updating expense';
-      toast.error(message);
-      throw err;
-    }
-  };
+    },
+    onError: (err: Error) => {
+      logger.error('Error updating expense:', err);
+      toast.error(err.message || 'Error updating expense');
+    },
+  });
 
-  const deleteExpense = async (id: string) => {
-    try {
-      await expenseService.deleteExpense(id);
-      setExpenses(prev => prev.filter(e => e.id !== id));
+  // Mutation para eliminar gasto
+  const deleteExpenseMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return await expenseService.deleteExpense(id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['expenses', user?.id, effectiveTeamId] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard', user?.id, effectiveTeamId] });
       toast.success('Expense deleted successfully');
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Error deleting expense';
-      toast.error(message);
-      throw err;
-    }
-  };
+    },
+    onError: (err: Error) => {
+      logger.error('Error deleting expense:', err);
+      toast.error(err.message || 'Error deleting expense');
+    },
+  });
 
   const getExpenseStats = () => {
     return expenseService.calculateExpenseStats(expenses);
@@ -110,21 +87,18 @@ export function useExpenses() {
     return expenseService.getExpenseCategories();
   };
 
-  // Función de refetch que fuerza la actualización
-  const refetch = useCallback(async () => {
-    lastFetchedTeamId.current = NEVER_FETCHED.current;
-    await fetchExpenses();
-  }, [fetchExpenses]);
-
   return {
     expenses,
-    loading,
-    error,
-    createExpense,
-    updateExpense,
-    deleteExpense,
+    loading: isLoading,
+    error: error ? (error as Error).message : null,
+    createExpense: createExpenseMutation.mutateAsync,
+    updateExpense: updateExpenseMutation.mutateAsync,
+    deleteExpense: deleteExpenseMutation.mutateAsync,
+    isCreating: createExpenseMutation.isPending,
+    isUpdating: updateExpenseMutation.isPending,
+    isDeleting: deleteExpenseMutation.isPending,
     getExpenseStats,
     getExpenseCategories,
-    refetch
+    refetch,
   };
-} 
+}

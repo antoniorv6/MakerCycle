@@ -1,5 +1,6 @@
 import { createClient as createSupabaseClient } from '@/lib/supabase'
 import type { Database } from '@/lib/supabase'
+import { clientSchema } from '@/lib/validators'
 
 export interface Client {
   id: string
@@ -108,8 +109,18 @@ export async function getClient(clientId: string): Promise<Client | null> {
 
 export async function createClient(userId: string, data: ClientFormData): Promise<Client> {
   const supabase = createSupabaseClient()
-  
+
   try {
+    // Validar datos antes de crear
+    clientSchema.parse({
+      name: data.name,
+      email: data.email,
+      phone: data.phone,
+      address: data.address,
+      tax_id: data.taxId,
+      notes: data.notes,
+    });
+
     const { data: newClient, error } = await supabase
       .from('clients')
       .insert(toDatabaseFormat(data, userId))
@@ -129,10 +140,21 @@ export async function createClient(userId: string, data: ClientFormData): Promis
 
 export async function updateClient(clientId: string, data: Partial<ClientFormData>): Promise<Client> {
   const supabase = createSupabaseClient()
-  
+
   try {
+    // Validación parcial
+    const validationData: any = {};
+    if (data.name !== undefined) validationData.name = data.name;
+    if (data.email !== undefined) validationData.email = data.email;
+    if (data.phone !== undefined) validationData.phone = data.phone;
+    if (data.address !== undefined) validationData.address = data.address;
+    if (data.taxId !== undefined) validationData.tax_id = data.taxId;
+    if (data.notes !== undefined) validationData.notes = data.notes;
+
+    clientSchema.partial().parse(validationData);
+
     const updateData: Partial<Database['public']['Tables']['clients']['Update']> = {}
-    
+
     if (data.name !== undefined) updateData.name = data.name
     if (data.email !== undefined) updateData.email = data.email || null
     if (data.phone !== undefined) updateData.phone = data.phone || null

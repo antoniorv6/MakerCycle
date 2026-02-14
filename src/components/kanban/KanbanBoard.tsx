@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import toast, { Toaster } from 'react-hot-toast';
 import { useAuth } from '@/components/providers/AuthProvider';
@@ -30,16 +30,7 @@ export default function KanbanBoard() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingCard, setEditingCard] = useState<KanbanCard | null>(null);
 
-  // Cargar proyectos y tarjetas Kanban
-  useEffect(() => {
-    if (user) {
-      fetchProjects();
-      fetchKanbanCards();
-    }
-    // eslint-disable-next-line
-  }, [user, currentTeam]);
-
-  const fetchProjects = async () => {
+  const fetchProjects = useCallback(async () => {
     if (!user) return;
     setLoading(true);
     try {
@@ -50,9 +41,9 @@ export default function KanbanBoard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, currentTeam?.id]);
 
-  const fetchKanbanCards = async () => {
+  const fetchKanbanCards = useCallback(async () => {
     if (!user) return;
     setLoading(true);
     try {
@@ -63,21 +54,34 @@ export default function KanbanBoard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, currentTeam?.id]);
+
+  // Cargar proyectos y tarjetas Kanban
+  useEffect(() => {
+    if (user) {
+      fetchProjects();
+      fetchKanbanCards();
+    }
+  }, [user, currentTeam, fetchProjects, fetchKanbanCards]);
 
   // Agrupar tarjetas por columna
-  const columns: Record<KanbanStatus, KanbanCard[]> = {
-    pending: [],
-    in_progress: [],
-    completed: [],
-  };
-  cards.forEach(card => {
-    columns[card.status].push(card);
-  });
+  const columns = useMemo(() => {
+    const result: Record<KanbanStatus, KanbanCard[]> = {
+      pending: [],
+      in_progress: [],
+      completed: [],
+    };
+    cards.forEach(card => {
+      result[card.status].push(card);
+    });
+    return result;
+  }, [cards]);
 
   // Proyectos que se pueden añadir (no están ya en el tablero)
-  const usedProjectIds = new Set(cards.map(c => c.project_id));
-  const availableProjects = projects.filter(p => !usedProjectIds.has(p.id));
+  const availableProjects = useMemo(() => {
+    const usedProjectIds = new Set(cards.map(c => c.project_id));
+    return projects.filter(p => !usedProjectIds.has(p.id));
+  }, [cards, projects]);
 
   // Añadir tarjeta desde el modal
   const handleAddCard = async (data: {
