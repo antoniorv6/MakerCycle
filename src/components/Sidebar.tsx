@@ -1,7 +1,8 @@
 'use client'
 
 import React from 'react'
-import { Calculator, TrendingUp, FolderOpen, Settings, Menu, X, LogOut, Home, Users, User, LayoutGrid } from 'lucide-react'
+import { Menu, X, LogOut, Home } from 'lucide-react'
+import { CalculadoraIcon, ContabilidadIcon, ClientesIcon, ProyectosIcon, OrganizacionIcon, EquiposIcon, ConfiguracionIcon } from '@/components/icons/MenuIcons'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '@/components/providers/AuthProvider'
 import TeamContextIndicator from './TeamContextIndicator'
@@ -17,13 +18,13 @@ interface SidebarProps {
 
 const menuItems = [
   { id: 'home', label: 'Dashboard', icon: Home },
-  { id: 'calculator', label: 'Calculadora', icon: Calculator },
-  { id: 'accounting', label: 'Contabilidad', icon: TrendingUp },
-  { id: 'clients', label: 'Clientes', icon: User },
-  { id: 'projects', label: 'Proyectos', icon: FolderOpen },
-  { id: 'kanban', label: 'Organización', icon: LayoutGrid, iconColor: 'text-purple-600', tooltip: 'Organiza y prioriza tus proyectos visualmente' },
-  { id: 'teams', label: 'Equipos', icon: Users, href: '/dashboard/teams' },
-  { id: 'settings', label: 'Configuración', icon: Settings },
+  { id: 'calculator', label: 'Calculadora', icon: CalculadoraIcon },
+  { id: 'accounting', label: 'Contabilidad', icon: ContabilidadIcon },
+  { id: 'clients', label: 'Clientes', icon: ClientesIcon },
+  { id: 'projects', label: 'Proyectos', icon: ProyectosIcon },
+  { id: 'kanban', label: 'Organización', icon: OrganizacionIcon, iconColor: 'text-purple-600', tooltip: 'Organiza y prioriza tus proyectos visualmente' },
+  { id: 'teams', label: 'Equipos', icon: EquiposIcon, href: '/dashboard/teams' },
+  { id: 'settings', label: 'Configuración', icon: ConfiguracionIcon },
 ]
 
 export default function Sidebar({ currentPage, onPageChange, isOpen, onToggle }: SidebarProps) {
@@ -112,7 +113,18 @@ export default function Sidebar({ currentPage, onPageChange, isOpen, onToggle }:
                       }`}
                       onClick={() => { if (window.innerWidth < 1024) onToggle() }}
                     >
-                      <Icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-dark-400'}`} />
+                      <div 
+                        className={`w-8 h-8 flex items-center justify-center flex-shrink-0 ${isActive ? '' : 'opacity-60'}`}
+                      >
+                        <div 
+                          className="w-full h-full"
+                          style={isActive ? {
+                            filter: 'brightness(0) invert(1)'
+                          } : {}}
+                        >
+                          <Icon className="w-full h-full" />
+                        </div>
+                      </div>
                       <span className="font-medium">{item.label}</span>
                     </a>
                   )
@@ -130,7 +142,18 @@ export default function Sidebar({ currentPage, onPageChange, isOpen, onToggle }:
                         : 'text-dark-600 hover:bg-cream-100 hover:text-dark-900'
                     }`}
                   >
-                    <Icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-dark-400'}`} />
+                    <div 
+                      className={`w-8 h-8 flex items-center justify-center flex-shrink-0 ${isActive ? '' : 'opacity-60'}`}
+                    >
+                      <div 
+                        className="w-full h-full"
+                        style={isActive ? {
+                          filter: 'brightness(0) invert(1)'
+                        } : {}}
+                      >
+                        <Icon className="w-full h-full" />
+                      </div>
+                    </div>
                     <span className="font-medium">{item.label}</span>
                   </button>
                 )

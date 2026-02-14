@@ -1,7 +1,8 @@
 import React from 'react';
-import { CheckCircle, Edit3, Plus, Calculator, TrendingDown, Clock, Package, TrendingUp } from 'lucide-react';
+import { CheckCircle, Edit3, Plus, TrendingDown, Clock, Package, TrendingUp } from 'lucide-react';
 import { useFormatCurrency } from '@/hooks/useFormatCurrency';
 import type { DatabaseProject, DatabasePiece } from '@/types';
+import { CalculadoraIcon } from '@/components/icons/MenuIcons';
 
 interface ProjectSavedSummaryProps {
   project: DatabaseProject & { pieces?: DatabasePiece[] };
@@ -62,7 +63,7 @@ const ProjectSavedSummary: React.FC<ProjectSavedSummaryProps> = ({
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
           <div className="bg-slate-50 rounded-lg p-4">
             <div className="flex items-center space-x-3">
-              <Calculator className="w-5 h-5 text-slate-600" />
+              <CalculadoraIcon className="w-5 h-5" />
               <div>
                 <p className="text-sm text-slate-600">Coste Total</p>
                 <p className="text-xl font-semibold text-slate-900">

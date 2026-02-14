@@ -10,6 +10,7 @@ import { toast } from 'react-hot-toast';
 import ProjectInfo from './cost-calculator/forms/ProjectInfo';
 import ProjectManagerSkeleton from './skeletons/ProjectManagerSkeleton';
 import ConfirmModal from './cost-calculator/ConfirmModal';
+import { ProyectosIcon } from '@/components/icons/MenuIcons';
 
 interface ProjectManagerProps {
   onLoadProject: (project: DatabaseProject & { pieces?: DatabasePiece[] }) => void;
@@ -309,7 +310,7 @@ export default function ProjectManager({ onLoadProject, onEditProject }: Project
       {/* Header */}
       <div className="text-center mb-8">
         <div className="inline-flex items-center justify-center w-16 h-16 bg-slate-100 rounded-full mb-4">
-          <FileText className="w-8 h-8 text-slate-600" />
+          <ProyectosIcon className="w-8 h-8" />
         </div>
         <h1 className="text-3xl font-bold text-slate-900 mb-2">Gestión de Proyectos</h1>
         <p className="text-slate-600">Administra y reutiliza tus proyectos de impresión 3D</p>
@@ -333,7 +334,7 @@ export default function ProjectManager({ onLoadProject, onEditProject }: Project
             onClick={() => setShowCreateModal(true)}
           >
             <Plus className="w-5 h-5" />
-            <span>Nuevo Proyecto</span>
+            <span>Nuevo proyecto</span>
           </button>
         </div>
       </div>
@@ -354,7 +355,7 @@ export default function ProjectManager({ onLoadProject, onEditProject }: Project
               onClick={() => setShowCreateModal(true)}
               className="px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors duration-200 font-medium shadow-md hover:shadow-lg"
             >
-              Crear Proyecto
+              Crear proyecto
             </button>
           </div>
         ) : (
@@ -414,7 +415,7 @@ export default function ProjectManager({ onLoadProject, onEditProject }: Project
                 <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
                   <div className="flex items-center gap-2 font-medium text-blue-700 mb-1">
                     <Package className="w-4 h-4" />
-                    Peso Total
+                    Peso total
                   </div>
                   <div className="text-blue-900 font-bold text-lg">
                     {(() => {
@@ -439,7 +440,7 @@ export default function ProjectManager({ onLoadProject, onEditProject }: Project
                 <div className="bg-green-50 p-3 rounded-lg border border-green-100">
                   <div className="flex items-center gap-2 font-medium text-green-700 mb-1">
                     <Clock className="w-4 h-4" />
-                    Tiempo Total
+                    Tiempo total
                   </div>
                   <div className="text-green-900 font-bold text-lg">
                     {(() => {
@@ -463,7 +464,7 @@ export default function ProjectManager({ onLoadProject, onEditProject }: Project
                 <div className="bg-orange-50 p-3 rounded-lg border border-orange-100">
                   <div className="flex items-center gap-2 font-medium text-orange-700 mb-1">
                     <Euro className="w-4 h-4" />
-                    Coste Total
+                    Coste total
                   </div>
                   <div className="text-orange-900 font-bold text-lg">{formatCurrency(project.total_cost)}</div>
                 </div>
@@ -602,7 +603,7 @@ export default function ProjectManager({ onLoadProject, onEditProject }: Project
               onClick={handleCreateProject}
               className="mt-6 w-full px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
             >
-              Crear Proyecto
+              Crear proyecto
             </button>
           </div>
         </div>

@@ -1,7 +1,8 @@
 'use client'
 
 import React from 'react'
-import { Home, Calculator, TrendingUp, FolderOpen, Menu } from 'lucide-react'
+import { Home, Menu } from 'lucide-react'
+import { CalculadoraIcon, ContabilidadIcon, ProyectosIcon } from '@/components/icons/MenuIcons'
 import { motion } from 'framer-motion'
 
 interface BottomNavigationProps {
@@ -12,9 +13,9 @@ interface BottomNavigationProps {
 
 const navItems = [
   { id: 'home', label: 'Inicio', icon: Home },
-  { id: 'calculator', label: 'Calcular', icon: Calculator },
-  { id: 'accounting', label: 'Cuentas', icon: TrendingUp },
-  { id: 'projects', label: 'Proyectos', icon: FolderOpen },
+  { id: 'calculator', label: 'Calcular', icon: CalculadoraIcon },
+  { id: 'accounting', label: 'Cuentas', icon: ContabilidadIcon },
+  { id: 'projects', label: 'Proyectos', icon: ProyectosIcon },
   { id: 'menu', label: 'Más', icon: Menu, isMenu: true },
 ]
 
@@ -40,13 +41,19 @@ export default function BottomNavigation({ currentPage, onPageChange, onMenuOpen
                     transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                   />
                 )}
-                <Icon 
-                  className={`relative w-6 h-6 transition-colors duration-200 ${
-                    isActive && !item.isMenu
-                      ? 'text-slate-800' 
-                      : 'text-slate-400'
-                  }`} 
-                />
+                {item.isMenu ? (
+                  <Icon 
+                    className={`relative w-6 h-6 transition-colors duration-200 ${
+                      isActive && !item.isMenu
+                        ? 'text-slate-800' 
+                        : 'text-slate-400'
+                    }`} 
+                  />
+                ) : (
+                  <div className={`relative w-8 h-8 flex items-center justify-center ${isActive ? 'opacity-100' : 'opacity-50'}`}>
+                    <Icon className="w-full h-full" />
+                  </div>
+                )}
               </div>
               <span 
                 className={`text-[10px] mt-1 font-medium transition-colors duration-200 ${

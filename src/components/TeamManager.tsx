@@ -8,6 +8,7 @@ import type { Team, TeamMember } from '@/types';
 import { Plus, X, Users, User, ChevronDown, Edit } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-hot-toast';
+import { EquiposIcon } from '@/components/icons/MenuIcons';
 
 interface MemberProfile {
   id: string;
@@ -339,9 +340,9 @@ const TeamManager: React.FC = () => {
       {/* Header */}
       <div className="text-center mb-8">
         <div className="inline-flex items-center justify-center w-16 h-16 bg-slate-100 rounded-full mb-4">
-          <Users className="w-8 h-8 text-slate-600" />
+          <EquiposIcon className="w-8 h-8" />
         </div>
-        <h1 className="text-3xl font-bold text-slate-900 mb-2">Gestión de Equipos</h1>
+        <h1 className="text-3xl font-bold text-slate-900 mb-2">Gestión de equipos</h1>
         <p className="text-slate-600">Administra tus equipos y colaboradores</p>
       </div>
 
@@ -349,7 +350,7 @@ const TeamManager: React.FC = () => {
       <div className="mb-8 bg-white rounded-xl shadow-sm border border-slate-200 p-6">
                   <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-lg font-semibold text-slate-900 mb-1">Contexto Actual</h3>
+              <h3 className="text-lg font-semibold text-slate-900 mb-1">Contexto actual</h3>
               <p className="text-sm text-slate-600">
                 {isInEditingMode 
                   ? `Editando proyecto del equipo: ${editingTeam?.name}`
@@ -435,7 +436,7 @@ const TeamManager: React.FC = () => {
                     >
                       <User className="w-4 h-4" />
                       <div>
-                        <div className="text-sm font-medium">Vista Personal</div>
+                        <div className="text-sm font-medium">Vista personal</div>
                         <div className="text-xs text-slate-500">Tus proyectos y datos privados</div>
                       </div>
                     </button>
@@ -480,7 +481,7 @@ const TeamManager: React.FC = () => {
 
       {/* Create New Team */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-8">
-        <h3 className="text-lg font-semibold text-slate-900 mb-4">Crear Nuevo Equipo</h3>
+        <h3 className="text-lg font-semibold text-slate-900 mb-4">Crear nuevo equipo</h3>
         <div className="flex gap-2">
           <input
             type="text"
@@ -501,7 +502,7 @@ const TeamManager: React.FC = () => {
 
       {/* Admin Tools */}
       <div className="bg-amber-50 rounded-xl shadow-sm border border-amber-200 p-6 mb-8">
-        <h3 className="text-lg font-semibold text-amber-900 mb-4">Herramientas de Administración</h3>
+        <h3 className="text-lg font-semibold text-amber-900 mb-4">Herramientas de administración</h3>
         <p className="text-sm text-amber-700 mb-4">
           Si tienes problemas invitando usuarios que están registrados, puede que no tengan perfiles creados.
         </p>
@@ -510,7 +511,7 @@ const TeamManager: React.FC = () => {
             onClick={handleCreateMissingProfiles}
             className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors duration-200"
           >
-            Crear Perfiles Faltantes
+            Crear perfiles faltantes
           </button>
         </div>
       </div>
@@ -518,7 +519,7 @@ const TeamManager: React.FC = () => {
       {/* Team List */}
       <div className="grid lg:grid-cols-2 gap-8">
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-          <h3 className="text-lg font-semibold text-slate-900 mb-4">Tus Equipos</h3>
+          <h3 className="text-lg font-semibold text-slate-900 mb-4">Tus equipos</h3>
           <div className="space-y-2">
             {teams.map(team => (
               <div key={team.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
@@ -583,7 +584,7 @@ const TeamManager: React.FC = () => {
             
             {/* Invite Member */}
             <div className="mb-4 p-3 bg-slate-50 rounded-lg">
-              <h4 className="text-sm font-medium text-slate-900 mb-2">Invitar Miembro</h4>
+              <h4 className="text-sm font-medium text-slate-900 mb-2">Invitar miembro</h4>
               <div className="flex gap-2">
                 <input
                   type="email"

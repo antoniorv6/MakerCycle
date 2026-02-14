@@ -11,6 +11,7 @@ import { ProjectCard } from './ProjectCard';
 import { ColumnHeader } from './ColumnHeader';
 import { AddCardModal } from './AddCardModal';
 import ConfirmModal from '../cost-calculator/ConfirmModal';
+import { OrganizacionIcon } from '@/components/icons/MenuIcons';
 
 const columnOrder: KanbanStatus[] = ['pending', 'in_progress', 'completed'];
 const columnTitles: Record<KanbanStatus, string> = {
@@ -238,7 +239,12 @@ export default function KanbanBoard() {
     <div className="min-h-screen w-full bg-cream-50 py-10 px-2 md:px-8">
       <Toaster position="top-center" />
       <div className="flex items-center justify-between mb-8 max-w-5xl mx-auto">
-        <h1 className="text-3xl font-extrabold text-dark-900 tracking-tight">Organización de proyectos</h1>
+        <div className="flex items-center gap-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-slate-100 rounded-full">
+            <OrganizacionIcon className="w-8 h-8" />
+          </div>
+          <h1 className="text-3xl font-extrabold text-dark-900 tracking-tight">Organización de proyectos</h1>
+        </div>
         <button
           className="flex items-center gap-2 px-5 py-2.5 bg-brand-500 text-white rounded-xl shadow-brand hover:bg-brand-600 transition font-semibold text-base"
           onClick={() => setShowAddModal(true)}

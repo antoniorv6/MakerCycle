@@ -1,7 +1,8 @@
 'use client'
 
 import React from 'react'
-import { X, Settings, Users, User, LayoutGrid, LogOut, ChevronRight } from 'lucide-react'
+import { X, LogOut, ChevronRight } from 'lucide-react'
+import { OrganizacionIcon, ClientesIcon, EquiposIcon, ConfiguracionIcon } from '@/components/icons/MenuIcons'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '@/components/providers/AuthProvider'
 import TeamContextIndicator from '../TeamContextIndicator'
@@ -14,10 +15,10 @@ interface MobileDrawerProps {
 }
 
 const menuItems = [
-  { id: 'kanban', label: 'Organización Kanban', icon: LayoutGrid, description: 'Tablero visual de proyectos' },
-  { id: 'clients', label: 'Clientes', icon: User, description: 'Gestiona tus clientes' },
-  { id: 'teams', label: 'Equipos', icon: Users, description: 'Colabora con tu equipo' },
-  { id: 'settings', label: 'Configuración', icon: Settings, description: 'Preferencias y ajustes' },
+  { id: 'kanban', label: 'Organización Kanban', icon: OrganizacionIcon, description: 'Tablero visual de proyectos' },
+  { id: 'clients', label: 'Clientes', icon: ClientesIcon, description: 'Gestiona tus clientes' },
+  { id: 'teams', label: 'Equipos', icon: EquiposIcon, description: 'Colabora con tu equipo' },
+  { id: 'settings', label: 'Configuración', icon: ConfiguracionIcon, description: 'Preferencias y ajustes' },
 ]
 
 export default function MobileDrawer({ isOpen, onClose, onPageChange, currentPage }: MobileDrawerProps) {
@@ -118,7 +119,16 @@ export default function MobileDrawer({ isOpen, onClose, onPageChange, currentPag
                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
                           isActive ? 'bg-slate-800' : 'bg-slate-100'
                         }`}>
-                          <Icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-slate-600'}`} />
+                          <div className="w-8 h-8 flex items-center justify-center">
+                            <div 
+                              className="w-full h-full"
+                              style={isActive ? {
+                                filter: 'brightness(0) invert(1)'
+                              } : {}}
+                            >
+                              <Icon className="w-full h-full" />
+                            </div>
+                          </div>
                         </div>
                         <div className="text-left">
                           <p className={`font-medium ${isActive ? 'text-slate-900' : 'text-slate-700'}`}>

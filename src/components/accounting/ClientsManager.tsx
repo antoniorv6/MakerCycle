@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Plus, Search, Edit, Trash2, User, Mail, Phone, MapPin, FileText, X } from 'lucide-react'
 import { useClients, type Client, type ClientFormData } from '@/hooks/useClients'
+import { ClientesIcon } from '@/components/icons/MenuIcons'
 
 interface ClientsManagerProps {
   onBack: () => void
@@ -214,7 +215,7 @@ export function ClientsManager({ onBack }: ClientsManagerProps) {
       {/* Header */}
       <div className="text-center mb-8">
         <div className="inline-flex items-center justify-center w-16 h-16 bg-slate-100 rounded-full mb-4">
-          <User className="w-8 h-8 text-slate-600" />
+          <ClientesIcon className="w-8 h-8" />
         </div>
         <h1 className="text-3xl font-bold text-slate-900 mb-2">Gestión de Clientes</h1>
         <p className="text-slate-600">Administra tu base de datos de clientes</p>

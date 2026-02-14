@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Calculator } from 'lucide-react';
 import { createClient } from '@/lib/supabase';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useTeam } from '@/components/providers/TeamProvider';
@@ -22,6 +21,7 @@ import { usePostprocessingPresets } from '@/hooks/usePostprocessingPresets';
 import { usePrinterPresets } from '@/hooks/usePrinterPresets';
 import { useProjectDraft, generateDraftId, type ProjectDraft } from './hooks/useProjectDraft';
 import type { DatabaseProject, DatabasePiece, PieceMaterial } from '@/types';
+import { CalculadoraIcon } from '@/components/icons/MenuIcons';
 
 // Function to process pieces (solo sistema multi-material)
 async function processPieces(
@@ -1061,7 +1061,7 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({
       {/* Header */}
       <div className="text-center mb-8">
         <div className="inline-flex items-center justify-center w-16 h-16 bg-slate-100 rounded-full mb-4">
-          <Calculator className="w-8 h-8 text-slate-600" />
+          <CalculadoraIcon className="w-8 h-8" />
         </div>
         <h1 className="text-3xl font-bold text-slate-900 mb-2">Calculadora de Costes 3D</h1>
         <p className="text-slate-600">Calcula el coste total de tus proyectos de impresión 3D</p>

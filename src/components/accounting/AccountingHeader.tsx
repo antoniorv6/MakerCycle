@@ -3,6 +3,7 @@ import { TrendingUp, Plus, Search, Calendar, Euro, BarChart3, PieChart, Clock, F
 import { motion } from 'framer-motion';
 import { useFormatCurrency } from '@/hooks/useFormatCurrency';
 import type { AccountingStats } from '@/types';
+import { ContabilidadIcon } from '@/components/icons/MenuIcons';
 
 interface AccountingHeaderProps {
   stats: AccountingStats;
@@ -21,7 +22,7 @@ export function AccountingHeader({
       {/* Header */}
       <div className="text-center">
         <div className="inline-flex items-center justify-center w-16 h-16 bg-slate-100 rounded-full mb-4">
-          <Receipt className="w-8 h-8 text-slate-600" />
+          <ContabilidadIcon className="w-8 h-8" />
         </div>
         <h1 className="text-3xl font-bold text-slate-900 mb-2">Contabilidad</h1>
         <p className="text-slate-600">Gestiona tus ventas, gastos y análisis financiero</p>

@@ -1,7 +1,8 @@
 import React from 'react';
-import { Calculator, Edit3, Upload, FileText } from 'lucide-react';
+import { Edit3, Upload, FileText } from 'lucide-react';
 import type { ModeSelectionProps} from '@/types';
 import PendingDraftsPanel from '../PendingDraftsPanel';
+import { CalculadoraIcon } from '@/components/icons/MenuIcons';
 
 const ModeSelection: React.FC<ModeSelectionProps> = ({
   onModeSelect,
@@ -13,7 +14,7 @@ const ModeSelection: React.FC<ModeSelectionProps> = ({
     <div className="max-w-7xl mx-auto p-6">
       <div className="text-center mb-8">
         <div className="inline-flex items-center justify-center w-16 h-16 bg-slate-100 rounded-full mb-4">
-          <Calculator className="w-8 h-8 text-slate-600" />
+          <CalculadoraIcon className="w-8 h-8" />
         </div>
         <h1 className="text-3xl font-bold text-slate-900 mb-2">Calculadora de Costes 3D</h1>
         <p className="text-slate-600">Calcula el coste total de tus proyectos de impresión 3D</p>

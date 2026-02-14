@@ -9,6 +9,7 @@ import MaterialPresetsManager from './MaterialPresetsManager'
 import PostprocessingPresetsManager from './PostprocessingPresetsManager'
 import PrinterPresetsManager from './PrinterPresetsManager'
 import ShippingPresetsManager from './ShippingPresetsManager'
+import { ConfiguracionIcon } from '@/components/icons/MenuIcons'
 
 interface SettingsPageProps {
   initialTab?: string;
@@ -58,7 +59,7 @@ export default function SettingsPage({ initialTab = 'company' }: SettingsPagePro
 
   const tabs = [
     { id: 'company', label: 'Empresa', icon: Building2 },
-    { id: 'materials', label: 'Perfiles Materiales', icon: Package },
+    { id: 'materials', label: 'Perfiles materiales', icon: Package },
     { id: 'printers', label: 'Impresoras', icon: Printer3D },
     { id: 'postprocessing', label: 'Postproducción', icon: Paintbrush },
     { id: 'shipping', label: 'Envíos', icon: Truck },
@@ -75,7 +76,7 @@ export default function SettingsPage({ initialTab = 'company' }: SettingsPagePro
       <div className="mb-8">
         <div className="flex items-center space-x-3 mb-4">
           <div className="p-3 bg-slate-100 rounded-lg">
-            <Settings className="w-8 h-8 text-slate-600" />
+            <ConfiguracionIcon className="w-8 h-8" />
           </div>
           <div>
             <h1 className="text-3xl font-bold text-slate-900">Configuración</h1>
@@ -130,14 +131,14 @@ export default function SettingsPage({ initialTab = 'company' }: SettingsPagePro
             {activeTab === 'company' && (
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">Información de la Empresa</h3>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">Información de la empresa</h3>
                   <p className="text-gray-600 mb-6">Configura los datos de tu empresa que aparecerán en los albaranes y facturas.</p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Nombre de la Empresa
+                      Nombre de la empresa
                     </label>
                     <input
                       type="text"
@@ -229,7 +230,7 @@ export default function SettingsPage({ initialTab = 'company' }: SettingsPagePro
 
                 <div className="col-span-full">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Descripción de la Empresa
+                    Descripción de la empresa
                   </label>
                   <textarea
                     value={formData.description}
@@ -242,7 +243,7 @@ export default function SettingsPage({ initialTab = 'company' }: SettingsPagePro
 
                 <div className="col-span-full">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Términos y Condiciones
+                    Términos y condiciones
                   </label>
                   <textarea
                     value={formData.terms}
@@ -255,7 +256,7 @@ export default function SettingsPage({ initialTab = 'company' }: SettingsPagePro
 
                 <div className="col-span-full">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Pie de Página
+                    Pie de página
                   </label>
                   <textarea
                     value={formData.footer}
@@ -271,7 +272,7 @@ export default function SettingsPage({ initialTab = 'company' }: SettingsPagePro
             {activeTab === 'profile' && (
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">Perfil de Usuario</h3>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">Perfil de usuario</h3>
                   <p className="text-gray-600 mb-6">Gestiona tu información personal y preferencias.</p>
                 </div>
                 <div className="text-center py-12">
@@ -286,7 +287,7 @@ export default function SettingsPage({ initialTab = 'company' }: SettingsPagePro
             {activeTab === 'currency' && (
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">Configuración de Moneda</h3>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">Configuración de moneda</h3>
                   <p className="text-gray-600 mb-6">Selecciona la moneda que deseas usar en toda la aplicación. Los precios se mostrarán con el símbolo de la moneda seleccionada.</p>
                 </div>
 
@@ -348,7 +349,7 @@ export default function SettingsPage({ initialTab = 'company' }: SettingsPagePro
                     className="px-6 py-3 bg-brand-600 text-white rounded-lg hover:bg-brand-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-2 shadow-md hover:shadow-lg"
                   >
                     <Save className="w-4 h-4" />
-                    <span>{isSavingCurrency ? 'Guardando...' : 'Guardar Moneda'}</span>
+                    <span>{isSavingCurrency ? 'Guardando...' : 'Guardar moneda'}</span>
                   </button>
                 </div>
               </div>
@@ -418,7 +419,7 @@ export default function SettingsPage({ initialTab = 'company' }: SettingsPagePro
                     className="px-6 py-3 bg-brand-600 text-white rounded-lg hover:bg-brand-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-2 shadow-md hover:shadow-lg"
                   >
                     <Save className="w-4 h-4" />
-                    <span>{isSaving ? 'Guardando...' : 'Guardar Configuración'}</span>
+                    <span>{isSaving ? 'Guardando...' : 'Guardar configuración'}</span>
                   </button>
                 </div>
               </div>

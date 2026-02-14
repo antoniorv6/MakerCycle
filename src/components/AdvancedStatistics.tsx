@@ -811,7 +811,7 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
         <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-slate-100 to-slate-200 rounded-2xl mb-6 shadow-lg">
           <BarChart3 className="w-10 h-10 text-slate-700" />
         </div>
-        <h1 className="text-4xl font-bold text-slate-900 mb-3">Estadísticas Avanzadas</h1>
+        <h1 className="text-4xl font-bold text-slate-900 mb-3">Estadísticas avanzadas</h1>
         <p className="text-lg text-slate-600 max-w-3xl mx-auto">
           Análisis profundo de rentabilidad, tendencias y oportunidades de optimización 
           para maximizar el rendimiento de tu negocio de impresión 3D.
@@ -883,7 +883,7 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
         className="flex space-x-1 bg-slate-100 rounded-xl p-1"
       >
         {[
-          { id: 'overview', label: 'Vista General', icon: BarChart3 },
+          { id: 'overview', label: 'Vista general', icon: BarChart3 },
           { id: 'performance', label: 'Rendimiento', icon: Target },
           { id: 'trends', label: 'Tendencias', icon: TrendingUp },
           { id: 'insights', label: 'Insights', icon: Lightbulb }
@@ -921,7 +921,7 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
             <GrowthBadge value={stats.revenueGrowth} />
           </div>
           <div>
-            <p className="text-blue-600 text-sm font-medium mb-1">Ingresos Período</p>
+            <p className="text-blue-600 text-sm font-medium mb-1">Ingresos período</p>
             <p className="text-2xl font-bold text-blue-900">{formatCurrency(stats.totalRevenue)}</p>
             <p className="text-blue-700 text-xs mt-2">
               {stats.salesCount} ventas realizadas
@@ -937,7 +937,7 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
             <GrowthBadge value={stats.netProfitGrowth} />
           </div>
           <div>
-            <p className="text-green-600 text-sm font-medium mb-1">Beneficio Neto</p>
+            <p className="text-green-600 text-sm font-medium mb-1">Beneficio neto</p>
             <p className="text-2xl font-bold text-green-900">{formatCurrency(stats.netProfit)}</p>
             <p className="text-green-700 text-xs mt-2">
               {formatPercentage(stats.netProfitMargin)} margen neto
@@ -954,7 +954,7 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
             <GrowthBadge value={stats.expenseGrowth} />
           </div>
           <div>
-            <p className="text-red-600 text-sm font-medium mb-1">Gastos Período</p>
+            <p className="text-red-600 text-sm font-medium mb-1">Gastos período</p>
             <p className="text-2xl font-bold text-red-900">{formatCurrency(stats.totalExpenses)}</p>
             <p className="text-red-700 text-xs mt-2">
               {stats.expensesCount} gastos registrados
@@ -994,7 +994,7 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
             </div>
           </div>
           <div>
-            <p className="text-orange-600 text-sm font-medium mb-1">Valor Promedio Venta</p>
+            <p className="text-orange-600 text-sm font-medium mb-1">Valor promedio venta</p>
             <p className="text-2xl font-bold text-orange-900">{formatCurrency(stats.avgSaleValue)}</p>
             <p className="text-orange-700 text-xs mt-2">
               {stats.salesCount} ventas
@@ -1017,7 +1017,7 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
             <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900">Evolución Temporal</h3>
+                  <h3 className="text-lg font-semibold text-gray-900">Evolución temporal</h3>
                   <p className="text-sm text-gray-500">Análisis de tendencias en el tiempo</p>
                 </div>
                 <LineChartIcon className="w-5 h-5 text-gray-500" />
@@ -1035,9 +1035,9 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
                         formatter={(value: any, name?: string) => {
                           if (name === 'margin') return [formatPercentage(value), 'Margen'];
                           if (name === 'eurosPerHour') return [formatCurrency(value), `${currencySymbol}/Hora`];
-                          if (name === 'netProfit') return [formatCurrency(value), 'Beneficio Neto'];
+                          if (name === 'netProfit') return [formatCurrency(value), 'Beneficio neto'];
                           if (name === 'expenses') return [formatCurrency(value), 'Gastos'];
-                          return [formatCurrency(value), name === 'revenue' ? 'Ingresos' : name === 'profit' ? 'Beneficio Bruto' : 'Coste'];
+                          return [formatCurrency(value), name === 'revenue' ? 'Ingresos' : name === 'profit' ? 'Beneficio bruto' : 'Coste'];
                         }}
                       />
                       <Legend />
@@ -1050,8 +1050,8 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
                       )}
                       {chartType === 'profit' && (
                         <>
-                          <Line type="monotone" dataKey="profit" stroke="#10b981" strokeWidth={3} name="Beneficio Bruto" />
-                          <Line type="monotone" dataKey="netProfit" stroke="#059669" strokeWidth={3} name="Beneficio Neto" />
+                          <Line type="monotone" dataKey="profit" stroke="#10b981" strokeWidth={3} name="Beneficio bruto" />
+                          <Line type="monotone" dataKey="netProfit" stroke="#059669" strokeWidth={3} name="Beneficio neto" />
                         </>
                       )}
                       {chartType === 'margin' && (
@@ -1070,7 +1070,7 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
             <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900">Distribución de Márgenes</h3>
+                  <h3 className="text-lg font-semibold text-gray-900">Distribución de márgenes</h3>
                   <p className="text-sm text-gray-500">Análisis de rentabilidad por rangos</p>
                 </div>
                 <PieChartIcon className="w-5 h-5 text-gray-500" />
@@ -1109,7 +1109,7 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
             <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100 flex flex-col justify-between">
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900">Proporción de Ingresos por Proyecto</h3>
+                  <h3 className="text-lg font-semibold text-gray-900">Proporción de ingresos por proyecto</h3>
                   <p className="text-sm text-gray-500">Visualiza qué proyectos generan más ingresos</p>
                 </div>
                 <PieChartIcon className="w-5 h-5 text-gray-500" />
@@ -1143,7 +1143,7 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
             <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100 overflow-x-auto">
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900">Top 10 Proyectos Detallados</h3>
+                  <h3 className="text-lg font-semibold text-gray-900">Top 10 proyectos detallados</h3>
                   <p className="text-sm text-gray-500">Ranking de proyectos más rentables</p>
                 </div>
                 <Activity className="w-5 h-5 text-gray-500" />
@@ -1188,7 +1188,7 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
           <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100 mt-8">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">Gastos por Categoría</h3>
+                <h3 className="text-lg font-semibold text-gray-900">Gastos por categoría</h3>
                 <p className="text-sm text-gray-500">Distribución de gastos en el período</p>
               </div>
               <PieChartIcon className="w-5 h-5 text-gray-500" />
@@ -1235,7 +1235,7 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
             <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900">Métricas de Rendimiento</h3>
+                  <h3 className="text-lg font-semibold text-gray-900">Métricas de rendimiento</h3>
                   <p className="text-sm text-gray-500">Indicadores clave de rentabilidad</p>
                 </div>
                 <Target className="w-5 h-5 text-gray-500" />
@@ -1282,7 +1282,7 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
             <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900">Productos Estrella</h3>
+                  <h3 className="text-lg font-semibold text-gray-900">Productos estrella</h3>
                   <p className="text-sm text-gray-500">Top 5 productos más rentables</p>
                 </div>
                 <Award className="w-5 h-5 text-gray-500" />
@@ -1323,7 +1323,7 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
           <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">Top Clientes por Facturación</h3>
+                <h3 className="text-lg font-semibold text-gray-900">Top clientes por facturación</h3>
                 <p className="text-sm text-gray-500">Ranking de clientes que más ingresos generan</p>
               </div>
               <Users className="w-5 h-5 text-gray-500" />
@@ -1363,7 +1363,7 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
           <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">Comparativa de Períodos</h3>
+                <h3 className="text-lg font-semibold text-gray-900">Comparativa de períodos</h3>
                 <p className="text-sm text-gray-500">Período actual vs. anterior ({timeRange === 'all' ? '365d' : timeRange})</p>
               </div>
               <Activity className="w-5 h-5 text-gray-500" />
@@ -1381,10 +1381,10 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
                 <tbody>
                   {[
                     { label: 'Ingresos', current: stats.totalRevenue, previous: stats.previous.revenue, format: 'currency' },
-                    { label: 'Beneficio Bruto', current: stats.totalProfit, previous: stats.previous.profit, format: 'currency' },
+                    { label: 'Beneficio bruto', current: stats.totalProfit, previous: stats.previous.profit, format: 'currency' },
                     { label: 'Gastos', current: stats.totalExpenses, previous: stats.previous.expenses, format: 'currency', invertColor: true },
                     { label: 'Amortizaciones', current: stats.totalAmortization, previous: stats.previous.amortization, format: 'currency', invertColor: true },
-                    { label: 'Beneficio Neto', current: stats.netProfit, previous: stats.previous.netProfit, format: 'currency' },
+                    { label: 'Beneficio neto', current: stats.netProfit, previous: stats.previous.netProfit, format: 'currency' },
                     { label: 'N.º Ventas', current: stats.salesCount, previous: stats.previous.salesCount, format: 'number' },
                     { label: 'Horas impr.', current: stats.totalHours, previous: stats.previous.hours, format: 'hours' },
                     { label: 'Margen prom.', current: stats.avgMargin, previous: stats.previous.avgMargin, format: 'percent' },
@@ -1433,7 +1433,7 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
           <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">Análisis de Tendencias</h3>
+                <h3 className="text-lg font-semibold text-gray-900">Análisis de tendencias</h3>
                 <p className="text-sm text-gray-500">Evolución diaria de métricas clave</p>
               </div>
               <TrendingUp className="w-5 h-5 text-gray-500" />
@@ -1467,7 +1467,7 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
           <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">Resumen Mensual</h3>
+                <h3 className="text-lg font-semibold text-gray-900">Resumen mensual</h3>
                 <p className="text-sm text-gray-500">Ingresos, beneficio neto y gastos agregados por mes</p>
               </div>
               <BarChart3 className="w-5 h-5 text-gray-500" />
@@ -1484,12 +1484,12 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
                     <Tooltip
                       formatter={(value: any, name?: string) => [
                         formatCurrency(value),
-                        name === 'revenue' ? 'Ingresos' : name === 'netProfit' ? 'Beneficio Neto' : 'Gastos'
+                        name === 'revenue' ? 'Ingresos' : name === 'netProfit' ? 'Beneficio neto' : 'Gastos'
                       ]}
                     />
                     <Legend />
                     <Bar dataKey="revenue" fill="#3b82f6" name="Ingresos" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="netProfit" fill="#10b981" name="Beneficio Neto" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="netProfit" fill="#10b981" name="Beneficio neto" radius={[4, 4, 0, 0]} />
                     <Bar dataKey="expenses" fill="#f59e0b" name="Gastos" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
@@ -1501,7 +1501,7 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
           <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">Ratio Gastos / Ingresos</h3>
+                <h3 className="text-lg font-semibold text-gray-900">Ratio gastos / ingresos</h3>
                 <p className="text-sm text-gray-500">Evolución mensual del % de gastos sobre ingresos</p>
               </div>
               <Percent className="w-5 h-5 text-gray-500" />
@@ -1528,7 +1528,7 @@ export default function AdvancedStatistics({ onBack }: AdvancedStatsProps) {
           <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">Evolución de Clientes</h3>
+                <h3 className="text-lg font-semibold text-gray-900">Evolución de clientes</h3>
                 <p className="text-sm text-gray-500">Clientes acumulados por mes</p>
               </div>
               <User className="w-5 h-5 text-gray-500" />
