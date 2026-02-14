@@ -16,8 +16,6 @@ const IconWrapper = ({ src, alt, className = 'w-8 h-8' }: { src: string; alt: st
         justifyContent: 'center',
         flexShrink: 0,
         position: 'relative',
-        width: '100%',
-        height: '100%',
         isolation: 'isolate'
       }}
     >
@@ -61,5 +59,5 @@ export const EquiposIcon = ({ className = 'w-8 h-8' }: IconProps) => {
 }
 
 export const ConfiguracionIcon = ({ className = 'w-8 h-8' }: IconProps) => {
-  return <IconWrapper src="/menu_icons/configuracon.svg" alt="Configuración" className={className} />
+  return <IconWrapper src="/menu_icons/configuracion.svg" alt="Configuración" className={className} />
 }

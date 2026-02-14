@@ -75,7 +75,7 @@ export default function SettingsPage({ initialTab = 'company' }: SettingsPagePro
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center space-x-3 mb-4">
-          <div className="p-3 bg-slate-100 rounded-lg">
+          <div className="p-3 bg-slate-100 rounded-lg flex items-center justify-center flex-shrink-0">
             <ConfiguracionIcon className="w-8 h-8" />
           </div>
           <div>

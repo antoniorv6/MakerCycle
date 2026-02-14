@@ -114,7 +114,7 @@ export default function Sidebar({ currentPage, onPageChange, isOpen, onToggle }:
                       onClick={() => { if (window.innerWidth < 1024) onToggle() }}
                     >
                       <div 
-                        className={`w-8 h-8 flex items-center justify-center flex-shrink-0 ${isActive ? '' : 'opacity-60'}`}
+                        className={`w-8 h-8 flex items-center justify-center flex-shrink-0 ${isActive ? '' : 'opacity-80'}`}
                       >
                         <div 
                           className="w-full h-full"
@@ -143,7 +143,7 @@ export default function Sidebar({ currentPage, onPageChange, isOpen, onToggle }:
                     }`}
                   >
                     <div 
-                      className={`w-8 h-8 flex items-center justify-center flex-shrink-0 ${isActive ? '' : 'opacity-60'}`}
+                      className={`w-8 h-8 flex items-center justify-center flex-shrink-0 ${isActive ? '' : 'opacity-80'}`}
                     >
                       <div 
                         className="w-full h-full"

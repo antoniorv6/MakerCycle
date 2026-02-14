@@ -50,7 +50,7 @@ export default function BottomNavigation({ currentPage, onPageChange, onMenuOpen
                     }`} 
                   />
                 ) : (
-                  <div className={`relative w-8 h-8 flex items-center justify-center ${isActive ? 'opacity-100' : 'opacity-50'}`}>
+                  <div className={`relative w-8 h-8 flex items-center justify-center ${isActive ? 'opacity-100' : 'opacity-75'}`}>
                     <Icon className="w-full h-full" />
                   </div>
                 )}
