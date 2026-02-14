@@ -1,63 +1,21 @@
 [build]
   command = "pnpm run build"
-  publish = ".next"
+  publish = "out"
 
 [build.environment]
   NODE_VERSION = "20"
 
-# Handle Next.js static files
-[[redirects]]
-  from = "/_next/static/*"
-  to = "/_next/static/:splat"
-  status = 200
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://fonts.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https: blob:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co; frame-ancestors 'none';"
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
 
-# Handle public static files (images, etc.)
-[[redirects]]
-  from = "/*.webp"
-  to = "/:splat.webp"
-  status = 200
-
-[[redirects]]
-  from = "/*.png"
-  to = "/:splat.png"
-  status = 200
-
-[[redirects]]
-  from = "/*.jpg"
-  to = "/:splat.jpg"
-  status = 200
-
-[[redirects]]
-  from = "/*.jpeg"
-  to = "/:splat.jpeg"
-  status = 200
-
-[[redirects]]
-  from = "/*.svg"
-  to = "/:splat.svg"
-  status = 200
-
-[[redirects]]
-  from = "/*.ico"
-  to = "/:splat.ico"
-  status = 200
-
-# Handle API routes
-[[redirects]]
-  from = "/api/*"
-  to = "/api/:splat"
-  status = 200
-
-# Handle all other routes (SPA fallback)
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
-
-[[headers]]
-  for = "/*"
-  [headers.values]
-    X-Frame-Options = "DENY"
-    X-XSS-Protection = "1; mode=block"
-    X-Content-Type-Options = "nosniff"
-    Referrer-Policy = "strict-origin-when-cross-origin" 

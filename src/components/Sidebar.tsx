@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '@/components/providers/AuthProvider'
 import TeamContextIndicator from './TeamContextIndicator'
 import { Notifications } from './Notifications'
+import { IconButton } from '@/components/ui/IconButton'
 
 interface SidebarProps {
   currentPage: string
@@ -44,24 +45,27 @@ export default function Sidebar({ currentPage, onPageChange, isOpen, onToggle }:
       </AnimatePresence>
 
       {/* Mobile menu button */}
-      <button
+      <IconButton
         onClick={onToggle}
-        className="fixed top-4 left-4 z-50 lg:hidden bg-white rounded-xl p-2.5 shadow-lg border border-cream-200 hover:border-brand-300 transition-colors"
-      >
-        {isOpen ? <X className="w-6 h-6 text-dark-700" /> : <Menu className="w-6 h-6 text-dark-700" />}
-      </button>
+        icon={isOpen ? <X className="w-6 h-6 text-dark-700" /> : <Menu className="w-6 h-6 text-dark-700" />}
+        label={isOpen ? "Cerrar menú de navegación" : "Abrir menú de navegación"}
+        className="fixed top-4 left-4 z-50 lg:hidden border border-cream-200 hover:border-brand-300"
+      />
 
       {/* Sidebar */}
       <motion.aside
+        id="sidebar-navigation"
+        role="navigation"
+        aria-label="Navegación principal"
         initial={false}
         animate={{
           x: isOpen ? 0 : -280,
           transition: { type: "spring", stiffness: 300, damping: 30 }
         }}
-        className="fixed left-0 top-0 h-full w-70 bg-white border-r border-cream-200 shadow-xl z-50 lg:relative lg:translate-x-0 lg:z-auto lg:w-64 flex flex-col"
+        className="fixed left-0 top-0 h-full w-70 bg-white border-r border-cream-200 shadow-xl z-50 lg:relative lg:translate-x-0 lg:z-auto lg:w-64 flex flex-col overflow-x-hidden"
       >
         {/* Scrollable content area */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden">
           <div className="p-6">
             {/* Logo */}
             <div className="mb-6 flex justify-center">

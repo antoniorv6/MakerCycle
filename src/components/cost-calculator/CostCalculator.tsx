@@ -289,7 +289,8 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({
       setPostprocessingItems([]);
     }
 
-    setPrinterPower(0.35);
+    // Load printer power from project if available, otherwise use default
+    setPrinterPower(project.printer_power || 0.35);
 
     if (project.pieces && project.pieces.length > 0) {
       const mappedPieces = project.pieces.map(piece => {
@@ -841,6 +842,7 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({
         filament_price: filamentPrice,
         print_hours: totalPrintHours,
         electricity_cost: electricityCost,
+        printer_power: printerPower,
         materials,
         postprocessing_items: postprocessingItemsToSave, // Always save as array, never null
         total_cost: costs.total,

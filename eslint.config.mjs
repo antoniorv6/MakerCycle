@@ -37,11 +37,25 @@ export default tseslint.config(
       ...hooksPlugin.configs.recommended.rules,
       ...nextPlugin.configs.recommended.rules,
       ...nextPlugin.configs["core-web-vitals"].rules,
+
+      // React
       "react/react-in-jsx-scope": "off",
       "react/prop-types": "off",
-      "@typescript-eslint/no-explicit-any": "off",
-      "@typescript-eslint/no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
+
+      // TypeScript - MÁS ESTRICTO
+      "@typescript-eslint/no-explicit-any": "warn", // Cambio: off → warn
+      "@typescript-eslint/no-unused-vars": ["error", {
+        "argsIgnorePattern": "^_",
+        "varsIgnorePattern": "^_"
+      }],
+
+      // React Hooks - MÁS ESTRICTO
+      "react-hooks/exhaustive-deps": "warn", // Cambio: añadir
+      "react-hooks/rules-of-hooks": "error",
       "react-hooks/set-state-in-effect": "off",
+
+      // Console - BLOQUEAR EN PRODUCCIÓN
+      "no-console": ["warn", { "allow": ["error", "warn"] }], // Cambio: añadir
     },
   }
 );

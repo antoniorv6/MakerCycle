@@ -1,52 +1,24 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useTeam } from '@/components/providers/TeamProvider';
 import { createClient } from '@/lib/supabase';
+import { useMemo } from 'react';
 import type { DatabaseProject, Sale, Expense, DashboardStats } from '@/types';
-
-// Cache for dashboard data
-const dashboardCache = new Map<string, { 
-  data: { projects: DatabaseProject[], sales: Sale[], expenses: Expense[] }, 
-  timestamp: number 
-}>();
-const CACHE_DURATION = 2 * 60 * 1000; // 2 minutes
-
-// Remove local interface and use the one from types
+import { logger } from '@/lib/logger';
 
 export function useDashboardData() {
-  const [projects, setProjects] = useState<DatabaseProject[]>([]);
-  const [sales, setSales] = useState<Sale[]>([]);
-  const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
   const { currentTeam, isEditingMode, editingTeam } = useTeam();
   const supabase = createClient();
-  
-  // Calcular el equipo efectivo directamente
-  const effectiveTeamId = isEditingMode && editingTeam ? editingTeam.id : currentTeam?.id;
 
-  // Create cache key that includes team context
-  const cacheKey = `${user?.id || ''}-${effectiveTeamId || 'personal'}`;
+  const effectiveTeamId = (isEditingMode && editingTeam) ? editingTeam.id : currentTeam?.id;
 
-  const fetchDashboardData = useCallback(async () => {
-    if (!user) return;
-    
-    // Check cache first
-    const cached = dashboardCache.get(cacheKey);
-    if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-      setProjects(cached.data.projects);
-      setSales(cached.data.sales);
-      setExpenses(cached.data.expenses);
-      setLoading(false);
-      return;
-    }
-    
-    try {
-      setLoading(true);
-      setError(null);
-      
-      // Prepare queries based on team context
+  const { data, isLoading, error, refetch } = useQuery({
+    queryKey: ['dashboard', user?.id, effectiveTeamId],
+    queryFn: async () => {
+      if (!user) return null;
+
+      // Construir queries base
       let projectsQuery = supabase
         .from('projects')
         .select('*')
@@ -65,92 +37,85 @@ export function useDashboardData() {
         .order('created_at', { ascending: false })
         .limit(10);
 
-      // Apply team context filters
+      // Aplicar filtros de equipo
       if (effectiveTeamId) {
-        // Get team data
         projectsQuery = projectsQuery.eq('team_id', effectiveTeamId);
         salesQuery = salesQuery.eq('team_id', effectiveTeamId);
         expensesQuery = expensesQuery.eq('team_id', effectiveTeamId);
       } else {
-        // Get personal data (where team_id is null)
         projectsQuery = projectsQuery.eq('user_id', user.id).is('team_id', null);
         salesQuery = salesQuery.eq('user_id', user.id).is('team_id', null);
         expensesQuery = expensesQuery.eq('user_id', user.id).is('team_id', null);
       }
 
-      // Fetch all data in parallel
+      // Ejecutar en paralelo
       const [projectsResult, salesResult, expensesResult] = await Promise.allSettled([
         projectsQuery,
         salesQuery,
-        expensesQuery
+        expensesQuery,
       ]);
 
-      // Handle projects
+      // Procesar resultados
+      const projects: DatabaseProject[] = [];
+      const sales: Sale[] = [];
+      const expenses: Expense[] = [];
+
       if (projectsResult.status === 'fulfilled' && !projectsResult.value.error) {
-        setProjects(projectsResult.value.data || []);
+        projects.push(...(projectsResult.value.data || []));
       } else {
-        console.error('Error fetching projects:', projectsResult.status === 'rejected' ? projectsResult.reason : projectsResult.value?.error);
+        logger.error('Error fetching projects:', projectsResult.status === 'rejected' ? projectsResult.reason : projectsResult.value?.error);
       }
 
-      // Handle sales
       if (salesResult.status === 'fulfilled' && !salesResult.value.error) {
-        setSales(salesResult.value.data || []);
+        sales.push(...(salesResult.value.data || []));
       } else {
-        console.error('Error fetching sales:', salesResult.status === 'rejected' ? salesResult.reason : salesResult.value?.error);
+        logger.error('Error fetching sales:', salesResult.status === 'rejected' ? salesResult.reason : salesResult.value?.error);
       }
 
-      // Handle expenses
       if (expensesResult.status === 'fulfilled' && !expensesResult.value.error) {
-        setExpenses(expensesResult.value.data || []);
+        expenses.push(...(expensesResult.value.data || []));
       } else {
-        console.error('Error fetching expenses:', expensesResult.status === 'rejected' ? expensesResult.reason : expensesResult.value?.error);
+        logger.error('Error fetching expenses:', expensesResult.status === 'rejected' ? expensesResult.reason : expensesResult.value?.error);
       }
 
-      // Update cache
-      dashboardCache.set(cacheKey, { 
-        data: { 
-          projects: projectsResult.status === 'fulfilled' ? (projectsResult.value.data || []) : [],
-          sales: salesResult.status === 'fulfilled' ? (salesResult.value.data || []) : [],
-          expenses: expensesResult.status === 'fulfilled' ? (expensesResult.value.data || []) : []
-        }, 
-        timestamp: Date.now() 
-      });
+      return { projects, sales, expenses };
+    },
+    enabled: !!user,
+  });
 
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error fetching dashboard data');
-      console.error('Error fetching dashboard data:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, [user, effectiveTeamId, cacheKey, supabase]);
-
-  const invalidateCache = useCallback(() => {
-    dashboardCache.delete(cacheKey);
-  }, [cacheKey]);
-
-  useEffect(() => {
-    if (user) {
-      fetchDashboardData();
-    }
-  }, [user, effectiveTeamId, fetchDashboardData]);
-
+  // Calcular estadísticas con useMemo
   const stats = useMemo((): DashboardStats => {
-    const totalRevenue = sales.reduce((sum, sale) => sum + sale.total_amount, 0);
-    const totalProfit = sales.reduce((sum, sale) => sum + sale.total_profit, 0);
-    const totalPrintHours = sales.reduce((sum, sale) => sum + sale.total_print_hours, 0);
-    const totalProducts = sales.reduce((sum, sale) => sum + sale.items_count, 0);
-    const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
-    
-    const averageMargin = sales.length > 0 
-      ? sales.reduce((sum, sale) => sum + sale.total_margin, 0) / sales.length 
+    if (!data) {
+      return {
+        totalProjects: 0,
+        totalSales: 0,
+        totalRevenue: 0,
+        totalProfit: 0,
+        averageMargin: 0,
+        totalPrintHours: 0,
+        averageEurosPerHour: 0,
+        totalProducts: 0,
+        totalExpenses: 0,
+        netProfit: 0,
+      };
+    }
+
+    const totalRevenue = data.sales.reduce((sum, sale) => sum + sale.total_amount, 0);
+    const totalProfit = data.sales.reduce((sum, sale) => sum + sale.total_profit, 0);
+    const totalPrintHours = data.sales.reduce((sum, sale) => sum + sale.total_print_hours, 0);
+    const totalProducts = data.sales.reduce((sum, sale) => sum + sale.items_count, 0);
+    const totalExpenses = data.expenses.reduce((sum, expense) => sum + expense.amount, 0);
+
+    const averageMargin = data.sales.length > 0
+      ? data.sales.reduce((sum, sale) => sum + sale.total_margin, 0) / data.sales.length
       : 0;
-    
+
     const averageEurosPerHour = totalPrintHours > 0 ? totalProfit / totalPrintHours : 0;
     const netProfit = totalProfit - totalExpenses;
 
     return {
-      totalProjects: projects.length,
-      totalSales: sales.length,
+      totalProjects: data.projects.length,
+      totalSales: data.sales.length,
       totalRevenue,
       totalProfit,
       averageMargin,
@@ -158,18 +123,17 @@ export function useDashboardData() {
       averageEurosPerHour,
       totalProducts,
       totalExpenses,
-      netProfit
+      netProfit,
     };
-  }, [projects, sales, expenses]);
+  }, [data]);
 
   return {
-    projects,
-    sales,
-    expenses,
+    projects: data?.projects || [],
+    sales: data?.sales || [],
+    expenses: data?.expenses || [],
     stats,
-    loading,
-    error,
-    refetch: fetchDashboardData,
-    invalidateCache
+    loading: isLoading,
+    error: error ? (error as Error).message : null,
+    refetch,
   };
-} 
+}

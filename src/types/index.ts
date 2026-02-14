@@ -17,6 +17,7 @@ export interface Project {
   filament_price: number;
   print_hours: number;
   electricity_cost: number;
+  printer_power?: number; // Potencia de la impresora en kW (default: 0.35)
   materials: Material[]; // DEPRECATED: usar postprocessing_items
   postprocessing_items?: PostprocessingItem[];
   total_cost: number;
@@ -68,6 +69,7 @@ export interface DatabaseProject {
   filament_price: number;
   print_hours: number;
   electricity_cost: number;
+  printer_power?: number; // Potencia de la impresora en kW (default: 0.35)
   materials: Material[]; // DEPRECATED: usar postprocessing_items
   postprocessing_items?: PostprocessingItem[];
   total_cost: number;

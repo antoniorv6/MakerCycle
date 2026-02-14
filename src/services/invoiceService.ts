@@ -1,9 +1,21 @@
 import type { InvoiceFormData } from '@/types';
 import type { CompanyData } from '@/hooks/useCompanySettings';
+import { escapeHTML } from '@/lib/sanitize';
+import { invoiceSchema } from '@/lib/validators';
+import { z } from 'zod';
 
 export class InvoiceService {
   static async generatePDF(data: InvoiceFormData, companyData: CompanyData, currencySymbol: string = '€'): Promise<void> {
     try {
+      // Validar datos antes de generar
+      try {
+        invoiceSchema.parse(data);
+      } catch (error) {
+        if (error instanceof z.ZodError) {
+          throw new Error('Datos de factura inválidos: ' + error.issues.map((e: any) => e.message).join(', '));
+        }
+        throw error;
+      }
       
       // Por ahora, vamos a crear un HTML que se pueda convertir a PDF
       const htmlContent = this.generateInvoiceHTML(data, companyData, currencySymbol);
@@ -52,14 +64,14 @@ export class InvoiceService {
         
         try {
           return `${currencySymbol}${numericValue.toFixed(2)}`;
-        } catch (error) {
+        } catch {
           return `${currencySymbol}0.00`;
         }
       };
       const formatDate = (dateString: string) => {
         try {
           return new Date(dateString).toLocaleDateString('es-ES');
-        } catch (error) {
+        } catch {
           return new Date().toLocaleDateString('es-ES');
         }
       };
@@ -284,29 +296,29 @@ export class InvoiceService {
           <div class="header">
             <div class="header-left">
               <h1>ALBARÁN</h1>
-              <p>${companyData.description || 'Servicios de Impresión 3D'}</p>
+              <p>${escapeHTML(companyData.description || 'Servicios de Impresión 3D')}</p>
             </div>
-            <div class="invoice-number">${data.invoiceNumber || 'ALB-001'}</div>
+            <div class="invoice-number">${escapeHTML(data.invoiceNumber || 'ALB-001')}</div>
           </div>
 
           <div class="content">
             <div class="invoice-info">
               <div class="company-info">
                 <div class="section-title">EMPRESA</div>
-                <p><strong>${companyData.name || 'MakerCycle'}</strong></p>
-                <p>${companyData.description || 'Servicios de Impresión 3D'}</p>
-                ${companyData.address ? `<p>${companyData.address}</p>` : ''}
-                <p>Email: ${companyData.email || 'info@makercycle.com'}</p>
-                <p>Tel: ${companyData.phone || '+34 XXX XXX XXX'}</p>
-                ${companyData.website ? `<p>Web: ${companyData.website}</p>` : ''}
-                ${companyData.taxId ? `<p>CIF: ${companyData.taxId}</p>` : ''}
+                <p><strong>${escapeHTML(companyData.name || 'MakerCycle')}</strong></p>
+                <p>${escapeHTML(companyData.description || 'Servicios de Impresión 3D')}</p>
+                ${companyData.address ? `<p>${escapeHTML(companyData.address)}</p>` : ''}
+                <p>Email: ${escapeHTML(companyData.email || 'info@makercycle.com')}</p>
+                <p>Tel: ${escapeHTML(companyData.phone || '+34 XXX XXX XXX')}</p>
+                ${companyData.website ? `<p>Web: ${escapeHTML(companyData.website)}</p>` : ''}
+                ${companyData.taxId ? `<p>CIF: ${escapeHTML(companyData.taxId)}</p>` : ''}
               </div>
               <div class="client-info">
                 <div class="section-title">CLIENTE</div>
-                <p><strong>${data.clientName || 'Cliente'}</strong></p>
-                <p>${(data.clientAddress || '').replace(/\n/g, '<br>')}</p>
-                ${data.clientPhone ? `<p>Tel: ${data.clientPhone}</p>` : ''}
-                ${data.clientEmail ? `<p>Email: ${data.clientEmail}</p>` : ''}
+                <p><strong>${escapeHTML(data.clientName || 'Cliente')}</strong></p>
+                <p>${escapeHTML(data.clientAddress || '').replace(/\n/g, '<br>')}</p>
+                ${data.clientPhone ? `<p>Tel: ${escapeHTML(data.clientPhone)}</p>` : ''}
+                ${data.clientEmail ? `<p>Email: ${escapeHTML(data.clientEmail)}</p>` : ''}
               </div>
             </div>
 
@@ -342,7 +354,7 @@ export class InvoiceService {
                   
                   return `
                   <tr>
-                    <td>${item.description || ''}</td>
+                    <td>${escapeHTML(item.description || '')}</td>
                     <td>${quantity}</td>
                     <td>${formatCurrency(unitPrice)}</td>
                     <td>${formatCurrency(total)}</td>
@@ -359,13 +371,13 @@ export class InvoiceService {
             ${data.notes ? `
             <div class="notes">
               <div class="section-title">NOTAS</div>
-              <p>${(data.notes || '').replace(/\n/g, '<br>')}</p>
+              <p>${escapeHTML(data.notes || '').replace(/\n/g, '<br>')}</p>
             </div>
             ` : ''}
 
             <div class="footer">
-              <p>${companyData.terms || 'Este documento es un albarán de entrega de servicios de impresión 3D.'}</p>
-              <p>${companyData.footer || 'Gracias por confiar en nuestros servicios.'}</p>
+              <p>${escapeHTML(companyData.terms || 'Este documento es un albarán de entrega de servicios de impresión 3D.')}</p>
+              <p>${escapeHTML(companyData.footer || 'Gracias por confiar en nuestros servicios.')}</p>
             </div>
           </div>
         </div>

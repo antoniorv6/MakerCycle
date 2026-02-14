@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Search, Filter, Calendar, Euro, FileText, Clock, Package, Layers, Zap, Eye, Pencil } from 'lucide-react';
+import { Plus, Search, Calendar, Euro, FileText, Clock, Package, Layers, Zap, Eye, Pencil } from 'lucide-react';
 import { createClient } from '@/lib/supabase';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useTeam } from '@/components/providers/TeamProvider';
@@ -52,7 +52,6 @@ export default function ProjectManager({ onLoadProject, onEditProject }: Project
   const [projects, setProjects] = useState<(DatabaseProject & { pieces?: DatabasePiece[] })[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState('all');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newProjectName, setNewProjectName] = useState('');
   const [newProjectType, setNewProjectType] = useState<'filament' | 'resin'>('filament');
@@ -302,8 +301,7 @@ export default function ProjectManager({ onLoadProject, onEditProject }: Project
 
   const filteredProjects = projects.filter(project => {
     const matchesSearch = project.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter = filterStatus === 'all' || project.status === filterStatus;
-    return matchesSearch && matchesFilter;
+    return matchesSearch;
   });
 
   return (
@@ -319,34 +317,19 @@ export default function ProjectManager({ onLoadProject, onEditProject }: Project
 
       {/* Controles */}
       <div className="bg-white rounded-xl shadow-lg p-6 mb-8 border border-slate-100">
-        <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
-          <div className="flex flex-1 gap-4 w-full lg:w-auto">
-            <div className="relative flex-1 lg:w-80">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
-              <input
-                type="text"
-                placeholder="Buscar proyectos..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent"
-              />
-            </div>
-            <div className="relative">
-              <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-                className="pl-10 pr-8 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent appearance-none bg-white"
-              >
-                <option value="all">Todos</option>
-                <option value="draft">Borradores</option>
-                <option value="calculated">Calculados</option>
-                <option value="completed">Completados</option>
-              </select>
-            </div>
+        <div className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-center justify-between">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
+            <input
+              type="text"
+              placeholder="Buscar proyectos..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent"
+            />
           </div>
           <button
-            className="flex items-center space-x-2 px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors duration-200 font-medium"
+            className="flex items-center justify-center space-x-2 px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors duration-200 font-medium shadow-md hover:shadow-lg flex-shrink-0 w-full sm:w-auto"
             onClick={() => setShowCreateModal(true)}
           >
             <Plus className="w-5 h-5" />
@@ -362,12 +345,15 @@ export default function ProjectManager({ onLoadProject, onEditProject }: Project
             <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-gray-900 mb-2">No hay proyectos</h3>
             <p className="text-gray-600 mb-6">
-              {searchTerm || filterStatus !== 'all' 
-                ? 'No se encontraron proyectos con los filtros aplicados'
+              {searchTerm
+                ? 'No se encontraron proyectos con la búsqueda realizada'
                 : 'Comienza creando tu primer proyecto de impresión 3D'
               }
             </p>
-            <button className="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors duration-200 font-medium">
+            <button 
+              onClick={() => setShowCreateModal(true)}
+              className="px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors duration-200 font-medium shadow-md hover:shadow-lg"
+            >
               Crear Proyecto
             </button>
           </div>
@@ -402,14 +388,14 @@ export default function ProjectManager({ onLoadProject, onEditProject }: Project
                 <div className="flex space-x-2">
                   <button
                     onClick={() => handleLoadProject(project)}
-                    className="flex items-center space-x-1.5 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors duration-200 text-sm font-medium"
+                    className="flex items-center space-x-1.5 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 text-sm font-medium shadow-sm hover:shadow-md"
                   >
                     <Eye className="w-4 h-4" />
                     <span>Ver detalles</span>
                   </button>
                   <button
                     onClick={() => handleEditProject(project)}
-                    className="flex items-center space-x-1.5 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 text-sm font-medium shadow-sm hover:shadow-md"
+                    className="flex items-center space-x-1.5 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors duration-200 text-sm font-medium shadow-sm hover:shadow-md"
                   >
                     <Pencil className="w-4 h-4" />
                     <span>Editar</span>
