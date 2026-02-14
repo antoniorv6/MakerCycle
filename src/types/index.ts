@@ -25,6 +25,11 @@ export interface Project {
   profit_margin: number;
   recommended_price: number;
   status: 'draft' | 'calculated' | 'completed';
+  shipping_enabled?: boolean;
+  shipping_preset_id?: string | null;
+  packaging_weight_mode?: 'percentage' | 'fixed';
+  packaging_weight_value?: number;
+  shipping_cost?: number;
   pieces?: Piece[];
   created_at: string;
   updated_at: string;
@@ -47,6 +52,11 @@ export interface AppProject {
   recommendedPrice: number;
   createdAt: string;
   status: 'draft' | 'calculated' | 'completed';
+  shippingEnabled?: boolean;
+  shippingPresetId?: string | null;
+  packagingWeightMode?: 'percentage' | 'fixed';
+  packagingWeightValue?: number;
+  shippingCost?: number;
   pieces?: AppPiece[];
 }
 
@@ -79,6 +89,11 @@ export interface DatabaseProject {
   status: 'draft' | 'calculated' | 'completed';
   project_type?: 'filament' | 'resin';
   team_id?: string | null;
+  shipping_enabled?: boolean;
+  shipping_preset_id?: string | null;
+  packaging_weight_mode?: 'percentage' | 'fixed';
+  packaging_weight_value?: number;
+  shipping_cost?: number;
   pieces?: DatabasePiece[];
   created_at: string;
   updated_at: string;
@@ -190,6 +205,27 @@ export interface PostprocessingItem {
   is_from_preset: boolean;
   description?: string;
   category?: string;
+}
+
+// Shipping types
+export interface ShippingWeightTier {
+  min_weight: number; // gramos
+  max_weight: number; // gramos
+  price: number;      // coste del tramo
+}
+
+export interface ShippingPreset {
+  id: string;
+  user_id: string;
+  team_id?: string | null;
+  name: string;
+  provider_name: string;
+  is_custom_provider: boolean;
+  weight_tiers: ShippingWeightTier[];
+  notes?: string;
+  is_default: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 // Client related types
@@ -446,6 +482,7 @@ export interface CostBreakdownPanelProps {
     filament: number;
     electricity: number;
     materials: number;
+    shipping: number;
     total: number;
   };
 }

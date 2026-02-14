@@ -10,6 +10,7 @@ import ProjectInfo from './forms/ProjectInfo';
 import PiecesSection from './forms/PiecesSection';
 import ElectricitySection from './forms/ElectricitySection';
 import MaterialsSection from './forms/MaterialsSection';
+import ShippingSection from './forms/ShippingSection';
 import PricingConfig from './forms/PricingConfig';
 import SummaryTabsPanel from './panels/SummaryTabsPanel';
 import DisasterModeButton from './DisasterModeButton';
@@ -150,6 +151,13 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({
     notes: '',
     materials: []
   }]);
+  // Shipping state
+  const [shippingEnabled, setShippingEnabled] = useState(false);
+  const [selectedShippingPresetId, setSelectedShippingPresetId] = useState<string | null>(null);
+  const [packagingWeightMode, setPackagingWeightMode] = useState<'percentage' | 'fixed'>('percentage');
+  const [packagingWeightValue, setPackagingWeightValue] = useState(10);
+  const [shippingCost, setShippingCost] = useState(0);
+
   const [isDisasterMode, setIsDisasterMode] = useState(false);
   const [disasterModeNotes, setDisasterModeNotes] = useState<Array<{
     id: string;
@@ -292,6 +300,13 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({
     // Load printer power from project if available, otherwise use default
     setPrinterPower(project.printer_power || 0.35);
 
+    // Load shipping data
+    setShippingEnabled(project.shipping_enabled || false);
+    setSelectedShippingPresetId(project.shipping_preset_id || null);
+    setPackagingWeightMode(project.packaging_weight_mode || 'percentage');
+    setPackagingWeightValue(project.packaging_weight_value || 10);
+    setShippingCost(project.shipping_cost || 0);
+
     if (project.pieces && project.pieces.length > 0) {
       const mappedPieces = project.pieces.map(piece => {
         let materials: Array<{
@@ -432,7 +447,8 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({
     materials,
     postprocessingItems,
     vatPercentage,
-    profitMargin
+    profitMargin,
+    shippingCost
   });
 
   // Material handlers
@@ -851,6 +867,11 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({
         recommended_price: salePrice.recommendedPrice,
         status: 'calculated',
         team_id: getEffectiveTeam()?.id || null,
+        shipping_enabled: shippingEnabled,
+        shipping_preset_id: selectedShippingPresetId,
+        packaging_weight_mode: packagingWeightMode,
+        packaging_weight_value: packagingWeightValue,
+        shipping_cost: shippingCost,
       };
 
       const existingProjectId = loadedProject?.id || editingProjectId;
@@ -1112,6 +1133,19 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({
             onNavigateToSettings={onNavigateToSettings}
             onSaveAsPreset={savePostprocessingItemAsPreset}
           />
+
+          <ShippingSection
+            shippingEnabled={shippingEnabled}
+            selectedPresetId={selectedShippingPresetId}
+            packagingWeightMode={packagingWeightMode}
+            packagingWeightValue={packagingWeightValue}
+            productionWeightGrams={totalFilamentWeight}
+            onToggleShipping={setShippingEnabled}
+            onSelectPreset={setSelectedShippingPresetId}
+            onUpdatePackagingMode={setPackagingWeightMode}
+            onUpdatePackagingValue={setPackagingWeightValue}
+            onShippingCostChange={setShippingCost}
+          />
         </div>
 
         {/* Columna derecha: Resultados */}
@@ -1122,6 +1156,7 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({
           totalFilamentCost={totalFilamentCost}
           totalElectricityCost={totalElectricityCost}
           totalPostprocessingCost={postprocessingItems.reduce((sum, item) => sum + (item.cost_per_unit * (item.quantity || 1)), 0)}
+          totalShippingCost={shippingCost}
           projectType={projectType}
           costs={costs}
           salePrice={salePrice}

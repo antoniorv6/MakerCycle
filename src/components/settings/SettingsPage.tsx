@@ -1,13 +1,14 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { Save, Building2, User, Shield, Bell, Palette, Settings, Package, DollarSign, Paintbrush } from 'lucide-react'
+import { Save, Building2, User, Shield, Bell, Palette, Settings, Package, DollarSign, Paintbrush, Truck } from 'lucide-react'
 import { Printer3D } from '@/components/icons/Printer3D'
 import { useCompanySettings } from '@/hooks/useCompanySettings'
 import { useCurrency } from '@/components/providers/CurrencyProvider'
 import MaterialPresetsManager from './MaterialPresetsManager'
 import PostprocessingPresetsManager from './PostprocessingPresetsManager'
 import PrinterPresetsManager from './PrinterPresetsManager'
+import ShippingPresetsManager from './ShippingPresetsManager'
 
 interface SettingsPageProps {
   initialTab?: string;
@@ -60,6 +61,7 @@ export default function SettingsPage({ initialTab = 'company' }: SettingsPagePro
     { id: 'materials', label: 'Perfiles Materiales', icon: Package },
     { id: 'printers', label: 'Impresoras', icon: Printer3D },
     { id: 'postprocessing', label: 'Postproducción', icon: Paintbrush },
+    { id: 'shipping', label: 'Envíos', icon: Truck },
     { id: 'profile', label: 'Perfil', icon: User },
     { id: 'currency', label: 'Moneda', icon: DollarSign },
     { id: 'security', label: 'Seguridad', icon: Shield },
@@ -115,6 +117,10 @@ export default function SettingsPage({ initialTab = 'company' }: SettingsPagePro
 
             {activeTab === 'postprocessing' && (
               <PostprocessingPresetsManager />
+            )}
+
+            {activeTab === 'shipping' && (
+              <ShippingPresetsManager />
             )}
 
             {activeTab === 'printers' && (

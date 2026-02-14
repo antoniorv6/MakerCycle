@@ -21,6 +21,12 @@ const CostBreakdownPanel: React.FC<CostBreakdownPanelProps> = ({ costs }) => {
           <span className="text-slate-700 font-medium">Postproducción</span>
           <span className="text-xl font-semibold text-slate-900">{formatCurrency(costs.materials)}</span>
         </div>
+        {costs.shipping > 0 && (
+          <div className="flex justify-between items-center py-3 border-b border-slate-200">
+            <span className="text-slate-700 font-medium">Envío</span>
+            <span className="text-xl font-semibold text-slate-900">{formatCurrency(costs.shipping)}</span>
+          </div>
+        )}
         <div className="flex justify-between items-center py-4 bg-white rounded-lg px-4 mt-6">
           <span className="text-lg font-bold text-slate-900">Coste Total</span>
           <span className="text-2xl font-bold text-slate-600">{formatCurrency(costs.total)}</span>

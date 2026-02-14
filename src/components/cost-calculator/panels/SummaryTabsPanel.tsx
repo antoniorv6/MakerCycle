@@ -13,6 +13,7 @@ interface SummaryTabsPanelProps {
   totalFilamentCost: number;
   totalElectricityCost: number;
   totalPostprocessingCost: number;
+  totalShippingCost?: number;
   projectType?: 'filament' | 'resin';
   // CostBreakdown props
   costs: CostBreakdownPanelProps['costs'];
@@ -29,6 +30,7 @@ const SummaryTabsPanel: React.FC<SummaryTabsPanelProps> = ({
   totalFilamentCost,
   totalElectricityCost,
   totalPostprocessingCost,
+  totalShippingCost = 0,
   projectType,
   costs,
   salePrice,
@@ -38,7 +40,7 @@ const SummaryTabsPanel: React.FC<SummaryTabsPanelProps> = ({
   const { formatCurrency, currencySymbol } = useFormatCurrency();
   const totalPieces = pieces.reduce((sum, piece) => sum + piece.quantity, 0);
   const uniquePieces = pieces.length;
-  const totalCost = totalFilamentCost + totalElectricityCost + totalPostprocessingCost;
+  const totalCost = totalFilamentCost + totalElectricityCost + totalPostprocessingCost + totalShippingCost;
 
   // Detectar tipo de proyecto si no se proporciona
   const detectedProjectType = projectType || (() => {
@@ -251,6 +253,7 @@ const SummaryTabsPanel: React.FC<SummaryTabsPanelProps> = ({
                 <div className="text-sm text-gray-600">
                   Materiales: {formatCurrency(totalFilamentCost)} • Electricidad: {formatCurrency(totalElectricityCost)}
                   {totalPostprocessingCost > 0 && ` • Postproducción: ${formatCurrency(totalPostprocessingCost)}`}
+                  {totalShippingCost > 0 && ` • Envío: ${formatCurrency(totalShippingCost)}`}
                 </div>
               </div>
               <div className="text-right">

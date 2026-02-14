@@ -6,6 +6,7 @@ interface CostBreakdown {
   filament: number;
   electricity: number;
   materials: number;
+  shipping: number;
   total: number;
 }
 
@@ -34,6 +35,7 @@ interface UseCostCalculationsProps {
   }>;
   vatPercentage: number;
   profitMargin: number;
+  shippingCost?: number;
   // Nuevos campos para piezas
   pieces?: Array<{
     id: string;
@@ -57,12 +59,14 @@ export const useCostCalculations = ({
   postprocessingItems = [],
   vatPercentage,
   profitMargin,
+  shippingCost = 0,
   pieces = []
 }: UseCostCalculationsProps) => {
   const [costs, setCosts] = useState<CostBreakdown>({
     filament: 0,
     electricity: 0,
     materials: 0,
+    shipping: 0,
     total: 0
   });
 
@@ -143,12 +147,13 @@ export const useCostCalculations = ({
       const unitCost = item.cost_per_unit ?? item.cost ?? 0;
       return sum + (unitCost * (item.quantity || 1));
     }, 0);
-    const totalCost = totalFilamentCost + electricityCostTotal + materialsCost + postprocessingCost;
+    const totalCost = totalFilamentCost + electricityCostTotal + materialsCost + postprocessingCost + shippingCost;
 
     setCosts({
       filament: totalFilamentCost,
       electricity: electricityCostTotal,
       materials: materialsCost + postprocessingCost,
+      shipping: shippingCost,
       total: totalCost
     });
 
@@ -164,7 +169,7 @@ export const useCostCalculations = ({
       priceWithTax,
       recommendedPrice
     });
-  }, [filamentWeight, filamentPrice, printHours, electricityCost, printerPower, materials, postprocessingItems, vatPercentage, profitMargin, pieces]);
+  }, [filamentWeight, filamentPrice, printHours, electricityCost, printerPower, materials, postprocessingItems, vatPercentage, profitMargin, shippingCost, pieces]);
 
   const { totalFilamentWeight, totalPrintHours, totalFilamentCost } = calculateTotalsFromPieces();
 
