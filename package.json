@@ -22,6 +22,10 @@
     "cap:run:ios": "pnpm run cap:build && npx cap run ios",
     "cap:open:ios": "npx cap open ios",
     "cap:open:android": "npx cap open android",
+    "emulator:android": "pnpm build && npx cap sync android && npx cap run android",
+    "emulator:ios": "pnpm build && npx cap sync ios && npx cap run ios",
+    "dev:android": "npx cap run android --livereload --external",
+    "dev:ios": "npx cap run ios --livereload --external",
     "docker:build": "docker build -t makercycle:latest .",
     "docker:run": "docker run -p 8080:80 makercycle:latest"
   },

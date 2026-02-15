@@ -5,6 +5,11 @@
 @tailwind utilities;
 
 @layer base {
+  /* Eliminate 300ms tap delay on mobile */
+  *, *::before, *::after {
+    touch-action: manipulation;
+  }
+
   :root {
     /* MakerCycle Brand Theme - Light Mode */
     --background: 30 20% 99%;        /* cream-50 */
@@ -587,6 +592,71 @@ html {
     opacity: 1;
     transition: 0s;
   }
+}
+
+/* ================================
+   MATERIAL DESIGN 3 UTILITIES
+   ================================ */
+
+/* MD3 Ripple effect - works on all platforms */
+.md-ripple {
+  position: relative;
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.md-ripple::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: currentColor;
+  opacity: 0;
+  transition: opacity 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+.md-ripple:active::before {
+  opacity: 0.08;
+}
+
+/* Enhanced skeleton shimmer with brand colors */
+.skeleton-shimmer-brand {
+  background: linear-gradient(
+    90deg,
+    hsl(var(--muted)) 25%,
+    hsl(var(--border)) 50%,
+    hsl(var(--muted)) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: 0.75rem;
+}
+
+/* Scroll fade indicators for horizontal scrollable containers */
+.scroll-fade-right {
+  mask-image: linear-gradient(to right, black 85%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, black 85%, transparent 100%);
+}
+
+.scroll-fade-both {
+  mask-image: linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%);
+}
+
+.scroll-fade-none {
+  mask-image: none;
+  -webkit-mask-image: none;
+}
+
+/* Focus-visible ring for keyboard navigation only */
+.focus-ring {
+  outline: none;
+}
+
+.focus-ring:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
 }
 
 /* Fix for viewport height on mobile browsers */

@@ -45,9 +45,9 @@ const MobileInput = forwardRef<HTMLInputElement, MobileInputProps>(({
             ${icon && iconPosition === 'left' ? 'pl-12' : 'pl-4'}
             ${icon && iconPosition === 'right' ? 'pr-12' : 'pr-4'}
             py-4
-            ${error 
-              ? 'border-red-300 focus:border-red-500 focus:ring-red-500' 
-              : 'border-slate-300 focus:border-slate-500 focus:ring-slate-500'
+            ${error
+              ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
+              : 'border-slate-300 focus:border-brand-500 focus:ring-brand-500'
             }
             focus:outline-none focus:ring-2 focus:ring-opacity-50
             placeholder:text-slate-400

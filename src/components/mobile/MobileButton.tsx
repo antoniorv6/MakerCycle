@@ -27,22 +27,22 @@ export default function MobileButton({
   type = 'button',
 }: MobileButtonProps) {
   const sizeClasses = {
-    sm: 'py-2 px-4 text-sm',
-    md: 'py-3 px-5 text-base',
-    lg: 'py-4 px-6 text-lg',
-    full: 'py-4 px-6 text-base w-full',
+    sm: 'py-2.5 px-4 text-sm min-h-[44px]',
+    md: 'py-3 px-5 text-base min-h-[44px]',
+    lg: 'py-4 px-6 text-lg min-h-[48px]',
+    full: 'py-4 px-6 text-base w-full min-h-[48px]',
   }
 
   const variantClasses = {
     primary: `
-      bg-gradient-to-r from-slate-700 to-slate-800 text-white
-      shadow-lg active:shadow-md
-      disabled:from-slate-400 disabled:to-slate-500
+      bg-brand-gradient text-white
+      shadow-elevation-2 active:shadow-elevation-1
+      disabled:opacity-50 disabled:shadow-none
     `,
     secondary: `
-      bg-slate-100 text-slate-700 border border-slate-200
-      active:bg-slate-200
-      disabled:bg-slate-50 disabled:text-slate-400
+      bg-brand-50 text-brand-700 border border-brand-200
+      active:bg-brand-100
+      disabled:bg-slate-50 disabled:text-slate-400 disabled:border-slate-200
     `,
     ghost: `
       bg-slate-50 text-slate-700 border border-slate-200
@@ -51,7 +51,7 @@ export default function MobileButton({
     `,
     danger: `
       bg-red-500 text-white
-      shadow-lg active:shadow-md
+      shadow-lg shadow-red-500/25 active:shadow-md
       disabled:bg-red-300
     `,
   }
@@ -67,6 +67,7 @@ export default function MobileButton({
         font-semibold rounded-xl
         transition-all duration-200
         tap-highlight-none no-select
+        ${!disabled ? 'md-ripple' : ''}
         ${sizeClasses[size]}
         ${variantClasses[variant]}
         ${disabled ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}

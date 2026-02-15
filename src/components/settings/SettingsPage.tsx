@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { Save, Building2, User, Shield, Bell, Palette, Settings, Package, DollarSign, Paintbrush, Truck } from 'lucide-react'
 import { Printer3D } from '@/components/icons/Printer3D'
 import { useCompanySettings } from '@/hooks/useCompanySettings'
@@ -17,6 +17,7 @@ interface SettingsPageProps {
 
 export default function SettingsPage({ initialTab = 'company' }: SettingsPageProps) {
   const [activeTab, setActiveTab] = useState(initialTab)
+  const [isMobile, setIsMobile] = useState(false)
   const { companyData, saveCompanyData, isLoading } = useCompanySettings()
   const { currency, currencySymbol, saveUserCurrency, currencies, loading: currencyLoading } = useCurrency()
   const [formData, setFormData] = useState(companyData)
@@ -25,6 +26,26 @@ export default function SettingsPage({ initialTab = 'company' }: SettingsPagePro
   const [selectedCurrency, setSelectedCurrency] = useState(currency)
   const [isSavingCurrency, setIsSavingCurrency] = useState(false)
   const [currencySaveMessage, setCurrencySaveMessage] = useState('')
+  const [scrollFadeClass, setScrollFadeClass] = useState('scroll-fade-right')
+  const tabsScrollRef = useRef<HTMLDivElement>(null)
+
+  const handleTabsScroll = useCallback(() => {
+    const el = tabsScrollRef.current
+    if (!el) return
+    const atStart = el.scrollLeft <= 5
+    const atEnd = el.scrollLeft + el.clientWidth >= el.scrollWidth - 5
+    if (atStart && atEnd) setScrollFadeClass('scroll-fade-none')
+    else if (atStart) setScrollFadeClass('scroll-fade-right')
+    else if (atEnd) setScrollFadeClass('scroll-fade-none')
+    else setScrollFadeClass('scroll-fade-both')
+  }, [])
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768)
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
   useEffect(() => {
     setFormData(companyData)
@@ -71,47 +92,79 @@ export default function SettingsPage({ initialTab = 'company' }: SettingsPagePro
   ]
 
   return (
-    <div className="max-w-6xl mx-auto p-6">
+    <div className={`max-w-6xl mx-auto ${isMobile ? 'p-3' : 'p-6'}`}>
       {/* Header */}
-      <div className="mb-8">
+      <div className={isMobile ? 'mb-4' : 'mb-8'}>
         <div className="flex items-center space-x-3 mb-4">
-          <div className="p-3 bg-slate-100 rounded-lg flex items-center justify-center flex-shrink-0">
-            <ConfiguracionIcon className="w-8 h-8" />
+          <div className={`${isMobile ? 'p-2' : 'p-3'} bg-slate-100 rounded-lg flex items-center justify-center flex-shrink-0`}>
+            <ConfiguracionIcon className={isMobile ? 'w-6 h-6' : 'w-8 h-8'} />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-slate-900">Configuración</h1>
-            <p className="text-slate-600">Personaliza tu experiencia de gestión 3D</p>
+            <h1 className={`${isMobile ? 'text-xl' : 'text-3xl'} font-bold text-slate-900`}>Configuración</h1>
+            {!isMobile && <p className="text-slate-600">Personaliza tu experiencia de gestión 3D</p>}
           </div>
         </div>
       </div>
 
       <div className="bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden">
-        <div className="flex min-h-[600px]">
-          {/* Sidebar */}
-          <div className="w-80 bg-slate-50 border-r border-slate-200 p-6">
-            <nav className="space-y-2">
-              {tabs.map((tab) => {
-                const Icon = tab.icon
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-colors ${
-                      activeTab === tab.id
-                        ? 'bg-slate-100 text-slate-700 border border-slate-200'
-                        : 'text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 hover:border-slate-300'
-                    }`}
-                  >
-                    <Icon className="w-5 h-5" />
-                    <span className="font-medium">{tab.label}</span>
-                  </button>
-                )
-              })}
-            </nav>
-          </div>
+        <div className={`${isMobile ? 'flex flex-col' : 'flex'} min-h-[600px]`}>
+          {/* Tabs - horizontal scrollable on mobile, sidebar on desktop */}
+          {isMobile ? (
+            <div
+              ref={tabsScrollRef}
+              onScroll={handleTabsScroll}
+              className={`overflow-x-auto scrollbar-hide border-b border-slate-200 ${scrollFadeClass}`}
+              role="tablist"
+              aria-label="Secciones de configuración"
+            >
+              <div className="flex space-x-2 p-3 min-w-max">
+                {tabs.map((tab) => {
+                  const Icon = tab.icon
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`flex items-center space-x-2 px-4 py-2.5 rounded-full whitespace-nowrap text-sm font-medium transition-colors md-ripple ${
+                        activeTab === tab.id
+                          ? 'bg-slate-800 text-white'
+                          : 'bg-slate-100 text-slate-600'
+                      }`}
+                      role="tab"
+                      aria-selected={activeTab === tab.id}
+                    >
+                      <Icon className="w-4 h-4" />
+                      <span>{tab.label}</span>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          ) : (
+            <div className="w-80 bg-slate-50 border-r border-slate-200 p-6">
+              <nav className="space-y-2">
+                {tabs.map((tab) => {
+                  const Icon = tab.icon
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-colors ${
+                        activeTab === tab.id
+                          ? 'bg-slate-100 text-slate-700 border border-slate-200'
+                          : 'text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 hover:border-slate-300'
+                      }`}
+                    >
+                      <Icon className="w-5 h-5" />
+                      <span className="font-medium">{tab.label}</span>
+                    </button>
+                  )
+                })}
+              </nav>
+            </div>
+          )}
 
           {/* Content */}
-          <div className="flex-1 p-8">
+          <div className={`flex-1 ${isMobile ? 'p-4' : 'p-8'}`}>
             {activeTab === 'materials' && (
               <MaterialPresetsManager />
             )}

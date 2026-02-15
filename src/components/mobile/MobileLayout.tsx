@@ -1,6 +1,8 @@
 'use client'
 
 import React, { useState, Suspense } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { useCapacitorContext } from '@/components/providers/CapacitorProvider'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { useDashboardData } from '@/hooks/useDashboardData'
 import BottomNavigation from './BottomNavigation'
@@ -31,6 +33,7 @@ export default function MobileLayout({ initialPage }: MobileLayoutProps) {
   const [loadedProject, setLoadedProject] = useState<AppProject | null>(null)
   const [settingsTab, setSettingsTab] = useState<string>('company')
   const { user } = useAuth()
+  const { keyboardVisible } = useCapacitorContext()
   const { stats } = useDashboardData()
 
   // Helper to convert DatabaseProject to AppProject
@@ -242,9 +245,19 @@ export default function MobileLayout({ initialPage }: MobileLayoutProps) {
       />
 
       {/* Main Content - Native scroll behavior */}
-      <main className="pt-14 pb-20 h-screen overflow-y-auto native-scroll">
+      <main className={`pt-[60px] ${keyboardVisible ? 'pb-4' : 'pb-[72px]'} min-h-screen-safe overflow-y-auto native-scroll`}>
         <div className="py-3">
-          {renderContent()}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentPage}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+            >
+              {renderContent()}
+            </motion.div>
+          </AnimatePresence>
         </div>
       </main>
 

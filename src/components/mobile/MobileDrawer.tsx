@@ -1,10 +1,11 @@
 'use client'
 
-import React from 'react'
-import { X, LogOut, ChevronRight } from 'lucide-react'
+import React, { useRef, useEffect } from 'react'
+import { X, LogOut, ChevronRight, ExternalLink } from 'lucide-react'
 import { OrganizacionIcon, ClientesIcon, EquiposIcon, ConfiguracionIcon } from '@/components/icons/MenuIcons'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '@/components/providers/AuthProvider'
+import { useHaptics } from '@/hooks/useCapacitor'
 import TeamContextIndicator from '../TeamContextIndicator'
 
 interface MobileDrawerProps {
@@ -23,8 +24,18 @@ const menuItems = [
 
 export default function MobileDrawer({ isOpen, onClose, onPageChange, currentPage }: MobileDrawerProps) {
   const { user, signOut } = useAuth()
+  const { triggerHaptic } = useHaptics()
+  const closeButtonRef = useRef<HTMLButtonElement>(null)
+
+  // Focus management: focus close button when drawer opens
+  useEffect(() => {
+    if (isOpen && closeButtonRef.current) {
+      closeButtonRef.current.focus()
+    }
+  }, [isOpen])
 
   const handleNavigation = (page: string) => {
+    triggerHaptic('light')
     onPageChange(page)
     onClose()
   }
@@ -58,7 +69,10 @@ export default function MobileDrawer({ isOpen, onClose, onPageChange, currentPag
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-            className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-3xl max-h-[85vh] overflow-hidden safe-area-bottom"
+            className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-3xl max-h-[85vh] overflow-hidden safe-area-bottom shadow-elevation-4"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Menú de navegación"
           >
             {/* Handle */}
             <div className="flex justify-center pt-3 pb-2">
@@ -69,8 +83,10 @@ export default function MobileDrawer({ isOpen, onClose, onPageChange, currentPag
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
               <h2 className="text-xl font-bold text-slate-900">Menú</h2>
               <button
+                ref={closeButtonRef}
                 onClick={onClose}
-                className="p-2 rounded-full hover:bg-slate-100 transition-colors"
+                className="p-2.5 rounded-full hover:bg-slate-100 transition-colors md-ripple min-w-touch min-h-touch flex items-center justify-center"
+                aria-label="Cerrar menú"
               >
                 <X className="w-5 h-5 text-slate-500" />
               </button>
@@ -109,11 +125,12 @@ export default function MobileDrawer({ isOpen, onClose, onPageChange, currentPag
                     <button
                       key={item.id}
                       onClick={() => handleNavigation(item.id)}
-                      className={`w-full flex items-center justify-between px-4 py-4 rounded-2xl transition-all duration-200 ${
-                        isActive 
-                          ? 'bg-slate-100' 
+                      className={`w-full flex items-center justify-between px-4 py-4 rounded-2xl transition-all duration-200 md-ripple ${
+                        isActive
+                          ? 'bg-slate-100'
                           : 'hover:bg-slate-50 active:bg-slate-100'
                       }`}
+                      aria-current={isActive ? 'page' : undefined}
                     >
                       <div className="flex items-center space-x-4">
                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
@@ -147,17 +164,19 @@ export default function MobileDrawer({ isOpen, onClose, onPageChange, currentPag
             {/* Buy Me a Coffee Button */}
             <div className="px-4 py-4 border-t border-slate-100">
               <div className="flex justify-center mb-4">
-                <a 
-                  href="https://www.buymeacoffee.com/3dmaniaconh" 
-                  target="_blank" 
+                <a
+                  href="https://www.buymeacoffee.com/3dmaniaconh"
+                  target="_blank"
                   rel="noopener noreferrer"
-                  className="block"
+                  className="flex items-center gap-2"
+                  aria-label="Apoya a MakerCycle (enlace externo)"
                 >
-                  <img 
-                    src="https://img.buymeacoffee.com/button-api/?text=¡Apoya a MakerCycle!&emoji=🖤&slug=3dmaniaconh&button_colour=FFDD00&font_colour=000000&font_family=Lato&outline_colour=000000&coffee_colour=ffffff" 
-                    alt="Buy Me a Coffee" 
+                  <img
+                    src="https://img.buymeacoffee.com/button-api/?text=¡Apoya a MakerCycle!&emoji=🖤&slug=3dmaniaconh&button_colour=FFDD00&font_colour=000000&font_family=Lato&outline_colour=000000&coffee_colour=ffffff"
+                    alt="Buy Me a Coffee"
                     className="h-auto w-full max-w-[200px]"
                   />
+                  <ExternalLink className="w-4 h-4 text-slate-400 flex-shrink-0" />
                 </a>
               </div>
             </div>

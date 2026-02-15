@@ -123,14 +123,17 @@ export default function PasswordResetForm({ onBack }: PasswordResetFormProps) {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="appearance-none block w-full pl-10 pr-10 py-2 border border-slate-300 rounded-md placeholder-slate-400 focus:outline-none focus:ring-slate-500 focus:border-slate-500"
+              className="appearance-none block w-full pl-10 pr-12 py-3.5 border border-cream-300 rounded-xl placeholder-dark-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 bg-white transition-all duration-200"
               placeholder="••••••••"
+              autoCapitalize="off"
+              style={{ fontSize: 16 }}
             />
-            <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+            <div className="absolute inset-y-0 right-0 pr-1 flex items-center">
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="text-slate-400 hover:text-slate-500"
+                className="text-dark-400 hover:text-brand-500 transition-colors duration-200 min-w-touch min-h-touch flex items-center justify-center"
+                aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
               >
                 {showPassword ? (
                   <EyeOff className="h-5 w-5" />
@@ -140,7 +143,7 @@ export default function PasswordResetForm({ onBack }: PasswordResetFormProps) {
               </button>
             </div>
           </div>
-          
+
           {/* Indicador de fortaleza de contraseña */}
           {password && (
             <div className="mt-2">
@@ -179,14 +182,17 @@ export default function PasswordResetForm({ onBack }: PasswordResetFormProps) {
               required
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="appearance-none block w-full pl-10 pr-10 py-2 border border-slate-300 rounded-md placeholder-slate-400 focus:outline-none focus:ring-slate-500 focus:border-slate-500"
+              className="appearance-none block w-full pl-10 pr-12 py-3.5 border border-cream-300 rounded-xl placeholder-dark-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 bg-white transition-all duration-200"
               placeholder="••••••••"
+              autoCapitalize="off"
+              style={{ fontSize: 16 }}
             />
-            <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+            <div className="absolute inset-y-0 right-0 pr-1 flex items-center">
               <button
                 type="button"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="text-slate-400 hover:text-slate-500"
+                className="text-dark-400 hover:text-brand-500 transition-colors duration-200 min-w-touch min-h-touch flex items-center justify-center"
+                aria-label={showConfirmPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
               >
                 {showConfirmPassword ? (
                   <EyeOff className="h-5 w-5" />
@@ -202,7 +208,7 @@ export default function PasswordResetForm({ onBack }: PasswordResetFormProps) {
           <button
             type="submit"
             disabled={loading || passwordStrength < 3 || password !== confirmPassword}
-            className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-xl text-white bg-gradient-to-r from-slate-700 to-slate-800 hover:from-slate-800 hover:to-slate-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl"
+            className="group relative w-full flex justify-center min-h-touch-lg py-3.5 px-4 border border-transparent text-sm font-medium rounded-xl text-white bg-gradient-to-r from-slate-700 to-slate-800 hover:from-slate-800 hover:to-slate-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-elevation-2 hover:shadow-elevation-3 md-ripple"
           >
             {loading ? 'Actualizando...' : 'Actualizar contraseña'}
           </button>
@@ -210,11 +216,14 @@ export default function PasswordResetForm({ onBack }: PasswordResetFormProps) {
       </form>
 
       {message && (
-        <div className={`p-4 rounded-xl ${
-          isSuccess 
-            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
-            : 'bg-red-50 text-red-700 border border-red-200'
-        }`}>
+        <div
+          className={`p-4 rounded-xl ${
+            isSuccess
+              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+              : 'bg-red-50 text-red-700 border border-red-200'
+          }`}
+          aria-live="polite"
+        >
           <div className="flex items-start">
             {isSuccess ? (
               <CheckCircle className="h-5 w-5 text-emerald-600 mt-0.5 mr-3 flex-shrink-0" />
@@ -230,7 +239,7 @@ export default function PasswordResetForm({ onBack }: PasswordResetFormProps) {
         {onBack ? (
           <button
             onClick={onBack}
-            className="inline-flex items-center text-sm text-slate-600 hover:text-slate-900 transition-colors duration-200"
+            className="inline-flex items-center text-sm text-slate-600 hover:text-slate-900 transition-colors duration-200 min-h-touch px-3"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Volver
@@ -238,7 +247,7 @@ export default function PasswordResetForm({ onBack }: PasswordResetFormProps) {
         ) : (
           <Link
             href="/auth"
-            className="inline-flex items-center text-sm text-slate-600 hover:text-slate-900 transition-colors duration-200"
+            className="inline-flex items-center text-sm text-slate-600 hover:text-slate-900 transition-colors duration-200 min-h-touch px-3"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Volver al inicio de sesión

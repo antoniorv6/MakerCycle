@@ -46,9 +46,9 @@ const MobileSelect = forwardRef<HTMLSelectElement, MobileSelectProps>(({
             text-base
             ${icon ? 'pl-12' : 'pl-4'}
             pr-12 py-4
-            ${error 
-              ? 'border-red-300 focus:border-red-500 focus:ring-red-500' 
-              : 'border-slate-300 focus:border-slate-500 focus:ring-slate-500'
+            ${error
+              ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
+              : 'border-slate-300 focus:border-brand-500 focus:ring-brand-500'
             }
             focus:outline-none focus:ring-2 focus:ring-opacity-50
             disabled:bg-slate-50 disabled:text-slate-500 disabled:cursor-not-allowed

@@ -1433,18 +1433,20 @@ export default function MobileCostCalculator({
               <button
                 key={step.id}
                 onClick={() => goToStep(index)}
-                className="flex flex-col items-center"
+                className="flex flex-col items-center md-ripple rounded-xl px-1"
+                aria-label={`Paso ${index + 1}: ${step.title}`}
+                aria-current={isActive ? 'step' : undefined}
               >
-                <div className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${
-                  isActive 
-                    ? 'bg-slate-800 text-white' 
-                    : isCompleted 
+                <div className={`w-11 h-11 rounded-full flex items-center justify-center transition-all ${
+                  isActive
+                    ? 'bg-slate-800 text-white'
+                    : isCompleted
                       ? 'bg-green-500 text-white'
                       : 'bg-slate-100 text-slate-400'
                 }`}>
                   {isCompleted ? <Check className="w-4 h-4" /> : <Icon className="w-4 h-4" />}
                 </div>
-                <span className={`text-[9px] mt-1 ${
+                <span className={`text-[10px] mt-1 ${
                   isActive ? 'text-slate-900 font-medium' : 'text-slate-400'
                 }`}>
                   {step.title}
@@ -1473,6 +1475,7 @@ export default function MobileCostCalculator({
         initial={{ opacity: 0, x: 50 }}
         animate={{ opacity: 1, x: 0 }}
         exit={{ opacity: 0, x: -50 }}
+        transition={{ type: 'tween', duration: 0.15, ease: 'easeOut' }}
         className="px-4"
       >
         {renderStep()}
@@ -1484,7 +1487,7 @@ export default function MobileCostCalculator({
           {currentStep > 0 && (
             <button
               onClick={prevStep}
-              className="flex-1 py-3 px-4 bg-slate-100 text-slate-700 rounded-xl font-medium flex items-center justify-center gap-2"
+              className="flex-1 py-3 px-4 bg-slate-100 text-slate-700 rounded-xl font-medium flex items-center justify-center gap-2 min-h-touch-lg md-ripple"
             >
               <ChevronLeft className="w-4 h-4" />
               Anterior
@@ -1492,7 +1495,7 @@ export default function MobileCostCalculator({
           )}
           <button
             onClick={nextStep}
-            className="flex-1 py-3 px-4 bg-slate-800 text-white rounded-xl font-medium flex items-center justify-center gap-2"
+            className="flex-1 py-3 px-4 bg-slate-800 text-white rounded-xl font-medium flex items-center justify-center gap-2 min-h-touch-lg md-ripple"
           >
             Siguiente
             <ChevronRight className="w-4 h-4" />
@@ -1501,8 +1504,10 @@ export default function MobileCostCalculator({
       )}
 
       {/* Swipe hint */}
-      <p className="text-[10px] text-slate-400 text-center mt-4">
-        ← Desliza para navegar →
+      <p className="text-xs text-slate-400 text-center mt-4 flex items-center justify-center gap-1">
+        <ChevronLeft className="w-3 h-3" />
+        Desliza para navegar
+        <ChevronRight className="w-3 h-3" />
       </p>
     </div>
   )

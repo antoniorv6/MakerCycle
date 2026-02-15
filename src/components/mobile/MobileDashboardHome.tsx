@@ -194,6 +194,41 @@ export default function MobileDashboardHome({ stats, onNavigate }: MobileDashboa
   const firstName = user?.user_metadata?.full_name?.split(' ')[0] || 'Usuario'
   const todayFormatted = new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })
 
+  // Skeleton loading state
+  if (loading) {
+    return (
+      <div className="space-y-5 pb-4">
+        {/* Greeting skeleton */}
+        <div className="px-4 pt-1">
+          <div className="h-6 w-36 skeleton-shimmer-brand mb-2" />
+          <div className="h-4 w-24 skeleton-shimmer-brand" />
+        </div>
+        {/* KPI grid skeleton */}
+        <div className="grid grid-cols-2 gap-2.5 px-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="h-20 rounded-xl skeleton-shimmer-brand" />
+          ))}
+        </div>
+        {/* Quick actions skeleton */}
+        <div className="flex gap-2 px-4">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="flex-1 h-11 rounded-xl skeleton-shimmer-brand" />
+          ))}
+        </div>
+        {/* Chart skeleton */}
+        <div className="px-4">
+          <div className="h-52 rounded-xl skeleton-shimmer-brand" />
+        </div>
+        {/* Metrics skeleton */}
+        <div className="grid grid-cols-2 gap-2.5 px-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="h-14 rounded-xl skeleton-shimmer-brand" />
+          ))}
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-5 pb-4">
       {/* Compact Greeting */}
@@ -211,10 +246,11 @@ export default function MobileDashboardHome({ stats, onNavigate }: MobileDashboa
           return (
             <motion.div
               key={kpi.title}
+              layout={false}
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.07 }}
-              className={`bg-gradient-to-br ${kpi.gradient} rounded-xl p-3 text-white shadow-sm`}
+              className={`bg-gradient-to-br ${kpi.gradient} rounded-xl p-3 text-white shadow-elevation-2`}
             >
               <div className="flex items-center gap-2 mb-1.5">
                 <div className={`w-7 h-7 ${kpi.iconBg} rounded-lg flex items-center justify-center`}>
@@ -236,7 +272,7 @@ export default function MobileDashboardHome({ stats, onNavigate }: MobileDashboa
             <button
               key={action.id}
               onClick={() => handleActionClick(action.id)}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-gradient-to-r ${action.gradient} rounded-xl text-white text-xs font-medium shadow-sm active:scale-[0.97] transition-transform`}
+              className={`flex-1 flex items-center justify-center gap-1.5 py-3 min-h-touch bg-gradient-to-r ${action.gradient} rounded-xl text-white text-xs font-medium shadow-sm active:scale-[0.97] transition-transform md-ripple`}
             >
               <Icon className="w-3.5 h-3.5" />
               <span>{action.title}</span>
@@ -247,23 +283,27 @@ export default function MobileDashboardHome({ stats, onNavigate }: MobileDashboa
 
       {/* Single Chart with Toggle */}
       <div className="px-4">
-        <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
+        <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-elevation-1">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-semibold text-slate-900">Este mes</h3>
-            <div className="flex bg-slate-100 rounded-lg p-0.5">
+            <div className="flex bg-slate-100 rounded-lg p-1" role="tablist" aria-label="Tipo de gráfico">
               <button
                 onClick={() => { setChartMode('ventas'); triggerHaptic('selection') }}
-                className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${
+                className={`px-4 py-2 rounded-md text-xs font-medium transition-all md-ripple ${
                   chartMode === 'ventas' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500'
                 }`}
+                role="tab"
+                aria-selected={chartMode === 'ventas'}
               >
                 Ventas
               </button>
               <button
                 onClick={() => { setChartMode('gastos'); triggerHaptic('selection') }}
-                className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${
+                className={`px-4 py-2 rounded-md text-xs font-medium transition-all md-ripple ${
                   chartMode === 'gastos' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500'
                 }`}
+                role="tab"
+                aria-selected={chartMode === 'gastos'}
               >
                 Gastos
               </button>
@@ -321,8 +361,8 @@ export default function MobileDashboardHome({ stats, onNavigate }: MobileDashboa
               <Zap className="w-3.5 h-3.5 text-amber-600" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-[10px] font-medium text-slate-500">Eficiencia</p>
-              <p className="text-sm font-bold text-slate-900 truncate">{formatCurrency(efficiencyRatio)}<span className="text-[10px] font-normal text-slate-400">/{currencySymbol}h</span></p>
+              <p className="text-[11px] font-medium text-slate-500">Eficiencia</p>
+              <p className="text-sm font-bold text-slate-900 truncate">{formatCurrency(efficiencyRatio)}<span className="text-[11px] font-normal text-slate-400">/{currencySymbol}h</span></p>
             </div>
           </div>
         </div>
@@ -332,7 +372,7 @@ export default function MobileDashboardHome({ stats, onNavigate }: MobileDashboa
               <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-[10px] font-medium text-slate-500">Beneficio</p>
+              <p className="text-[11px] font-medium text-slate-500">Beneficio</p>
               <p className="text-sm font-bold text-slate-900 truncate">{formatCurrency(stats.totalProfit)}</p>
             </div>
           </div>
@@ -343,7 +383,7 @@ export default function MobileDashboardHome({ stats, onNavigate }: MobileDashboa
               <Target className="w-3.5 h-3.5 text-indigo-600" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-[10px] font-medium text-slate-500">Margen</p>
+              <p className="text-[11px] font-medium text-slate-500">Margen</p>
               <p className="text-sm font-bold text-slate-900">{formatPercentage(stats.averageMargin)}</p>
             </div>
           </div>
@@ -354,7 +394,7 @@ export default function MobileDashboardHome({ stats, onNavigate }: MobileDashboa
               <Star className="w-3.5 h-3.5 text-purple-600" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-[10px] font-medium text-slate-500">Neto</p>
+              <p className="text-[11px] font-medium text-slate-500">Neto</p>
               <p className={`text-sm font-bold truncate ${stats.netProfit >= 0 ? 'text-slate-900' : 'text-red-600'}`}>{formatCurrency(stats.netProfit)}</p>
             </div>
           </div>
@@ -388,7 +428,7 @@ export default function MobileDashboardHome({ stats, onNavigate }: MobileDashboa
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-slate-900 truncate">{item.description}</p>
-                    <p className="text-[10px] text-slate-400">{new Date(item.date).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}</p>
+                    <p className="text-[11px] text-slate-400">{new Date(item.date).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}</p>
                   </div>
                 </div>
                 <p className={`text-sm font-semibold ml-2 ${item.type === 'sale' ? 'text-emerald-600' : 'text-red-600'}`}>
@@ -447,7 +487,7 @@ export default function MobileDashboardHome({ stats, onNavigate }: MobileDashboa
                       </p>
                     </div>
                     <div className="flex items-center gap-2 ml-2">
-                      <span className={`text-[10px] px-2 py-0.5 rounded-full border ${statusColors[card.status] || ''}`}>
+                      <span className={`text-[11px] px-2 py-0.5 rounded-full border ${statusColors[card.status] || ''}`}>
                         {statusLabels[card.status] || card.status}
                       </span>
                       <ChevronRight className="w-3.5 h-3.5 text-slate-400" />

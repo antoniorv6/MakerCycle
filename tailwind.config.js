@@ -116,8 +116,29 @@ module.exports = {
         '64': '16rem',
         '70': '17.5rem',
       },
+      boxShadow: {
+        'elevation-0': 'none',
+        'elevation-1': '0 1px 2px 0 rgba(0,0,0,0.1), 0 1px 3px 0 rgba(0,0,0,0.06)',
+        'elevation-2': '0 2px 4px -1px rgba(0,0,0,0.1), 0 4px 6px -1px rgba(0,0,0,0.06)',
+        'elevation-3': '0 4px 8px -2px rgba(0,0,0,0.1), 0 8px 16px -4px rgba(0,0,0,0.06)',
+        'elevation-4': '0 8px 16px -4px rgba(0,0,0,0.12), 0 16px 32px -8px rgba(0,0,0,0.08)',
+      },
+      fontSize: {
+        'fluid-xs': 'clamp(0.65rem, 0.6rem + 0.25vw, 0.75rem)',
+        'fluid-sm': 'clamp(0.75rem, 0.7rem + 0.25vw, 0.875rem)',
+        'fluid-base': 'clamp(0.875rem, 0.8rem + 0.35vw, 1rem)',
+        'fluid-lg': 'clamp(1rem, 0.9rem + 0.5vw, 1.125rem)',
+        'fluid-xl': 'clamp(1.125rem, 1rem + 0.6vw, 1.25rem)',
+        'fluid-2xl': 'clamp(1.25rem, 1.1rem + 0.75vw, 1.5rem)',
+      },
       minHeight: {
         'screen-safe': ['100vh', '100dvh'],
+        'touch': '44px',
+        'touch-lg': '48px',
+      },
+      minWidth: {
+        'touch': '44px',
+        'touch-lg': '48px',
       },
       height: {
         'screen-safe': ['100vh', '100dvh'],

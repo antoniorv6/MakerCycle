@@ -8,11 +8,11 @@ export default function ResetPasswordPage() {
   return (
     <div className="min-h-screen-safe bg-gradient-to-br from-slate-50 to-slate-100 safe-area-inset">
       {/* Back button */}
-      <div className="fixed top-0 left-0 right-0 z-10 safe-area-top">
+      <div className="fixed top-0 left-0 right-0 z-10 safe-area-top pointer-events-none">
         <div className="p-4">
           <Link
             href="/auth/"
-            className="inline-flex items-center text-slate-600 hover:text-slate-900 transition-colors"
+            className="pointer-events-auto inline-flex items-center text-slate-600 hover:text-slate-900 transition-colors"
           >
             <ArrowLeft className="w-5 h-5 mr-2" />
             <span className="font-medium">Volver</span>

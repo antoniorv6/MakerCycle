@@ -65,6 +65,13 @@ export function CapacitorProvider({ children }: CapacitorProviderProps) {
             setKeyboardVisible(true)
             setKeyboardHeight(info.keyboardHeight)
             document.body.classList.add('keyboard-open')
+            // Scroll focused input into view above the keyboard
+            setTimeout(() => {
+              const activeElement = document.activeElement as HTMLElement
+              if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA' || activeElement.tagName === 'SELECT')) {
+                activeElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
+              }
+            }, 100)
           })
 
           Keyboard.addListener('keyboardWillHide', () => {

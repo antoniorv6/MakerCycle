@@ -228,7 +228,7 @@ export default function MobileProjectManager({ onLoadProject, onEditProject }: M
         </div>
 
         {/* Filter Pills */}
-        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide" role="radiogroup" aria-label="Filtrar proyectos">
           {['all', 'draft', 'calculated', 'completed'].map(status => (
             <button
               key={status}
@@ -236,13 +236,15 @@ export default function MobileProjectManager({ onLoadProject, onEditProject }: M
                 setFilterStatus(status)
                 triggerHaptic('selection')
               }}
-              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
+              className={`px-4 py-2.5 rounded-full text-sm font-medium whitespace-nowrap transition-all md-ripple ${
                 filterStatus === status
                   ? 'bg-slate-800 text-white'
                   : 'bg-slate-100 text-slate-600'
               }`}
+              role="radio"
+              aria-checked={filterStatus === status}
             >
-              {status === 'all' ? 'Todos' : 
+              {status === 'all' ? 'Todos' :
                status === 'draft' ? 'Borradores' :
                status === 'calculated' ? 'Calculados' : 'Completados'}
             </button>

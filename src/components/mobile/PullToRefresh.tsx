@@ -70,11 +70,14 @@ export default function PullToRefresh({
       
       // Keep indicator visible during refresh
       animate(pullDistance, threshold, { duration: 0.2 })
-      
+
       try {
-        await onRefresh()
+        const timeoutPromise = new Promise<void>((_, reject) =>
+          setTimeout(() => reject(new Error('Refresh timeout')), 10000)
+        )
+        await Promise.race([onRefresh(), timeoutPromise])
       } catch (error) {
-        console.error('Refresh failed:', error)
+        console.error('Refresh failed or timed out:', error)
       }
       
       setIsRefreshing(false)
@@ -104,10 +107,10 @@ export default function PullToRefresh({
         <motion.div
           style={{ scale: indicatorScale }}
           className={`w-10 h-10 rounded-full flex items-center justify-center ${
-            isRefreshing 
-              ? 'bg-slate-800' 
-              : pullDistance.get() >= threshold 
-                ? 'bg-slate-700' 
+            isRefreshing
+              ? 'bg-brand-500'
+              : pullDistance.get() >= threshold
+                ? 'bg-brand-600'
                 : 'bg-slate-200'
           }`}
         >

@@ -10,7 +10,7 @@ interface MobileCardProps {
   className?: string
   showArrow?: boolean
   padding?: 'sm' | 'md' | 'lg'
-  variant?: 'default' | 'elevated' | 'outlined'
+  variant?: 'default' | 'elevated' | 'outlined' | 'accent'
 }
 
 export default function MobileCard({ 
@@ -28,9 +28,10 @@ export default function MobileCard({
   }
 
   const variantClasses = {
-    default: 'bg-white border border-slate-200 shadow-sm',
-    elevated: 'bg-white shadow-lg',
+    default: 'bg-white border border-slate-200 shadow-elevation-1',
+    elevated: 'bg-white shadow-elevation-3',
     outlined: 'bg-slate-50 border-2 border-slate-300',
+    accent: 'bg-white border border-brand-200 shadow-elevation-1',
   }
 
   const Component = onClick ? motion.button : motion.div
@@ -38,12 +39,12 @@ export default function MobileCard({
   return (
     <Component
       onClick={onClick}
-      whileTap={onClick ? { scale: 0.98 } : undefined}
+      whileTap={onClick ? { scale: 0.985 } : undefined}
       className={`
         w-full rounded-2xl transition-all duration-200
         ${paddingClasses[padding]}
         ${variantClasses[variant]}
-        ${onClick ? 'active:bg-slate-50 cursor-pointer tap-highlight-none' : ''}
+        ${onClick ? 'active:bg-slate-50 cursor-pointer tap-highlight-none md-ripple' : ''}
         ${className}
       `}
     >
