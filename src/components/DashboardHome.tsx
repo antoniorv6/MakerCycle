@@ -316,14 +316,14 @@ export default function DashboardHome({ stats, onNavigate }: DashboardHomeProps)
         </div>
       </motion.div>
 
-      {/* Sección: Cómo va tu negocio */}
+      {/* Sección: Cómo va el negocio */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
         className="space-y-2 flex-1 min-h-0 flex flex-col"
       >
-        <h2 className="text-lg font-bold text-dark-900 font-display flex-shrink-0">Cómo va tu negocio</h2>
+        <h2 className="text-lg font-bold text-dark-900 font-display flex-shrink-0">Cómo va el negocio</h2>
         
         <div className="grid grid-cols-2 gap-1.5 flex-1" style={{ minHeight: '280px' }}>
           {/* Gráfico de Progresión de Ventas */}
@@ -466,14 +466,14 @@ export default function DashboardHome({ stats, onNavigate }: DashboardHomeProps)
         </div>
       </motion.div>
 
-      {/* Sección: Qué queda por hacer */}
+      {/* Sección: Lo que queda por hacer */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
         className="space-y-2 flex-shrink-0"
       >
-        <h2 className="text-lg font-bold text-dark-900 font-display">Qué queda por hacer</h2>
+        <h2 className="text-lg font-bold text-dark-900 font-display">Lo que queda por hacer</h2>
         
         <div className="bg-white rounded-lg p-3 border border-cream-200 shadow-sm max-h-40 overflow-y-auto">
           {loading ? (

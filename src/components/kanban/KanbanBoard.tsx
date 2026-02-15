@@ -249,7 +249,7 @@ export default function KanbanBoard() {
           className="flex items-center gap-2 px-5 py-2.5 bg-brand-500 text-white rounded-xl shadow-brand hover:bg-brand-600 transition font-semibold text-base"
           onClick={() => setShowAddModal(true)}
         >
-          <Plus className="w-5 h-5" /> Añadir a Organización
+          <Plus className="w-5 h-5" /> Añadir a organización
         </button>
       </div>
       <DragDropContext onDragEnd={onDragEnd}>
