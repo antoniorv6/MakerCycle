@@ -69,7 +69,7 @@ export default function MobileDrawer({ isOpen, onClose, onPageChange, currentPag
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-            className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-3xl max-h-[85vh] overflow-hidden safe-area-bottom shadow-elevation-4"
+            className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-3xl max-h-[85vh] flex flex-col safe-area-bottom shadow-elevation-4"
             role="dialog"
             aria-modal="true"
             aria-label="Menú de navegación"
@@ -115,7 +115,7 @@ export default function MobileDrawer({ isOpen, onClose, onPageChange, currentPag
             </div>
 
             {/* Menu Items */}
-            <div className="px-4 py-4 overflow-y-auto max-h-[40vh]">
+            <div className="px-4 py-4 overflow-y-auto flex-1 min-h-0">
               <div className="space-y-1">
                 {menuItems.map((item) => {
                   const Icon = item.icon

@@ -245,7 +245,7 @@ export default function MobileLayout({ initialPage }: MobileLayoutProps) {
       />
 
       {/* Main Content - Native scroll behavior */}
-      <main className={`pt-[60px] ${keyboardVisible ? 'pb-4' : 'pb-[72px]'} min-h-screen-safe overflow-y-auto native-scroll`}>
+      <main className={`pt-[60px] ${keyboardVisible ? 'pb-4' : 'pb-[72px]'} h-screen-safe overflow-y-auto native-scroll`}>
         <div className="py-3">
           <AnimatePresence mode="wait">
             <motion.div

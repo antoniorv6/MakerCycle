@@ -69,7 +69,7 @@ export function CapacitorProvider({ children }: CapacitorProviderProps) {
             setTimeout(() => {
               const activeElement = document.activeElement as HTMLElement
               if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA' || activeElement.tagName === 'SELECT')) {
-                activeElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                activeElement.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' })
               }
             }, 100)
           })

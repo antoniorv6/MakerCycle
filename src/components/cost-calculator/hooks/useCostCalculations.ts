@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useMemo } from 'react';
 import type { Material } from '@/types';
 import type { CostCalculatorPieceMaterial } from '../types';
 
@@ -62,23 +62,8 @@ export const useCostCalculations = ({
   shippingCost = 0,
   pieces = []
 }: UseCostCalculationsProps) => {
-  const [costs, setCosts] = useState<CostBreakdown>({
-    filament: 0,
-    electricity: 0,
-    materials: 0,
-    shipping: 0,
-    total: 0
-  });
-
-  const [salePrice, setSalePrice] = useState<SalePrice>({
-    basePrice: 0,
-    priceWithMargin: 0,
-    priceWithTax: 0,
-    recommendedPrice: 0
-  });
-
-  // Calcular totales desde las piezas
-  const calculateTotalsFromPieces = () => {
+  // Calcular totales desde las piezas - Memoizado
+  const pieceTotals = useMemo(() => {
     if (pieces.length === 0) {
       return {
         totalFilamentWeight: filamentWeight,
@@ -93,7 +78,7 @@ export const useCostCalculations = ({
 
     pieces.forEach(piece => {
       totalPrintHours += piece.printHours * piece.quantity;
-      
+
       if (piece.materials && piece.materials.length > 0) {
         // Usar la nueva estructura de materiales
         const pieceWeight = piece.materials.reduce((sum, material) => {
@@ -107,7 +92,7 @@ export const useCostCalculations = ({
             return sum + weightInGrams;
           }
         }, 0);
-        
+
         const pieceCost = piece.materials.reduce((sum, material) => {
           let weightInKg;
           if (material.category === 'resin') {
@@ -120,7 +105,7 @@ export const useCostCalculations = ({
           }
           return sum + (weightInKg * material.pricePerKg);
         }, 0);
-        
+
         totalFilamentWeight += pieceWeight * piece.quantity;
         totalFilamentCost += pieceCost * piece.quantity;
       } else {
@@ -135,12 +120,12 @@ export const useCostCalculations = ({
       totalPrintHours,
       totalFilamentCost
     };
-  };
+  }, [pieces, filamentWeight, filamentPrice, printHours]);
 
-  useEffect(() => {
-    const { totalFilamentWeight, totalPrintHours, totalFilamentCost } = calculateTotalsFromPieces();
+  // Calcular costes - Memoizado
+  const costs = useMemo(() => {
+    const { totalFilamentCost, totalPrintHours } = pieceTotals;
 
-    // Calcular costes
     const electricityCostTotal = totalPrintHours * printerPower * electricityCost;
     const materialsCost = materials.reduce((sum, material) => sum + (material.price || 0), 0);
     const postprocessingCost = postprocessingItems.reduce((sum, item) => {
@@ -149,37 +134,37 @@ export const useCostCalculations = ({
     }, 0);
     const totalCost = totalFilamentCost + electricityCostTotal + materialsCost + postprocessingCost + shippingCost;
 
-    setCosts({
+    return {
       filament: totalFilamentCost,
       electricity: electricityCostTotal,
       materials: materialsCost + postprocessingCost,
       shipping: shippingCost,
       total: totalCost
-    });
+    };
+  }, [pieceTotals, printerPower, electricityCost, materials, postprocessingItems, shippingCost]);
 
-    // Calcular precio de venta
-    const basePrice = totalCost;
+  // Calcular precio de venta - Memoizado
+  const salePrice = useMemo(() => {
+    const basePrice = costs.total;
     const priceWithMargin = basePrice * (1 + profitMargin / 100);
     const priceWithTax = priceWithMargin * (1 + vatPercentage / 100);
     const recommendedPrice = Math.ceil(priceWithTax * 2) / 2; // Redondear a 0.50 más cercano
 
-    setSalePrice({
+    return {
       basePrice,
       priceWithMargin,
       priceWithTax,
       recommendedPrice
-    });
-  }, [filamentWeight, filamentPrice, printHours, electricityCost, printerPower, materials, postprocessingItems, vatPercentage, profitMargin, shippingCost, pieces]);
+    };
+  }, [costs.total, profitMargin, vatPercentage]);
 
-  const { totalFilamentWeight, totalPrintHours, totalFilamentCost } = calculateTotalsFromPieces();
-
-  return { 
-    costs, 
+  return {
+    costs,
     salePrice,
     // Totales calculados desde piezas
-    totalFilamentWeight,
-    totalPrintHours,
-    totalFilamentCost,
-    totalElectricityCost: totalPrintHours * printerPower * electricityCost
+    totalFilamentWeight: pieceTotals.totalFilamentWeight,
+    totalPrintHours: pieceTotals.totalPrintHours,
+    totalFilamentCost: pieceTotals.totalFilamentCost,
+    totalElectricityCost: pieceTotals.totalPrintHours * printerPower * electricityCost
   };
 };
